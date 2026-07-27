@@ -1,0 +1,13 @@
+{
+  "name": "d-robotics-skills",
+  "owner": {
+    "name": "D-Robotics"
+  },
+  "plugins": [
+    {
+      "name": "oe-skills",
+      "source": "./skills/oe-skills",
+      "description": "OpenExplorer tool chain skills: quantization, compilation, inference, performance evaluation, diagnostics. Supports S-series (S100/S100P/S600) and X5."
+    }
+  ]
+}

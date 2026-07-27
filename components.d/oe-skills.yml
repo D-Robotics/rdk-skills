@@ -1,0 +1,9 @@
+# OE 工具链 Skill Pack
+name: oe-skills
+title: OpenExplorer Tool Chain Skills
+source: D-Robotics/OE-Skills-D-Robotics
+sourcePath: drobotics/skills/
+platforms:
+  - s-series
+  - x-series
+skillCount: 60

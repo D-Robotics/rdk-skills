@@ -1,0 +1,7 @@
+{
+  "skillsRoot": "skills",
+  "packs": {},
+  "paths": {},
+  "platforms": {},
+  "_note": "本文件由 .github/scripts/sync.py 自动生成，请勿手动编辑。各 Pack 源头维护各自的 skill-index.json，同步时合并到此处。"
+}

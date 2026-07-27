@@ -1,0 +1,13 @@
+{
+  "name": "d-robotics-skills",
+  "owner": {
+    "name": "D-Robotics"
+  },
+  "plugins": [
+    {
+      "name": "oe-skills",
+      "source": "./skills/oe-skills",
+      "description": "OpenExplorer 工具链 Skills：量化、编译、推理、性能评测、诊断。支持 S 系列（S100/S100P/S600）和 X5。"
+    }
+  ]
+}
