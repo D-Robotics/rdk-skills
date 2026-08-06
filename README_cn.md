@@ -16,13 +16,13 @@
 
 ## 支持的板卡
 
-| 板卡 | SoC | BPU 架构 | 算力 |
-|------|-----|----------|------|
-| RDK X3 / X3 Module | Sunrise 3 | Bernoulli | 5 TOPS |
-| RDK X5 / X5 Module | Sunrise 5 | Bayes-e | 10 TOPS |
-| RDK Ultra | Journey 5 | Bayes | 96 TOPS |
-| RDK S100 / S100P | S100 / S100P | Nash-e | 80 / 128 TOPS |
-| RDK S600 | S600 | Nash-p（4× Nash core） | 最高 560 TOPS |
+| 板卡 | BPU 架构 | 算力 |
+|------|----------|------|
+| RDK X3 / X3 Module | Bernoulli | 5 TOPS |
+| RDK X5 / X5 Module | Bayes-e | 10 TOPS |
+| RDK Ultra | Bayes | 96 TOPS |
+| RDK S100 / S100P | Nash-e | 80 / 128 TOPS |
+| RDK S600 | Nash-p（4× Nash core） | 最高 560 TOPS |
 
 板卡参数取自官方文档仓库 [rdk_x_doc](https://github.com/D-Robotics/rdk_x_doc) 和 [rdk_s_doc](https://github.com/D-Robotics/rdk_s_doc)。X 系列模型格式为 `.bin`，S 系列为 `.hbm`。
 
@@ -30,7 +30,15 @@
 
 ## 安装
 
-### 方式一：skills CLI（推荐）
+### 方式一：让 AI 帮你装（推荐）
+
+把下面这句 prompt 复制给你的 AI 编程助手（Claude Code、Codex、Cursor 等）：
+
+```
+Install D-Robotics RDK skills from the marketplace: run `npx skills add d-robotics/rdk-skills` and follow the interactive prompts to install the skills you need.
+```
+
+### 方式二：skills CLI
 
 ```bash
 npx skills add d-robotics/rdk-skills
@@ -38,7 +46,7 @@ npx skills add d-robotics/rdk-skills
 
 CLI 会列出所有可用 Skill，选择后自动安装到对应 Agent 的 skills 目录。
 
-### 方式二：Claude Code 插件市场
+### 方式三：Claude Code 插件市场
 
 ```
 /plugin marketplace add D-Robotics/rdk-skills
@@ -46,7 +54,7 @@ CLI 会列出所有可用 Skill，选择后自动安装到对应 Agent 的 skill
 
 运行 `/plugin`，在 Discover 标签页浏览安装。
 
-### 方式三：直接克隆 Pack 仓库
+### 方式四：直接克隆 Pack 仓库
 
 每个 Pack 仓库自带 `install.sh`，支持 symlink 和 copy 两种模式，可同时安装到多个 Agent 运行时：
 
@@ -142,20 +150,6 @@ D-Robotics/rdk-skills/
 ├── LICENSE-APACHE               # 源码许可
 └── LICENSE-CC-BY-4.0            # 文档/Skill 许可
 ```
-
----
-
-## 路线图
-
-- [x] 中央目录仓库 + 自动同步流水线
-- [x] RDK Device Skills Pack（14 skills）
-- [x] OE 工具链 Pack（60+ skills）
-- [x] 多平台分发（Claude Code / Codex / Cursor / Skills.sh）
-- [ ] Skill 签名验证（第三方贡献者出现时启用）
-- [ ] BSP Skills Pack — 系统烧录、驱动配置
-- [ ] ISP Tuning Skills Pack — 图像质量调参、摄像头校准
-- [ ] Model Zoo Skills Pack — 模型推理 demo
-- [ ] TogetheROS.Bot Skills Pack — ROS 机器人算法包
 
 ---
 

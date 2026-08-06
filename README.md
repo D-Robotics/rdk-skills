@@ -16,13 +16,13 @@ This repository is the **central catalog (Hub)**: each Skill Pack maintains its 
 
 ## Supported Boards
 
-| Board | SoC | BPU Architecture | Compute |
-|-------|-----|------------------|---------|
-| RDK X3 / X3 Module | Sunrise 3 | Bernoulli | 5 TOPS |
-| RDK X5 / X5 Module | Sunrise 5 | Bayes-e | 10 TOPS |
-| RDK Ultra | Journey 5 | Bayes | 96 TOPS |
-| RDK S100 / S100P | S100 / S100P | Nash-e | 80 / 128 TOPS |
-| RDK S600 | S600 | Nash-p (4x Nash core) | up to 560 TOPS |
+| Board | BPU Architecture | Compute |
+|-------|------------------|---------|
+| RDK X3 / X3 Module | Bernoulli | 5 TOPS |
+| RDK X5 / X5 Module | Bayes-e | 10 TOPS |
+| RDK Ultra | Bayes | 96 TOPS |
+| RDK S100 / S100P | Nash-e | 80 / 128 TOPS |
+| RDK S600 | Nash-p (4x Nash core) | up to 560 TOPS |
 
 Board parameters follow official documentation repositories [rdk_x_doc](https://github.com/D-Robotics/rdk_x_doc) and [rdk_s_doc](https://github.com/D-Robotics/rdk_s_doc). Model format is `.bin` on X series and `.hbm` on S series.
 
@@ -30,7 +30,15 @@ Board parameters follow official documentation repositories [rdk_x_doc](https://
 
 ## Installation
 
-### Option 1: skills CLI (recommended)
+### Option 1: Ask your AI to install (recommended)
+
+Copy this prompt to your AI coding agent (Claude Code, Codex, Cursor, etc.):
+
+```
+Install D-Robotics RDK skills from the marketplace: run `npx skills add d-robotics/rdk-skills` and follow the interactive prompts to install the skills you need.
+```
+
+### Option 2: skills CLI
 
 ```bash
 npx skills add d-robotics/rdk-skills
@@ -38,7 +46,7 @@ npx skills add d-robotics/rdk-skills
 
 The CLI lists all available skills and installs the selected one into the appropriate agent skill directory.
 
-### Option 2: Claude Code plugin marketplace
+### Option 3: Claude Code plugin marketplace
 
 ```
 /plugin marketplace add D-Robotics/rdk-skills
@@ -46,7 +54,7 @@ The CLI lists all available skills and installs the selected one into the approp
 
 Run `/plugin`, browse the Discover tab, and install.
 
-### Option 3: Clone a Pack repo directly
+### Option 4: Clone a Pack repo directly
 
 Each Pack repo ships an `install.sh` supporting both symlink and copy modes across multiple agent runtimes:
 
@@ -142,20 +150,6 @@ D-Robotics/rdk-skills/
 ├── LICENSE-APACHE               # source code license
 └── LICENSE-CC-BY-4.0            # documentation/skills license
 ```
-
----
-
-## Roadmap
-
-- [x] Central catalog repository + automated sync pipeline
-- [x] RDK Device Skills Pack (14 skills)
-- [x] OE Tool Chain Pack (60+ skills)
-- [x] Multi-platform distribution (Claude Code / Codex / Cursor / Skills.sh)
-- [ ] Skill signing verification (when third-party contributors appear)
-- [ ] BSP Skills Pack — system flashing, driver configuration
-- [ ] ISP Tuning Skills Pack — image quality tuning, camera calibration
-- [ ] Model Zoo Skills Pack — model inference demos
-- [ ] TogetheROS.Bot Skills Pack — ROS robotics algorithm packages
 
 ---
 
