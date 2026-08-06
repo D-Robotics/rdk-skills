@@ -1,0 +1,154 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+#
+# Sync skills from product repos into the D-Robotics/skills catalog.
+# Reads component definitions from components.d/*.yml (one file per
+# component) — teams onboard by adding their own file there, not by
+# editing this workflow or any shared file.
+#
+# Requires a PAT (SKILLS_SYNC_PAT) with read access to all product
+# repos, stored as a repository secret.
+
+name: Sync Skills from Product Repos
+
+on:
+  schedule:
+    # Daily at 2:00 AM UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [main]
+    paths:
+      - "components.d/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-skills
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout skills catalog
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Verify yq is available
+        run: yq --version
+
+      - name: Sync skills from product repos
+        env:
+          GH_TOKEN: ${{ secrets.SKILLS_SYNC_PAT }}
+        run: |
+          set -euo pipefail
+          truncate -s 0 /tmp/rsynced-components.txt
+          truncate -s 0 /tmp/changed-components.txt
+          truncate -s 0 /tmp/failed-components.txt
+          truncate -s 0 /tmp/sync-versions.txt
+          truncate -s 0 /tmp/rsynced-skill-dirs.txt
+
+          # Aggregate per-component files into a single config so the
+          # iteration loop below can index by position. The components.d/
+          # layout means concurrent onboarding PRs never touch a shared
+          # file — see components.d/README.md for the schema.
+          CONFIG=/tmp/components.aggregated.yml
+          yq ea '[.] | {"components": .}' components.d/*.yml > "$CONFIG"
+
+          n_components=$(yq '.components | length' "$CONFIG")
+          echo "Found $n_components components to sync"
+
+          for i in $(seq 0 $((n_components - 1))); do
+            name=$(yq ".components[$i].name" "$CONFIG")
+            repo=$(yq ".components[$i].repo" "$CONFIG")
+            ref=$(yq ".components[$i].ref // \"main\"" "$CONFIG")
+            n_skills=$(yq ".components[$i].skills | length" "$CONFIG")
+
+            echo ""
+            echo "=== Syncing: $name (repo=$repo, ref=$ref, skills=$n_skills) ==="
+
+            # Clone the source repo (shallow, specific ref)
+            clone_dir="/tmp/source-$i"
+            rm -rf "$clone_dir"
+            if ! git clone --depth 1 --branch "$ref" \
+                 "https://github.com/${repo}.git" "$clone_dir" 2>/dev/null; then
+              echo "  [FAIL] could not clone $repo@$ref"
+              echo "$name" >> /tmp/failed-components.txt
+              continue
+            fi
+
+            # Record upstream version info
+            short_sha=$(git -C "$clone_dir" rev-parse --short HEAD)
+            full_sha=$(git -C "$clone_dir" rev-parse HEAD)
+            commit_date=$(git -C "$clone_dir" log -1 --format=%cI)
+            echo -e "$name\t$short_sha\t$full_sha\t$commit_date" >> /tmp/sync-versions.txt
+
+            changed=0
+            for j in $(seq 0 $((n_skills - 1))); do
+              src_path=$(yq ".components[$i].skills[$j].path" "$CONFIG")
+              catalog_dir=$(yq ".components[$i].skills[$j].catalog_dir" "$CONFIG")
+
+              src_full="$clone_dir/$src_path"
+              dest="skills/$catalog_dir"
+
+              if [ ! -d "$src_full" ]; then
+                echo "  [WARN] $name: source path '$src_path' not found in repo"
+                continue
+              fi
+
+              # Skip if no SKILL.md at the expected location
+              if [ ! -f "$src_full/SKILL.md" ]; then
+                echo "  [WARN] $name: no SKILL.md in '$src_path' — skipping"
+                continue
+              fi
+
+              # rsync the skill directory
+              mkdir -p "$dest"
+              rsync -a --delete "$src_full/" "$dest/"
+              echo "$catalog_dir" >> /tmp/rsynced-skill-dirs.txt
+              changed=1
+            done
+
+            if [ "$changed" -eq 1 ]; then
+              echo "$name" >> /tmp/changed-components.txt
+              echo "$name" >> /tmp/rsynced-components.txt
+            fi
+          done
+
+          # Prune orphaned skill directories
+          .github/scripts/prune-orphans.sh
+
+          # Regenerate README tables
+          .github/scripts/regenerate-readme.sh
+
+          # Rebuild plugins
+          .github/scripts/build-plugins.sh || true
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "D-Robotics Skills Bot"
+          git config user.email "skills-bot@d-robotics.com"
+          git add -A
+          git commit -m "chore: sync skills from product repos
+
+$(cat /tmp/sync-versions.txt | while IFS=$'\t' read -r name sha full date; do
+  echo "  - $name: $sha ($date)"
+done)
+
+Triggered by: ${{ github.event_name }}"
+          git push

@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+name: RDK Device Skills
+repo: D-Robotics/device-knowledge
+description: Device-side agent skills for working with a live D-Robotics RDK board after boot — diagnostics, memory auditing, headless setup, camera bring-up, model deployment and benchmarking, GPIO, TogetheROS.Bot, and documentation search.
+skills:
+  - path: skills/rdk-diagnostic/
+    catalog_dir: rdk-diagnostic
+  - path: skills/rdk-memory-audit/
+    catalog_dir: rdk-memory-audit
+  - path: skills/rdk-headless-mode/
+    catalog_dir: rdk-headless-mode
+  - path: skills/rdk-camera-setup/
+    catalog_dir: rdk-camera-setup
+  - path: skills/rdk-vision-pipeline/
+    catalog_dir: rdk-vision-pipeline
+  - path: skills/rdk-model-deploy/
+    catalog_dir: rdk-model-deploy
+  - path: skills/rdk-model-benchmark/
+    catalog_dir: rdk-model-benchmark
+  - path: skills/rdk-docs-reference/
+    catalog_dir: rdk-docs-reference
+  - path: skills/rdk-system-config/
+    catalog_dir: rdk-system-config
+  - path: skills/rdk-network-remote/
+    catalog_dir: rdk-network-remote
+  - path: skills/rdk-system-maintain/
+    catalog_dir: rdk-system-maintain
+  - path: skills/rdk-log-forensics/
+    catalog_dir: rdk-log-forensics
+  - path: skills/rdk-gpio-40pin/
+    catalog_dir: rdk-gpio-40pin
+  - path: skills/rdk-tros-setup/
+    catalog_dir: rdk-tros-setup
+links:
+  contributing: CONTRIBUTING.md
+  discussions: true

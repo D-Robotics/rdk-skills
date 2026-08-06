@@ -1,10 +1,42 @@
-# 临时同步目录
+# SPDX-License-Identifier: Apache-2.0 AND CC-BY-4.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Local configuration
+*.local
+*.local.*
+
+# Temporary sync directory
 .tmp-sync/
+/tmp/
 
 # Python
 __pycache__/
 *.pyc
+.venv/
+venv/
 
-# OS
-.DS_Store
-Thumbs.db
+# Node
+node_modules/
+
+# Build artifacts
+dist/
+build/

@@ -1,0 +1,14 @@
+{
+    "name": "d-robotics-official",
+    "owner": {
+        "name": "D-Robotics",
+        "url": "https://github.com/D-Robotics/skills"
+    },
+    "plugins": [
+        {
+            "name": "d-robotics-skills",
+            "source": "./plugins/d-robotics-skills",
+            "description": "Skills for D-Robotics RDK ecosystem spans board diagnostics, OE tool chain, BSP, ISP tuning, Model Zoo, and TogetheROS.Bot."
+        }
+    ]
+}

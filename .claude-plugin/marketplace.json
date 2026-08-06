@@ -1,13 +1,18 @@
 {
-  "name": "d-robotics-skills",
-  "owner": {
-    "name": "D-Robotics"
-  },
-  "plugins": [
-    {
-      "name": "oe-skills",
-      "source": "./skills/oe-skills",
-      "description": "OpenExplorer 工具链 Skills：量化、编译、推理、性能评测、诊断。支持 S 系列（S100/S100P/S600）和 X5。"
-    }
-  ]
+    "name": "d-robotics-official",
+    "owner": {
+        "name": "D-Robotics",
+        "url": "https://github.com/D-Robotics/skills"
+    },
+    "metadata": {
+        "description": "D-Robotics plugin marketplace — install the curated D-Robotics plugins and skills from this catalog repo.",
+        "version": "1.0.0"
+    },
+    "plugins": [
+        {
+            "name": "d-robotics-skills",
+            "source": "./plugins/d-robotics-skills",
+            "description": "Skills for D-Robotics RDK ecosystem spans board diagnostics, OE tool chain, BSP, ISP tuning, Model Zoo, and TogetheROS.Bot. This plugin helps you find the right skills to help in building D-Robotics-powered workflows."
+        }
+    ]
 }

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+#
+# DCO (Developer Certificate of Origin) check — requires all commits
+# to be signed off.
+
+name: DCO Check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: DCO Check
+        uses: christophebedard/dco-check@v0.5.2
+        with:
+          args: --verbose

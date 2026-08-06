@@ -1,0 +1,55 @@
+name: d-robotics-skills
+
+version: "1.0.0"
+description: Skills for D-Robotics RDK ecosystem spans board diagnostics, OE tool chain (quantization, compilation, inference, evaluation), BSP, ISP tuning, Model Zoo, and TogetheROS.Bot. This plugin helps you find the right skills to help in building D-Robotics-powered workflows.
+
+display_name: D-Robotics
+short_description: Guided help for D-Robotics RDK boards, BPU inference, OE tool chain, and robotics workflows.
+long_description: D-Robotics RDK ecosystem spans board diagnostics, model quantization (PTQ/QAT), compilation, inference, performance evaluation, BSP customization, ISP tuning, Model Zoo deployment, and TogetheROS.Bot. This plugin helps you find the right skills to help in building D-Robotics-powered workflows.
+
+category: Coding
+# logo: ./assets/d-robotics.png
+# composer_icon: ./assets/d-robotics.png
+
+keywords:
+  - d-robotics
+  - rdk
+  - bpu
+  - oe
+  - quantization
+  - inference
+  - robotics
+  - tros
+  - embedded
+  - edge-ai
+  - model-zoo
+
+default_prompts:
+  - "What D-Robotics skills can help me with model quantization"
+  - "Help me diagnose my RDK X5 board"
+  - "How do I deploy a model on RDK S100"
+
+# This plugin ships a single skill: the skill-finder/router.
+#
+# The discovery-first approach: instead of bundling a curated subset
+# of skills into the plugin (which loads every SKILL.md into the harness
+# context on install and crowds the limited skill context space), the
+# plugin ships only the finder. The finder routes users to any skill
+# in the canonical ./skills/ catalog on demand, so the full catalog is
+# reachable without paying the context cost of pre-loading it.
+#
+# It also decouples versioning: individual skills are version-managed in
+# the catalog independently of this plugin's version, so a skill update
+# no longer forces a plugin re-release (and vice versa).
+include_skills:
+  - skills/rdk-docs-reference/
+
+# Inherits from plugins.d/_defaults.yml:
+#   version, author, homepage, repository, license,
+#   brand_color, capabilities
+
+# By default this plugin is added (true) in all self-hosted marketplace.json files. Uncomment to opt out.
+# marketplace_enabled:
+#   claude: false
+#   codex: false
+#   cursor: false

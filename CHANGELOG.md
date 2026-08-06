@@ -1,0 +1,77 @@
+<!-- SPDX-License-Identifier: Apache-2.0 AND CC-BY-4.0 -->
+<!-- Copyright (c) 2026 D-Robotics. All rights reserved. -->
+
+# Changelog
+
+本文件记录本项目的所有重要变更。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
+
+## [0.3.0] - 2026-08-04
+
+### 变更
+
+- `components.d/rdk-device.yml` 的 `repo` 从 `D-Robotics/rdk-device-skills` 修正为 `D-Robotics/device-knowledge`
+- `validate.py` 与 device-knowledge 的 `sandbox.py` 约定对齐：
+  - `license` 从推荐改为必填（`REQUIRED_FRONTMATTER` 加入 `license`）
+  - 新增 4 个必填 section 检查：`## Purpose`、`## When to use`、`## Instructions`、`## Safety`
+  - 新增 `scripts/*.sh` 的 `bash -n` 语法检查
+  - 新增 `references/*.md` 引用存在性检查
+- `CONTRIBUTING.md` 重写，与 device-knowledge 的标准统一：
+  - frontmatter 表补 `metadata.data-classification`，`license` 从推荐改为必填
+  - 新增 SKILL.md 必填 section 说明（Purpose / When to use / Instructions / Safety）
+  - 新增 evals/tasks.yaml 格式规范（id / dimension / prompt / expect.skill / expect.behavior）
+  - 新增五维评测说明（Security / Correctness / Discoverability / Effectiveness / Efficiency）
+  - 新增设计原则（官方文档为真相源、观察/行动分离、不编造、自包含、description 为路由信号）
+  - 新增 Pack 级推荐基础设施（Makefile / install.sh / sandbox.py），参考 device-knowledge
+
+## [0.2.0] - 2026-07-28
+
+### 新增
+
+- 中央目录仓库架构升级，补齐完整的 Pack 注册与同步体系：
+  - `components.d/README.md` — Pack 注册规范文档
+  - `plugins.d/` — 插件构建配置（`README.md`、`_defaults.yml`、`d-robotics-skills.yml`）
+  - `catalog-exceptions.yml` — orphan 清理白名单
+  - `skills.sh.json` — Skills.sh marketplace 分组配置
+  - `.cursor-plugin/marketplace.json` — Cursor marketplace 元数据
+  - `SECURITY.md` — 安全漏洞报告流程
+  - `CODE_OF_CONDUCT.md` — 社区行为准则
+  - `LICENSE-APACHE` + `LICENSE-CC-BY-4.0` — 双许可，替代原先的单一 LICENSE
+- 同步流水线从 Python 脚本迁移到 bash + yq：
+  - `.github/workflows/sync-skills.yml` — 每日 2:00 UTC + `components.d/` 变更触发
+  - `.github/scripts/regenerate-readme.sh` — 从 `components.d/*.yml` 自动重生成 README 表格
+  - `.github/scripts/prune-orphans.sh` — 清理未注册的 `skills/` 目录（5 目录安全阈值）
+  - `.github/scripts/build-plugins.sh` — 从 `plugins.d/*.yml` 构建插件分发包
+  - `.github/scripts/validate.py` — Skill 结构校验（frontmatter、name 格式、description 长度、evals 完整性）
+- `.github/workflows/dco.yml` — DCO 签名检查
+- 注册两个 Skill Pack：
+  - `components.d/rdk-device.yml` — 14 个板端设备 Skill（诊断、内存、无头模式、摄像头、模型部署/基准、GPIO、TogetheROS.Bot、文档检索）
+  - `components.d/oe-tool-chain.yml` — 60+ 个 OE 工具链 Skill（量化、编译、推理、评测、诊断）
+- 中英双语 README（`README.md` 英文、`README_cn.md` 中文，顶部互相跳转）
+
+### 变更
+
+- `README.md` 重写：硬件优先，中文为主，调整章节顺序为「板卡 → 安装 → 目录 → 反馈 → 结构 → 仓库结构 → 路线图 → 许可证」
+- `components.d/` 字段格式统一为 `name`/`repo`/`description`/`skills[]`（`path` + `catalog_dir`），替代原先的非标准字段
+- `CONTRIBUTING.md` 重写，改为 D-Robotics 实际流程导向
+
+### 移除
+
+- `sync.py`（Python）— 由 bash + yq 同步流水线替代
+- 旧版 `validate.py` — 由增强版替代
+- `skill-index.json` — 由同步流水线按需生成
+- 旧版 `sync.yml` — 由 `sync-skills.yml` 替代
+- 单一 `LICENSE` — 由双许可（`LICENSE-APACHE` + `LICENSE-CC-BY-4.0`）替代
+- 旧版 `components.d/oe-skills.yml`（非标准字段）— 由标准格式替代
+
+## [0.1.0] - 2026-07-27
+
+### 新增
+
+- 初始中央目录仓库骨架
+- `components.d/oe-skills.yml` — 首个 Pack 注册（OE 工具链）
+- `sync.py` — Python 同步脚本
+- `validate.py` — 基础 Skill 校验器
+- `.claude-plugin/marketplace.json` — Claude Code marketplace 入口
+- `.agents/plugins/marketplace.json` — Codex marketplace 入口
+- `CONTRIBUTING.md`、`LICENSE`、`.gitignore`
+- `README.md` — Pack 列表与安装指引

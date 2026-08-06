@@ -1,0 +1,7 @@
+# Catalog exceptions — skills/ dirs allowed to exist WITHOUT a
+# components.d registration. Everything else in skills/ must be declared
+# by a components.d/<slug>.yml entry or listed here — otherwise the
+# daily sync prunes it (see .github/scripts/prune-orphans.sh).
+#
+# Add an entry only with a documented reason and an owner.
+exceptions: []

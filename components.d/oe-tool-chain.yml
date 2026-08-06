@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+name: OE Tool Chain
+repo: D-Robotics/oe-skills
+description: OpenExplorer tool chain skills — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Supports S-series (S100/S100P/S600) and X-series (X5).
+# OE-Skills uses bulk layout — the source drobotics/skills/ directory
+# contains 61 skills across 4 groups (drobotics-router / s / x5 / llm).
+# The sync workflow rsyncs the entire tree under catalog_dir "oe-skills".
+skills:
+  - path: drobotics/skills/
+    catalog_dir: oe-skills
+links:
+  contributing: false
+  discussions: false
