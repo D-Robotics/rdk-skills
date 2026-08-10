@@ -28,9 +28,9 @@ DRY_RUN=0
 DEFAULTS_FILE="plugins.d/_defaults.yml"
 default_version=$(yq '.version // "1.0.0"' "$DEFAULTS_FILE" 2>/dev/null || echo "1.0.0")
 default_author_name=$(yq '.author.name // "D-Robotics"' "$DEFAULTS_FILE" 2>/dev/null || echo "D-Robotics")
-default_author_url=$(yq '.author.url // "https://github.com/D-Robotics/skills"' "$DEFAULTS_FILE" 2>/dev/null || echo "https://github.com/D-Robotics/skills")
+default_author_url=$(yq '.author.url // "https://github.com/D-Robotics/rdk-skills"' "$DEFAULTS_FILE" 2>/dev/null || echo "https://github.com/D-Robotics/rdk-skills")
 default_homepage=$(yq '.homepage // "https://developer.d-robotics.com"' "$DEFAULTS_FILE" 2>/dev/null || echo "https://developer.d-robotics.com")
-default_repo=$(yq '.repository // "https://github.com/D-Robotics/skills"' "$DEFAULTS_FILE" 2>/dev/null || echo "https://github.com/D-Robotics/skills")
+default_repo=$(yq '.repository // "https://github.com/D-Robotics/rdk-skills"' "$DEFAULTS_FILE" 2>/dev/null || echo "https://github.com/D-Robotics/rdk-skills")
 default_license=$(yq '.license // "Apache-2.0 AND CC-BY-4.0"' "$DEFAULTS_FILE" 2>/dev/null || echo "Apache-2.0 AND CC-BY-4.0")
 default_brand=$(yq '.brand_color // "#1D9E75"' "$DEFAULTS_FILE" 2>/dev/null || echo "#1D9E75")
 default_skill_files=$(yq '.skill_files // "copy"' "$DEFAULTS_FILE" 2>/dev/null || echo "copy")
@@ -145,7 +145,7 @@ marketplace = {
     'name': 'd-robotics-official',
     'owner': {
         'name': 'D-Robotics',
-        'url': 'https://github.com/D-Robotics/skills'
+        'url': 'https://github.com/D-Robotics/rdk-skills'
     },
     'metadata': {
         'description': 'D-Robotics plugin marketplace — install the curated D-Robotics plugins and skills from this catalog repo.',
@@ -180,7 +180,7 @@ marketplace = {
     'name': 'd-robotics-official',
     'owner': {
         'name': 'D-Robotics',
-        'url': 'https://github.com/D-Robotics/skills'
+        'url': 'https://github.com/D-Robotics/rdk-skills'
     },
     'plugins': plugins
 }

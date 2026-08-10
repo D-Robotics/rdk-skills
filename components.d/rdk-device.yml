@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 name: RDK Device Skills
-repo: D-Robotics/device-knowledge
+repo: D-Robotics/rdk-device-skills
 description: Device-side agent skills for working with a live D-Robotics RDK board after boot — diagnostics, memory auditing, headless setup, camera bring-up, model deployment and benchmarking, GPIO, TogetheROS.Bot, and documentation search.
 skills:
   - path: skills/rdk-diagnostic/
