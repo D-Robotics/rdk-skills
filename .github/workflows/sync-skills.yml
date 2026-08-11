@@ -162,7 +162,7 @@ jobs:
           fi
 
       - name: Regenerate README tables
-        run: .github/scripts/regenerate-readme.sh
+        run: bash .github/scripts/regenerate-readme.sh
 
       - name: Build sync summary
         id: summary
