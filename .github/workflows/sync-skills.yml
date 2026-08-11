@@ -213,6 +213,10 @@ jobs:
           git config user.name "D-Robotics Skills Bot"
           git config user.email "skills-bot@d-robotics.com"
           git add -A
+          if git diff --staged --quiet; then
+            echo "No actual changes to commit — content already up to date"
+            exit 0
+          fi
           {
             echo "chore: sync skills from product repos"
             echo ""
