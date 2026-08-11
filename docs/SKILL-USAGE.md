@@ -30,8 +30,8 @@ CLI 会列出全部可用 skill，交互式选择后安装到对应 Agent 的技
 各 Pack 仓库自带 `install.sh`（如适用），支持 symlink/copy 两种模式：
 
 ```bash
-git clone https://github.com/D-Robotics/device-knowledge.git
-cd device-knowledge
+git clone https://github.com/D-Robotics/rdk-device-skills.git
+cd rdk-device-skills
 ./install.sh                          # 默认 symlink 到 ~/.claude/skills 等
 ./install.sh --copy                   # 复制而非软链
 ./install.sh --targets claude,cursor  # 只装指定 Agent

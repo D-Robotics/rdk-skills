@@ -105,7 +105,7 @@ SKILL.md body 必须包含以下 4 个 section：
 | `install.sh` | 安装脚本：symlink/copy 到多个 Agent 运行时 |
 | `tools/sandbox.py` | 本地校验沙箱：frontmatter + section + 脚本 + 路由测试 |
 
-参考实现见 [device-knowledge](https://github.com/D-Robotics/device-knowledge) 仓库。
+参考实现见 [rdk-device-skills](https://github.com/D-Robotics/rdk-device-skills) 仓库。
 
 ## DCO 签名
 
