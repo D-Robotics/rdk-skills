@@ -29,22 +29,15 @@ concurrency:
 
 jobs:
   sync:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout skills catalog
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Install yq
-        run: |
-          if ! command -v yq &>/dev/null; then
-            echo "yq not found, installing..."
-            sudo wget -qO /usr/local/bin/yq \
-              https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-            sudo chmod +x /usr/local/bin/yq
-          fi
-          yq --version
+      - name: Verify yq is available
+        run: yq --version
 
       - name: Sync skills from product repos
         env:
