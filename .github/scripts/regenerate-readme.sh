@@ -44,8 +44,12 @@ component_skill_count() {
 }
 
 # Build the skills table rows.
-skills_rows=""
-help_rows=""
+skills_rows="| Product | Description | Skills |
+|---------|-------------|--------|
+"
+help_rows="| Product | Issues | Discussions | Contributing |
+|---------|--------|-------------|--------------|
+"
 
 for idx in $sorted_indices; do
   name=$(yq ".components[$idx].name" "$CONFIG")
@@ -65,6 +69,11 @@ for idx in $sorted_indices; do
       fi
     fi
   done < <(yq -r ".components[$idx].skills[].catalog_dir" "$CONFIG")
+
+  # Skip components with no synced skills
+  if [ -z "$skill_links" ]; then
+    continue
+  fi
 
   # Skills table row
   skills_rows="${skills_rows}| **${name}** | ${description} | ${skill_links} |
