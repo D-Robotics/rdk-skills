@@ -23,33 +23,51 @@
     },
     {
       "title": "Camera and Vision",
-      "description": "Camera bring-up, end-to-end vision pipeline, and ISP-related skills.",
+      "description": "Camera bring-up, end-to-end vision pipeline, and multimedia hardware codecs.",
       "skills": [
         "rdk-camera-setup",
-        "rdk-vision-pipeline"
+        "rdk-vision-pipeline",
+        "rdk-multimedia"
       ]
     },
     {
       "title": "Model Deployment",
-      "description": "Model deployment, benchmarking, and inference-related skills.",
+      "description": "Model deployment, benchmarking, model zoo, and inference-related skills.",
       "skills": [
         "rdk-model-deploy",
-        "rdk-model-benchmark"
+        "rdk-model-benchmark",
+        "rdk-model-zoo"
       ]
     },
     {
       "title": "Peripherals and Robotics",
-      "description": "GPIO, 40-pin header, and TogetheROS.Bot setup.",
+      "description": "GPIO, 40-pin header, peripheral cookbook, accessories, and TogetheROS.Bot setup.",
       "skills": [
         "rdk-gpio-40pin",
+        "rdk-peripheral-cookbook",
+        "rdk-accessories",
         "rdk-tros-setup"
       ]
     },
     {
-      "title": "Documentation",
-      "description": "Full-text search over official D-Robotics documentation.",
+      "title": "Documentation and Knowledge",
+      "description": "Full-text search, board knowledge, hardware specs, command manual, source map, and ecosystem selection.",
       "skills": [
-        "rdk-docs-reference"
+        "rdk-docs-reference",
+        "rdk-board-knowledge",
+        "rdk-hardware",
+        "rdk-ecosystem",
+        "rdk-command-manual",
+        "rdk-source-map"
+      ]
+    },
+    {
+      "title": "Advanced Deployment",
+      "description": "On-device LLM/VLM deployment, embodied AI, and S-series heterogeneous development.",
+      "skills": [
+        "rdk-llm-deployment",
+        "rdk-embodied-lerobot",
+        "rdk-board-delegate"
       ]
     }
   ]

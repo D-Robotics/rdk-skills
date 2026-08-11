@@ -83,9 +83,9 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 | 摄像头与视觉 | rdk-camera-setup、rdk-vision-pipeline |
 | 模型部署与评测 | rdk-model-deploy、rdk-model-benchmark |
 | 外设与 ROS | rdk-gpio-40pin、rdk-tros-setup |
-| 文档与知识 | rdk-docs-reference、rdk-doc-finder、rdk-command-manual、rdk-source-map |
-| 选型与生态 | rdk-ecosystem、rdk-board-knowledge、rdk-hardware、rdk-accessories |
-| 高级部署 | rdk-llm-deployment、rdk-embodied-lerobot、rdk-board-delegate、rdk-model-zoo |
+| 文档与知识 | rdk-docs-reference、rdk-board-knowledge、rdk-hardware、rdk-command-manual、rdk-source-map |
+| 选型与生态 | rdk-ecosystem、rdk-accessories |
+| 高级部署 | rdk-llm-deployment、rdk-embodied-lerobot、rdk-board-delegate、rdk-model-zoo、rdk-multimedia、rdk-peripheral-cookbook |
 
 支持的板卡：RDK X3 / X5 / Ultra / S100 / S100P / S600（X 系列模型格式 `.bin`，S 系列 `.hbm`）。
 

@@ -32,6 +32,30 @@ skills:
     catalog_dir: rdk-gpio-40pin
   - path: skills/rdk-tros-setup/
     catalog_dir: rdk-tros-setup
+  - path: skills/rdk-ecosystem/
+    catalog_dir: rdk-ecosystem
+  - path: skills/rdk-hardware/
+    catalog_dir: rdk-hardware
+  - path: skills/rdk-board-knowledge/
+    catalog_dir: rdk-board-knowledge
+  - path: skills/rdk-model-zoo/
+    catalog_dir: rdk-model-zoo
+  - path: skills/rdk-multimedia/
+    catalog_dir: rdk-multimedia
+  - path: skills/rdk-peripheral-cookbook/
+    catalog_dir: rdk-peripheral-cookbook
+  - path: skills/rdk-accessories/
+    catalog_dir: rdk-accessories
+  - path: skills/rdk-llm-deployment/
+    catalog_dir: rdk-llm-deployment
+  - path: skills/rdk-embodied-lerobot/
+    catalog_dir: rdk-embodied-lerobot
+  - path: skills/rdk-board-delegate/
+    catalog_dir: rdk-board-delegate
+  - path: skills/rdk-command-manual/
+    catalog_dir: rdk-command-manual
+  - path: skills/rdk-source-map/
+    catalog_dir: rdk-source-map
 links:
   contributing: CONTRIBUTING.md
   discussions: true
