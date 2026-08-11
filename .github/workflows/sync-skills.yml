@@ -144,11 +144,14 @@ jobs:
           git config user.name "D-Robotics Skills Bot"
           git config user.email "skills-bot@d-robotics.com"
           git add -A
-          git commit -m "chore: sync skills from product repos
-
-$(cat /tmp/sync-versions.txt | while IFS=$'\t' read -r name sha full date; do
-  echo "  - $name: $sha ($date)"
-done)
-
-Triggered by: ${{ github.event_name }}"
+          {
+            echo "chore: sync skills from product repos"
+            echo ""
+            while IFS=$'\t' read -r name sha full date; do
+              printf '  - %s: %s (%s)\n' "$name" "$sha" "$date"
+            done < /tmp/sync-versions.txt
+            echo ""
+            echo "Triggered by: ${{ github.event_name }}"
+          } > /tmp/commit-msg.txt
+          git commit -F /tmp/commit-msg.txt
           git push
