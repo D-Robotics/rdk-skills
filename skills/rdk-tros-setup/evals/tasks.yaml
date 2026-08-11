@@ -1,0 +1,28 @@
+# rdk-tros-setup evaluation tasks
+
+- id: tros-001
+  dimension: correctness
+  prompt: "ros2 run 提示找不到 package，tros 是不是没装好？"
+  expect:
+    skill: rdk-tros-setup
+    behavior:
+      - runs tros_check.sh
+      - if env_sourced is false, advises source /opt/tros/setup.bash per official FAQ
+      - does not suggest reinstalling the OS without evidence
+
+- id: tros-002
+  dimension: correctness
+  prompt: "怎么确认板子上的 tros 装好了？"
+  expect:
+    skill: rdk-tros-setup
+    behavior:
+      - quotes tros_check.sh fields (tros_installed / distros / ros2_available)
+      - cites official install docs for the user's board if missing
+
+- id: tros-003
+  dimension: discoverability
+  prompt: "dnn_node 跑起来模型加载失败。"
+  expect:
+    skill: rdk-model-deploy
+    behavior:
+      - hands off model/arch mismatch analysis to rdk-model-deploy

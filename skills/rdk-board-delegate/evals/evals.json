@@ -1,0 +1,66 @@
+{
+  "skill_name": "rdk-board-delegate",
+  "description": "Test prompts that verify rdk-board-delegate triggers and produces correct S-series heterogeneous-development guidance. Prompts are written the way a real RDK robotics developer would phrase them (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "mcu1-wfi-crash",
+      "prompt": "我在 S100 上重新编了 MCU 固件，echo stop 之后马上 echo start，板子直接跑飞挂死了，为什么？",
+      "expected_output": "Identifies the wfi trap: after stop you must wait for the system to enter wfi mode before start; restarting too early overwrites running code in MCU SRAM.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "Explains that after echo stop you must wait for the system to enter wfi mode before echo start again." },
+        { "id": "1b", "text": "Explains why: an early start reloads firmware into MCU SRAM and overwrites the running code, crashing the board." },
+        { "id": "1c", "text": "Notes MCU1 loads via remoteproc (sysfs state node), not JTAG/flashing, and you cannot power-cycle MCU1 alone." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "s600-ethercat-native",
+      "prompt": "S600 上要做多轴伺服运动控制，EtherCAT 主站怎么起？跟 S100 一样吗？",
+      "expected_output": "S600 V5.1.0+ defaults to the Native (ec_hobot) EtherCAT driver, mutually exclusive with hobot_eth_super, MAC-based config; start via ethercat.service.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "States S600 is covered and V5.1.0+ defaults to the Native (hobot/ec_hobot) EtherCAT driver." },
+        { "id": "2b", "text": "Notes the Native driver is mutually exclusive with the gmac/hobot_eth_super driver and the bound port's MAC disappears from ip a (config uses the MAC address)." },
+        { "id": "2c", "text": "Mentions starting via ethercat.service and checking status with 'ethercat master', and/or pairing with PTP and IPC core-pinning for determinism." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "hbmem-zero-copy",
+      "prompt": "相机出来的图要送进 BPU 推理，怎么避免拷贝大块内存？S100 上有什么机制？",
+      "expected_output": "Use hbmem zero-copy shared memory (libhbmem), import buffers with consume-count, graph_buf for images; APIs need root; don't mmap raw physical addresses.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Recommends hbmem / libhbmem zero-copy shared memory and the import + consume-count mechanism." },
+        { "id": "3b", "text": "Mentions graph_buf for images vs com_buf for featuremaps, and/or that hbmem APIs require root." },
+        { "id": "3c", "text": "Warns against mmap-ing a raw physical address because it does not bump the reference count." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "delegate-handoff-fields",
+      "prompt": "我要把一个 MCU 排查任务委派给板端 OpenClaw agent，应该写哪些信息它才不会把我打回？",
+      "expected_output": "Lists the five required handoff fields: goal, background, done-so-far (with real output), analysis, expectation.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Lists the required handoff fields: goal, background, done-so-far, analysis, expectation (all five)." },
+        { "id": "4b", "text": "Says background must include board (S100/S100P/S600), debug/release, and current state (offline/running)." },
+        { "id": "4c", "text": "Says done-so-far must include the actual command output, not just a description." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "miniboot-no-rollback",
+      "prompt": "我只想单独升级 S600 的 miniboot/bootloader，不想整片重烧，可以吗？有什么风险？",
+      "expected_output": "Yes via rdk-miniboot-update; only touches BAK+AB miniboot partitions, applies on reboot, cannot upgrade the partition table; no auto-rollback so a failed write can brick boot.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Says yes — use rdk-miniboot-update (from hobot-miniboot), works on non-OTA images and applies on reboot." },
+        { "id": "5b", "text": "Notes it only updates the miniboot BAK/AB partitions and cannot upgrade the partition table." },
+        { "id": "5c", "text": "Warns there is no built-in auto-rollback, so a failed dd or power loss mid-write can leave the device unbootable." }
+      ]
+    }
+  ]
+}

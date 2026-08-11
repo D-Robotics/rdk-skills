@@ -1,0 +1,67 @@
+{
+  "skill_name": "rdk-embodied-lerobot",
+  "description": "Test prompts that verify rdk-embodied-lerobot triggers and produces correct, branch-aware guidance for deploying LeRobot ACT and Pi0/openpi VLA policies onto RDK boards. Prompts are written the way a real embodied-AI developer would phrase them (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "act-to-s100-deploy",
+      "prompt": "我训练好了一个 SO-101 的 ACT 策略,想部署到 RDK S100 上跑,完整流程是什么?",
+      "expected_output": "Three-stage ACT flow: export to ONNX (export_bpu_actpolicy.py, type nash-e), compile to .hbm in OE Docker via build_all.sh, then bpu_control_robot.py on board. Uses upstream lerobot v0.5.2 / s100 branch, not the fork.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "Uses export_bpu_actpolicy.py to produce ONNX, then build_all.sh in the OE Docker toolchain (x86 host) to produce .hbm, then bpu_control_robot.py on the board." },
+        { "id": "1b", "text": "States march/type = nash-e for S100." },
+        { "id": "1c", "text": "Says to use the upstream huggingface/lerobot (v0.5.2) s100 branch, NOT the D-Robotics/lerobot fork (or only uses the fork for the legacy stable/v2.1 path)." },
+        { "id": "1d", "text": "Notes that arm assembly / calibration / data collection are upstream LeRobot and out of scope for this deployment repo." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "s600-act-march",
+      "prompt": "S600 上跑 ACT,march 填什么?跟 S100 一样吗?",
+      "expected_output": "S600 = nash-p (S100 = nash-e), via the s600 branch and bpu_export_config_s600_calfix.yaml; artifact is .hbm.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "States march = nash-p for S600 and nash-e for S100 (they are NOT the same)." },
+        { "id": "2b", "text": "Points to the s600 branch of rdk_LeRobot_tools (and/or the s600 export config)." },
+        { "id": "2c", "text": "Says the artifact is a .hbm compiled in the OE toolchain." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "pi0-client-server",
+      "prompt": "Pi0 / openpi 是不是直接在板子上单机跑就行?输入输出是什么?",
+      "expected_output": "No — client-server: S600 runs the client (camera sync, preprocess, execute) + piper_node, Pi0 inference is on the OE-LLM server. Input 3 images + [14] state + text prompt, output [50,14] actions.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Says it is client-server, NOT a single on-board process; Pi0 inference runs on the server (OE-LLM)." },
+        { "id": "3b", "text": "Describes input as 3 images ([3,224,224]) + a [14] state + a text prompt, and output as a [50,14] action sequence." },
+        { "id": "3c", "text": "Notes it runs on RDK S600 (Ubuntu 24.04 / ROS2 Jazzy) driving a dual-arm setup via piper_node." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "fork-vs-upstream-dataset-error",
+      "prompt": "我用 huggingface 最新的 lerobot 装的环境,加载我以前的数据集报错了,怎么回事?",
+      "expected_output": "Branch/dataset mismatch: current s100/s600 branches target upstream v0.5.2 (new dataset format); legacy v2.1 datasets need the stable branch + D-Robotics fork or datasets==2.19.0.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Identifies a LeRobot-version / dataset-format mismatch as the cause." },
+        { "id": "4b", "text": "For legacy v2.1 datasets, routes to the stable branch + D-Robotics/lerobot fork or pinning datasets==2.19.0." },
+        { "id": "4c", "text": "Does NOT claim the D-Robotics fork is the correct choice for the current s100/s600 branches." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "hbm-runtime-py312-trap",
+      "prompt": "S100 板子上 pip install hbm-runtime 之后 import 不了,Python 3.12,怎么办?",
+      "expected_output": "PyPI hbm-runtime wheel is Python-3.10-only; on the s100 branch build the bundled bpu_runtime/ C++ pybind11 extension (BPUACTRuntime).",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Explains the PyPI hbm-runtime wheel is built for Python 3.10 and cannot be imported under Python 3.12." },
+        { "id": "5b", "text": "Says to build the bundled bpu_runtime/ C++ pybind11 extension (BPUACTRuntime) on the s100 branch instead." },
+        { "id": "5c", "text": "Notes bpu_control_robot.py auto-imports the built .so (falls back from hbm_runtime to the C++ extension)." }
+      ]
+    }
+  ]
+}

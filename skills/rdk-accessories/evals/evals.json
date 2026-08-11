@@ -1,0 +1,66 @@
+{
+  "skill_name": "rdk-accessories",
+  "description": "Test prompts that verify rdk-accessories triggers and produces correct, source-grounded guidance for D-Robotics official accessories (GS130W/GS130Wi cameras, RDK IMU Module BMI088, S100/S600 expansion boards). Prompts are phrased the way a real RDK developer would (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "gs130wi-imu-is-icm42688",
+      "prompt": "GS130Wi 上内置的 IMU 是 BMI088 吗？我想直接用 BMI088 的驱动读它。",
+      "expected_output": "Corrects the chip: GS130Wi's built-in IMU is ICM-42688-P (over the right-eye MIPI shared I2C), NOT BMI088; BMI088 is the separate RDK IMU Module on 40PIN.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "States GS130Wi's built-in IMU is ICM-42688-P, not BMI088." },
+        { "id": "1b", "text": "Notes BMI088 is a different part (the standalone RDK IMU Module on the 40PIN header)." },
+        { "id": "1c", "text": "Warns the driver/IIO device name/registers differ, so the BMI088 driver does not apply." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "s600-camera-board-no-mipi",
+      "prompt": "RDK S600 的相机扩展板有几路 MIPI、几路 GMSL？",
+      "expected_output": "S600 camera board = pure 8x GMSL (2x MAX96712), NO MIPI; contrasts with S100 (2x MIPI + 4x GMSL).",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "States the S600 camera expansion board has 8x GMSL and NO MIPI interface." },
+        { "id": "2b", "text": "Mentions it uses 2x MAX96712 (or contrasts with S100's MIPI+GMSL mix)." },
+        { "id": "2c", "text": "Does NOT claim the S600 camera board has MIPI camera connectors." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "gs130w-not-on-x3",
+      "prompt": "GS130W 双目相机能接在 RDK X3 上用吗？",
+      "expected_output": "No — GS130W needs dual MIPI; X3/X3 Module have single MIPI only. Supported: X5/X5M/S100(P)/S600.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Says GS130W is NOT supported on RDK X3 / X3 Module." },
+        { "id": "3b", "text": "Explains the reason: X3 has only single MIPI, GS130W needs dual MIPI." },
+        { "id": "3c", "text": "Lists supported boards (X5, X5 Module, S100/S100P, S600), noting S100/S100P need the Camera Expansion Board." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "imu-module-on-s100",
+      "prompt": "我想把 RDK IMU 模组装到 S100 上读数，怎么弄？",
+      "expected_output": "S100 supports it but cannot mount directly (needs jumper wiring on 40PIN); read via official rdk-imu-module-sdk (not IIO, which is X5-only). Distinguish from the S100 MCU board's on-board BMI088.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Says the RDK IMU Module (BMI088) cannot mount directly on S100 and needs jumper wiring to the 40PIN." },
+        { "id": "4b", "text": "Recommends the official rdk-imu-module-sdk (C/Python/ROS2), noting the IIO driver path is X5/X5 Module only." },
+        { "id": "4c", "text": "Does NOT incorrectly tell the user to enable BMI088 via srpi-config IIO on the S100." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "ffc-orientation-and-power",
+      "prompt": "GS130W 的 FFC 排线怎么插？方向有讲究吗？",
+      "expected_output": "Power off first; GS130W module-side contacts face away from PCB; warn GS130Wi is opposite orientation.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Says to power the board OFF before connecting the FFC/FPC cable." },
+        { "id": "5b", "text": "States GS130W and GS130Wi insert the FFC in OPPOSITE orientations (do not copy one onto the other)." },
+        { "id": "5c", "text": "Mentions the 22-pin / 0.5mm-pitch FFC and not yanking the flexible cable, or correct contact-facing direction." }
+      ]
+    }
+  ]
+}

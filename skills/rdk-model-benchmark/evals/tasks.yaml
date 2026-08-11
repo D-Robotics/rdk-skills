@@ -1,0 +1,30 @@
+# rdk-model-benchmark evaluation tasks
+
+- id: bench-001
+  dimension: correctness
+  prompt: "帮我测一下 /userdata/yolov5s.bin 在这块板子上的帧率。"
+  expect:
+    skill: rdk-model-benchmark
+    behavior:
+      - runs scripts/benchmark.sh --model /userdata/yolov5s.bin
+      - quotes average_latency_ms and fps from tool output
+      - states core_id / thread_num / frame_count conditions
+
+- id: bench-002
+  dimension: effectiveness
+  prompt: "怎么把这个模型的极限帧率跑出来？"
+  expect:
+    skill: rdk-model-benchmark
+    behavior:
+      - sweeps --threads within [1,8] per official guidance
+      - on dual-BPU boards uses --core 0
+      - reports the best thread count found, not a guess
+
+- id: bench-003
+  dimension: discoverability
+  prompt: "我想把 ONNX 模型转成 bin。"
+  expect:
+    skill: none
+    behavior:
+      - does not attempt conversion on-device
+      - points to official hb_mapper toolchain docs (04_toolchain_development)

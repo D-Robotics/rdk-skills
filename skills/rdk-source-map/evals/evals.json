@@ -1,0 +1,64 @@
+{
+  "skill_name": "rdk-source-map",
+  "description": "Test prompts that verify rdk-source-map triggers and produces correct, source-grounded answers about the D-Robotics GitHub org: the hobot- vs hobot_ split, board prefixes (and which are private), the two assembly systems, and which repo to use for a task. Prompts are phrased the way a real RDK developer would (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "hyphen-vs-underscore-dnn",
+      "prompt": "D-Robotics 仓库里 hobot-dnn 和 hobot_dnn 有什么区别，我做 ROS2 检测节点该用哪个？",
+      "expected_output": "Explains hobot-dnn (hyphen) is the BSP/image low-level BPU library and hobot_dnn (underscore) is the ROS2 dnn_node package that wraps it; for a ROS2 node use the underscore one.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "Says hobot- (hyphen) is the BSP / system-image low-level library." },
+        { "id": "1b", "text": "Says hobot_ (underscore) is the TROS/ROS2 application package (dnn_node)." },
+        { "id": "1c", "text": "Tells the user to use the underscore hobot_dnn for a ROS2 node." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "s100-bsp-is-private",
+      "prompt": "我想从源码构建 RDK S100 的系统镜像，是不是 clone s100-rdk-gen 就行？",
+      "expected_output": "Notes that s100-rdk-gen / s100-bootloader / s100-hobot-* are private (not anonymously cloneable); public source-build exists only for X3 and X5; suggests official prebuilt image or requesting access.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "Says the s100- prefixed BSP/build repos are private / not publicly cloneable." },
+        { "id": "2b", "text": "States that public source-build is available for X3 (rdk-gen) and X5 (x5-rdk-gen)." },
+        { "id": "2c", "text": "Does NOT instruct the user to anonymously clone s100-rdk-gen as if it were public." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "rcl-is-upstream-port",
+      "prompt": "组织里的 rcl、rclcpp、rmw_cyclonedds 这些仓库是 RDK 自己开发的算法吗？",
+      "expected_output": "No — these are upstream ROS2 repos ported/mirrored for the TROS build (pulled by vcstool via ros2.repos), not RDK-original; debug against upstream first.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Says these are upstream ROS2 ports/mirrors, NOT RDK-original algorithms." },
+        { "id": "3b", "text": "Associates them with the TROS workspace build (vcstool / ros2.repos)." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "two-assembly-systems",
+      "prompt": "RDK 这边构建 OS 镜像和编译 TROS 用的不是一套工具吗？分别用什么？",
+      "expected_output": "Two systems: OS image uses repo + manifest + *-rdk-gen (pulls hobot- hyphen BSP); TROS uses vcstool + ros2.repos via robot_dev_config (pulls hobot_ underscore packages).",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Says OS image build uses repo + manifest + *-rdk-gen." },
+        { "id": "4b", "text": "Says TROS build uses vcstool + ros2.repos (entry robot_dev_config)." },
+        { "id": "4c", "text": "Connects the OS build to hobot- (hyphen) repos and the TROS build to hobot_ (underscore) repos." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "no-s600-prefix",
+      "prompt": "S600 的 BSP 是不是在 s600-rdk-gen 仓库里？我想找 S600 的板级源码。",
+      "expected_output": "No s600- prefixed BSP/build repos exist (public or private); S600 support lives only in application-layer repos (e.g. model zoo branches, hobot_* adaptation).",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "States there is no s600-rdk-gen / s600- prefixed BSP repo." },
+        { "id": "5b", "text": "Says S600 support appears in application-layer repos rather than a dedicated BSP prefix." }
+      ]
+    }
+  ]
+}

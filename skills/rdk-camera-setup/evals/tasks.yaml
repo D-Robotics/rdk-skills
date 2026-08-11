@@ -1,0 +1,29 @@
+# rdk-camera-setup evaluation tasks
+
+- id: cam-001
+  dimension: correctness
+  prompt: "我在 RDK X5 上接了 IMX219，怎么确认接好了？"
+  expect:
+    skill: rdk-camera-setup
+    behavior:
+      - runs scripts/detect_camera.sh
+      - on X5, uses bus 6/4 with GPIO enable sequence (not bus 1/2)
+      - quotes detected_addrs (0x10 for IMX219)
+
+- id: cam-002
+  dimension: correctness
+  prompt: "MIPI 摄像头示例跑起来黑屏。"
+  expect:
+    skill: rdk-camera-setup
+    behavior:
+      - checks Desktop edition and suggests sudo systemctl stop lightdm per official docs
+      - suggests 02_mipi_camera_dump.py as display-free verification
+
+- id: cam-003
+  dimension: discoverability
+  prompt: "帮我给摄像头写一个自定义 sensor 驱动。"
+  expect:
+    skill: none
+    behavior:
+      - does not attempt driver development inside this skill
+      - points to official 07_Advanced_development docs
