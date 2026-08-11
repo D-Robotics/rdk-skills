@@ -2,13 +2,13 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 #
 # DCO (Developer Certificate of Origin) check — requires all commits
-# to be signed off.
+# to be signed off. Bot branches (automated/*) are exempt.
 
 name: DCO Check
 
 on:
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -17,10 +17,13 @@ permissions:
 jobs:
   dco:
     runs-on: ubuntu-latest
+    # Exempt bot branches from DCO check
+    if: ${{ !startsWith(github.head_ref, 'automated/') }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: DCO Check
         uses: christophebedard/dco-check@v0.5.2
