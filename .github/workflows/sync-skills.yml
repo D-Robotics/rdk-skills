@@ -1,25 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 #
-# Sync skills from product repos into the D-Robotics/skills catalog.
+# Sync skills from product repos into the D-Robotics/rdk-skills catalog.
 # Reads component definitions from components.d/*.yml (one file per
 # component) — teams onboard by adding their own file there, not by
 # editing this workflow or any shared file.
 #
 # Requires a PAT (SKILLS_SYNC_PAT) with read access to all product
-# repos, stored as a repository secret.
+# repos, stored as a repository secret. For public repos the token
+# is optional but recommended to avoid rate limits.
 
 name: Sync Skills from Product Repos
 
 on:
   schedule:
-    # Daily at 2:00 AM UTC
-    - cron: "0 2 * * *"
+    # Hourly
+    - cron: "0 * * * *"
   workflow_dispatch: # Allow manual trigger
-  push:
-    branches: [main]
-    paths:
-      - "components.d/**"
 
 permissions:
   contents: write
@@ -60,98 +57,252 @@ jobs:
           CONFIG=/tmp/components.aggregated.yml
           yq ea '[.] | {"components": .}' components.d/*.yml > "$CONFIG"
 
-          n_components=$(yq '.components | length' "$CONFIG")
-          echo "Found $n_components components to sync"
+          # Configure git to use the token via credential helper
+          # so it never appears in clone URLs or error output
+          if [ -n "${GH_TOKEN:-}" ]; then
+            git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=${GH_TOKEN}"; }; f'
+          fi
 
-          for i in $(seq 0 $((n_components - 1))); do
+          component_count=$(yq '.components | length' "$CONFIG")
+          echo "Found $component_count components to sync"
+
+          for i in $(seq 0 $((component_count - 1))); do
             name=$(yq ".components[$i].name" "$CONFIG")
             repo=$(yq ".components[$i].repo" "$CONFIG")
             ref=$(yq ".components[$i].ref // \"main\"" "$CONFIG")
-            n_skills=$(yq ".components[$i].skills | length" "$CONFIG")
 
             echo ""
-            echo "=== Syncing: $name (repo=$repo, ref=$ref, skills=$n_skills) ==="
+            echo "=== Syncing: $name (repo=$repo, ref=$ref) ==="
 
-            # Clone the source repo (shallow, specific ref)
-            clone_dir="/tmp/source-$i"
-            rm -rf "$clone_dir"
-            if ! git clone --depth 1 --branch "$ref" \
-                 "https://github.com/${repo}.git" "$clone_dir" 2>/dev/null; then
+            # Clone with sparse checkout
+            tmp_dir=".tmp/$(echo "$repo" | tr '/' '-')"
+            rm -rf "$tmp_dir"
+            if ! git clone --depth 1 --filter=blob:none --sparse \
+                 "https://github.com/${repo}.git" \
+                 "$tmp_dir" -b "$ref" 2>/dev/null; then
               echo "  [FAIL] could not clone $repo@$ref"
               echo "$name" >> /tmp/failed-components.txt
               continue
             fi
 
-            # Record upstream version info
-            short_sha=$(git -C "$clone_dir" rev-parse --short HEAD)
-            full_sha=$(git -C "$clone_dir" rev-parse HEAD)
-            commit_date=$(git -C "$clone_dir" log -1 --format=%cI)
-            echo -e "$name\t$short_sha\t$full_sha\t$commit_date" >> /tmp/sync-versions.txt
+            # Capture upstream HEAD info
+            upstream_sha=$(git -C "$tmp_dir" rev-parse HEAD)
+            upstream_short_sha=$(git -C "$tmp_dir" rev-parse --short HEAD)
+            upstream_date=$(git -C "$tmp_dir" show -s --format=%cs HEAD)
+            echo -e "$name\t$upstream_short_sha\t$upstream_sha\t$upstream_date" >> /tmp/sync-versions.txt
 
-            changed=0
+            # Collect all skill paths for sparse checkout
+            n_skills=$(yq ".components[$i].skills | length" "$CONFIG")
+            sparse_paths=""
+            for j in $(seq 0 $((n_skills - 1))); do
+              path=$(yq ".components[$i].skills[$j].path" "$CONFIG")
+              sparse_paths="$sparse_paths $path"
+            done
+            (cd "$tmp_dir" && git sparse-checkout set $sparse_paths 2>/dev/null) || true
+
+            # Copy each skill path to its catalog directory
+            synced=false
             for j in $(seq 0 $((n_skills - 1))); do
               src_path=$(yq ".components[$i].skills[$j].path" "$CONFIG")
               catalog_dir=$(yq ".components[$i].skills[$j].catalog_dir" "$CONFIG")
+              src_full="$tmp_dir/$src_path"
 
-              src_full="$clone_dir/$src_path"
-              dest="skills/$catalog_dir"
-
-              if [ ! -d "$src_full" ]; then
-                echo "  [WARN] $name: source path '$src_path' not found in repo"
-                continue
+              if [ -d "$src_full" ] && [ -n "$(ls -A "$src_full" 2>/dev/null)" ]; then
+                mkdir -p "skills/$catalog_dir"
+                rsync -a --delete "$src_full/" "skills/$catalog_dir/"
+                echo "skills/$catalog_dir" >> /tmp/rsynced-skill-dirs.txt
+                echo "  [OK] $src_path -> skills/$catalog_dir/"
+                synced=true
+              else
+                echo "  [WARN] $name: source path '$src_path' empty or missing — skipping to preserve existing catalog"
+                echo "$name" >> /tmp/failed-components.txt
               fi
-
-              # Skip if no SKILL.md at the expected location
-              if [ ! -f "$src_full/SKILL.md" ]; then
-                echo "  [WARN] $name: no SKILL.md in '$src_path' — skipping"
-                continue
-              fi
-
-              # rsync the skill directory
-              mkdir -p "$dest"
-              rsync -a --delete "$src_full/" "$dest/"
-              echo "$catalog_dir" >> /tmp/rsynced-skill-dirs.txt
-              changed=1
             done
 
-            if [ "$changed" -eq 1 ]; then
-              echo "$name" >> /tmp/changed-components.txt
+            if $synced; then
               echo "$name" >> /tmp/rsynced-components.txt
+              for j in $(seq 0 $((n_skills - 1))); do
+                catalog_dir=$(yq ".components[$i].skills[$j].catalog_dir" "$CONFIG")
+                if [ -n "$(git status --porcelain "skills/$catalog_dir" 2>/dev/null)" ]; then
+                  echo "$name" >> /tmp/changed-components.txt
+                  break
+                fi
+              done
             fi
+
+            echo ""
           done
 
-          # Prune orphaned skill directories
-          .github/scripts/prune-orphans.sh
+          rm -rf .tmp
 
-          # Regenerate README tables
-          .github/scripts/regenerate-readme.sh
-
-          # Rebuild plugins
-          .github/scripts/build-plugins.sh || true
-
-      - name: Check for changes
-        id: changes
+      - name: Fail if nothing synced
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+          if [ ! -s /tmp/rsynced-components.txt ]; then
+            echo "::error::All component checkouts failed — no skills were synced"
+            exit 1
           fi
 
-      - name: Commit and push
-        if: steps.changes.outputs.changed == 'true'
+      - name: Prune orphaned skill dirs
         run: |
-          git config user.name "D-Robotics Skills Bot"
-          git config user.email "skills-bot@d-robotics.com"
-          git add -A
+          bash .github/scripts/prune-orphans.sh
+          if [ -s /tmp/pruned-orphans.txt ]; then
+            echo "- orphan pruning" >> /tmp/changed-components.txt
+          fi
+
+      - name: Rebuild plugin catalog
+        run: |
+          set -euo pipefail
+          .github/scripts/build-plugins.sh || true
+          if ! git diff --quiet plugins/ \
+              .claude-plugin/marketplace.json \
+              .agents/plugins/marketplace.json 2>/dev/null; then
+            if ! grep -qx "- plugin catalog" /tmp/changed-components.txt 2>/dev/null; then
+              echo "- plugin catalog" >> /tmp/changed-components.txt
+            fi
+          fi
+
+      - name: Regenerate README tables
+        run: .github/scripts/regenerate-readme.sh
+
+      - name: Build sync summary
+        id: summary
+        run: |
+          if [ -s /tmp/failed-components.txt ]; then
+            echo "has_failures=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_failures=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ ! -s /tmp/changed-components.txt ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::All components synced; no upstream content changes detected"
+            exit 0
+          fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+
+          sort -u -o /tmp/changed-components.txt /tmp/changed-components.txt
+          changed=$(cat /tmp/changed-components.txt | tr '\n' ',' | sed 's/- //g;s/,$//')
+          echo "title=chore: sync skills ($changed)" >> "$GITHUB_OUTPUT"
           {
-            echo "chore: sync skills from product repos"
+            echo 'body<<EOFBODY'
+            echo "## Automated skills sync"
             echo ""
-            while IFS=$'\t' read -r name sha full date; do
-              printf '  - %s: %s (%s)\n' "$name" "$sha" "$date"
-            done < /tmp/sync-versions.txt
+            echo "**Components updated:**"
+            cat /tmp/changed-components.txt
             echo ""
-            echo "Triggered by: ${{ github.event_name }}"
-          } > /tmp/commit-msg.txt
-          git commit -F /tmp/commit-msg.txt
-          git push
+            if [ -s /tmp/sync-versions.txt ]; then
+              echo "**Upstream versions:**"
+              while IFS=$'\t' read -r name sha full date; do
+                echo "  - $name: $sha ($date)"
+              done < /tmp/sync-versions.txt
+              echo ""
+            fi
+            if [ -s /tmp/failed-components.txt ]; then
+              echo ""
+              echo "**Components that failed to sync:**"
+              cat /tmp/failed-components.txt
+              echo ""
+            fi
+            echo "Triggered by: \`${{ github.event_name }}\`"
+            echo 'EOFBODY'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.summary.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: ${{ steps.summary.outputs.title }}
+          branch: automated/sync-skills
+          title: ${{ steps.summary.outputs.title }}
+          body: ${{ steps.summary.outputs.body }}
+          delete-branch: true
+
+      - name: Update sync-failure tracking issue (rolling)
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const hasFailures = '${{ steps.summary.outputs.has_failures }}' === 'true';
+            const jobFailed = '${{ job.status }}' === 'failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const { data: openIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sync-failure',
+            });
+            const tracker = openIssues[0];
+
+            if (!hasFailures && !jobFailed) {
+              if (tracker) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: tracker.number,
+                  body: `Sync run [#${context.runId}](${runUrl}) completed cleanly — closing the rolling sync-failure tracker.`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: tracker.number,
+                  state: 'closed',
+                });
+              }
+              return;
+            }
+
+            let title, bodyLines = [];
+            const today = new Date().toISOString().slice(0, 10);
+
+            if (jobFailed) {
+              title = `Sync failure tracker — workflow run failed (${today})`;
+              bodyLines.push(
+                `The most recent sync workflow run failed entirely.`,
+                ``,
+                `**Most recent run:** [#${context.runId}](${runUrl})`,
+                `**Trigger:** \`${context.eventName}\``,
+                `**Last updated:** ${today}`,
+                ``,
+                `This issue auto-updates on every sync run and closes when sync runs cleanly again.`,
+              );
+            } else {
+              let failed = '';
+              try {
+                failed = fs.readFileSync('/tmp/failed-components.txt', 'utf8').trim();
+              } catch (e) {
+                failed = '(failed-components.txt not available)';
+              }
+              const count = failed.split('\n').filter(l => l.trim()).length;
+              title = `Sync failure tracker — ${count} component(s) failing (${today})`;
+              bodyLines.push(
+                `Components that failed to sync on the most recent run. This issue auto-updates each sync and closes when all components are syncing cleanly.`,
+                ``,
+                `**Currently failing (${count}):**`,
+                failed,
+                ``,
+                `**Most recent run:** [#${context.runId}](${runUrl})`,
+                `**Last updated:** ${today}`,
+              );
+            }
+            const body = bodyLines.join('\n');
+
+            if (tracker) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: tracker.number,
+                title,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['sync-failure'],
+              });
+            }
