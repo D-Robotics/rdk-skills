@@ -207,15 +207,23 @@ jobs:
             echo 'EOFBODY'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create pull request
+      - name: Commit and push changes
         if: steps.summary.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v6
-        with:
-          commit-message: ${{ steps.summary.outputs.title }}
-          branch: automated/sync-skills
-          title: ${{ steps.summary.outputs.title }}
-          body: ${{ steps.summary.outputs.body }}
-          delete-branch: true
+        run: |
+          git config user.name "D-Robotics Skills Bot"
+          git config user.email "skills-bot@d-robotics.com"
+          git add -A
+          {
+            echo "chore: sync skills from product repos"
+            echo ""
+            while IFS=$'\t' read -r name sha full date; do
+              printf '  - %s: %s (%s)\n' "$name" "$sha" "$date"
+            done < /tmp/sync-versions.txt
+            echo ""
+            echo "Triggered by: ${{ github.event_name }}"
+          } > /tmp/commit-msg.txt
+          git commit -F /tmp/commit-msg.txt
+          git push
 
       - name: Update sync-failure tracking issue (rolling)
         if: always()
