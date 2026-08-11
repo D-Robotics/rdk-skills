@@ -71,7 +71,8 @@ cd rdk-device-skills
 ## Skill Catalog
 
 <!-- skills-table-start -->
-| **OE Tool Chain** | OpenExplorer tool chain skills — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Supports S-series (S100/S100P/S600) and X-series (X5). |  |
+| Product | Description | Skills |
+|---------|-------------|--------|
 | **RDK Device Skills** | Device-side agent skills for working with a live D-Robotics RDK board after boot — diagnostics, memory auditing, headless setup, camera bring-up, model deployment and benchmarking, GPIO, TogetheROS.Bot, and documentation search. | [ `rdk-diagnostic`](skills/rdk-diagnostic), [ `rdk-memory-audit`](skills/rdk-memory-audit), [ `rdk-headless-mode`](skills/rdk-headless-mode), [ `rdk-camera-setup`](skills/rdk-camera-setup), [ `rdk-vision-pipeline`](skills/rdk-vision-pipeline), [ `rdk-model-deploy`](skills/rdk-model-deploy), [ `rdk-model-benchmark`](skills/rdk-model-benchmark), [ `rdk-docs-reference`](skills/rdk-docs-reference), [ `rdk-system-config`](skills/rdk-system-config), [ `rdk-network-remote`](skills/rdk-network-remote), [ `rdk-system-maintain`](skills/rdk-system-maintain), [ `rdk-log-forensics`](skills/rdk-log-forensics), [ `rdk-gpio-40pin`](skills/rdk-gpio-40pin), [ `rdk-tros-setup`](skills/rdk-tros-setup), [ `rdk-ecosystem`](skills/rdk-ecosystem), [ `rdk-hardware`](skills/rdk-hardware), [ `rdk-board-knowledge`](skills/rdk-board-knowledge), [ `rdk-model-zoo`](skills/rdk-model-zoo), [ `rdk-multimedia`](skills/rdk-multimedia), [ `rdk-peripheral-cookbook`](skills/rdk-peripheral-cookbook), [ `rdk-accessories`](skills/rdk-accessories), [ `rdk-llm-deployment`](skills/rdk-llm-deployment), [ `rdk-embodied-lerobot`](skills/rdk-embodied-lerobot), [ `rdk-board-delegate`](skills/rdk-board-delegate), [ `rdk-command-manual`](skills/rdk-command-manual), [ `rdk-source-map`](skills/rdk-source-map) |
 <!-- skills-table-end -->
 
@@ -89,7 +90,8 @@ cd rdk-device-skills
 Product source repos:
 
 <!-- help-table-start -->
-| **OE Tool Chain** | [Issues](https://github.com/D-Robotics/oe-skills/issues) | [Discussions](https://github.com/D-Robotics/oe-skills/discussions) | [Contributing](https://github.com/D-Robotics/oe-skills/blob/main/CONTRIBUTING.md) |
+| Product | Issues | Discussions | Contributing |
+|---------|--------|-------------|--------------|
 | **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | [Discussions](https://github.com/D-Robotics/rdk-device-skills/discussions) | [Contributing](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
 <!-- help-table-end -->
 
