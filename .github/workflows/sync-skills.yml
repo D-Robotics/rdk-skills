@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout skills catalog
         uses: actions/checkout@v4
