@@ -1,0 +1,75 @@
+{
+  "skill_name": "rdk-peripheral-cookbook",
+  "description": "Test prompts that verify rdk-peripheral-cookbook triggers and produces correct, board-aware peripheral-driving guidance. Prompts are written the way a real RDK developer would phrase them (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "s100-can-not-socketcan",
+      "prompt": "我在 RDK S100 上敲 ip link set can0 type can bitrate 500000 报错没有 can0，CAN 怎么用？",
+      "expected_output": "Explains S100 CAN is in the MCU domain (no SocketCAN / no can0), routes to CANHAL + /app/Can sample, contrasts with X5.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "States that S100 (and S600) CAN is in the MCU domain and there is no can0 SocketCAN device." },
+        { "id": "1b", "text": "Says to use the CANHAL library / IPC and the /app/Can sample (e.g. canhal_send/canhal_get), NOT ip link/cansend/candump." },
+        { "id": "1c", "text": "Notes that ip link + can-utils is the X5-only path (X5 = SocketCAN / TCAN4550)." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "x5-canfd-bringup",
+      "prompt": "RDK X5 上想跑 CAN FD，仲裁 500K 数据段 2M，命令怎么写？",
+      "expected_output": "Gives the X5 SocketCAN CAN FD bringup with bitrate/dbitrate/fd on and an FD frame send.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "Uses ip link set can0 type can bitrate 500000 dbitrate 2000000 fd on (arbitration + data phase, fd on)." },
+        { "id": "2b", "text": "Sends an FD frame with cansend using ## (FD) syntax, and/or mentions candump to receive." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "multi-servo-pca9685",
+      "prompt": "想在 RDK X5 上同时控制 4 个舵机，应该怎么接？",
+      "expected_output": "Recommends PCA9685 over I2C, with servo power on V+ external supply, never the 40PIN rail; confirm 0x40 via i2cdetect.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Recommends a PCA9685 16-channel PWM expander over I2C (default address 0x40)." },
+        { "id": "3b", "text": "Says servo power must come from an external supply (PCA9685 V+ terminal), NOT the 40PIN Pin 2/4 5V rail." },
+        { "id": "3c", "text": "Mentions confirming 0x40 with i2cdetect -y <bus> before driving." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "ws2812-spi-not-bitbang",
+      "prompt": "RDK 上接了 WS2812 灯带，用 GPIO 拉高拉低控制不了，怎么搞？",
+      "expected_output": "Drive WS2812 via SPI MOSI emulation at ~2.4MHz (NeoPixel-SPI); rpi_ws281x not applicable; external power.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Says GPIO bitbang is unreliable and to drive WS2812 via the SPI MOSI pin emulating the 800kHz timing (~2.4MHz, e.g. NeoPixel-SPI)." },
+        { "id": "4b", "text": "Notes RPi's rpi_ws281x does not apply on RDK, and/or that the strip needs an external 5V supply (not the 40PIN rail)." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "audio-no-tros-alsa",
+      "prompt": "板子上没装 TROS，插了个 USB 麦克风想录音，怎么弄？",
+      "expected_output": "Use standard ALSA (arecord/aplay), find the card with arecord -l, USB sound card auto-loads snd-usb-audio.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Routes to standard ALSA (no TROS needed): arecord -l to find the card, arecord -D plughw to record, aplay to play back." },
+        { "id": "5b", "text": "Mentions a USB sound card / mic auto-loads snd-usb-audio and appears in aplay -l/arecord -l (universal fallback)." }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "gpio-probe-verification",
+      "prompt": "想确认板上的 GPIO 行数和 CAN 接口状态，有没有脚本直接查？",
+      "expected_output": "References the gpio_probe.sh script to read GPIO lines via gpioinfo and CAN interface state in structured JSON.",
+      "files": [],
+      "assertions": [
+        { "id": "6a", "text": "References or suggests running scripts/gpio_probe.sh (or equivalent gpio_probe.sh) to check GPIO and CAN status." },
+        { "id": "6b", "text": "Mentions the script outputs structured JSON with gpio_lines and/or can_interfaces fields." },
+        { "id": "6c", "text": "Notes the script is read-only and safe (uses gpioinfo not gpioset), or degrades gracefully if libgpiod is not installed." }
+      ]
+    }
+  ]
+}

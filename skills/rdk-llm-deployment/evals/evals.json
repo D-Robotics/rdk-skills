@@ -1,0 +1,78 @@
+{
+  "skill_name": "rdk-llm-deployment",
+  "description": "Test prompts that verify rdk-llm-deployment triggers and produces correct, board-aware on-device LLM/VLM/voice guidance. Prompts are written the way a real RDK developer would phrase them (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "s600-not-hobot-llamacpp",
+      "prompt": "我想在 RDK S600 上跑端侧大模型对话,用 hobot_llamacpp 怎么编译?",
+      "expected_output": "Stops the hobot_llamacpp framing for S600 and routes to the D-Robotics_LLM_S600 SDK / oellm_runtime path.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "States hobot_llamacpp has no S600 path (build flags are only -DPLATFORM_X5 / -DPLATFORM_S100)." },
+        { "id": "1b", "text": "Routes S600 to the D-Robotics_LLM_S600 SDK / oellm_runtime (libxlm.so), with .hbm and march nash-p." },
+        { "id": "1c", "text": "Does NOT give a -DPLATFORM_S600 colcon build command as the fix." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "x5-vlm-two-files",
+      "prompt": "RDK X5 上想跑个看图问答的多模态,选哪个模型?怎么起?",
+      "expected_output": "Recommends hobot_llamacpp + a GGUF-BPU VLM, and notes a VLM needs two files (ViT encoder + GGUF).",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "Recommends hobot_llamacpp with a D-Robotics GGUF-BPU VLM (e.g. InternVL3 or SmolVLM2)." },
+        { "id": "2b", "text": "Notes a VLM needs two files: the vision/ViT encoder (X5 = .bin) plus the language GGUF." },
+        { "id": "2c", "text": "Gives a runnable launch (e.g. feed_type:=0, model_type:=0/1) and/or the output topic /llama_cpp_node." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "voice-assistant-loop",
+      "prompt": "想在 X5 上做个语音助手,能听我说话、回答还能播出来,怎么搭?",
+      "expected_output": "Describes the ASR→LLM→TTS loop (sensevoice_ros2 → hobot_llamacpp → hobot_tts) or recommends xiaozhi-in-rdk.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Names sensevoice_ros2 for ASR and hobot_tts for TTS, with hobot_llamacpp/hobot_llm in between." },
+        { "id": "3b", "text": "Connects topics correctly (ASR /asr_text into the LLM prompt, LLM output to /tts_text for TTS)." },
+        { "id": "3c", "text": "Mentions xiaozhi-in-rdk as a turnkey alternative, OR is acceptable to omit if the pipeline is fully described." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "sensevoice-wakeup-vs-cmd",
+      "prompt": "sensevoice 默认能识别'地平线你好'这个唤醒词吗?",
+      "expected_output": "Clarifies that defaults are 5 command words (no 地平线你好), and wakeup is a separate wakeup_name param.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "States the default config/cmd_word.json has 5 command words and does NOT include 地平线你好." },
+        { "id": "4b", "text": "Explains the wakeup word is separate, set via the wakeup_name parameter (default 你好)." },
+        { "id": "4c", "text": "Does NOT claim 地平线你好 is a built-in default wakeup/command word." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "x3-legacy-llm",
+      "prompt": "手头是一块 RDK X3 4GB,想体验一下端侧大模型聊天,有现成的吗?",
+      "expected_output": "Points to hobot_llm (Bloom 1.4B), X3-4GB-only, with the ION memory caveat.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Recommends hobot_llm (apt tros-humble-hobot-llm) as the X3 legacy on-device LLM (Bloom 1.4B)." },
+        { "id": "5b", "text": "Notes it is X3 4GB only and that ION memory must be set (1.9GB) or the model won't load." },
+        { "id": "5c", "text": "Does NOT recommend hobot_llamacpp for the X3 (X3 is not in its platform flags)." }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "llm-env-check-probe",
+      "prompt": "想在板上跑大模型，怎么先确认当前板的内存够不够、装了哪些 LLM 包？",
+      "expected_output": "References the llm_env_check.sh script to check board_id, memory, and installed LLM packages in structured JSON for stack matching.",
+      "files": [],
+      "assertions": [
+        { "id": "6a", "text": "References or suggests running scripts/llm_env_check.sh (or equivalent llm_env_check.sh) to check the LLM environment." },
+        { "id": "6b", "text": "Mentions the script checks memory (mem_total), board_id, and/or installed LLM packages (hobot_llm, hobot_llamacpp, oellm)." },
+        { "id": "6c", "text": "Notes the script is read-only and safe, or that it recommends a stack based on the detected board." }
+      ]
+    }
+  ]
+}

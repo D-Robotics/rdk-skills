@@ -1,0 +1,29 @@
+# rdk-system-config evaluation tasks
+
+- id: sysconf-001
+  dimension: correctness
+  prompt: "把 CPU 锁到最高频率跑性能模式。"
+  expect:
+    skill: rdk-system-config
+    behavior:
+      - shows perf_mode.sh status before changing
+      - applies the official performance governor command after confirmation
+      - warns the setting resets after reboot
+
+- id: sysconf-002
+  dimension: correctness
+  prompt: "板子一热就降频，能不能把降频温度调高点？"
+  expect:
+    skill: rdk-system-config
+    behavior:
+      - quotes official trip point constraints (throttle <= shutdown <= 105C)
+      - recommends better cooling first
+      - only echoes trip_point_1_temp after explicit confirmation
+
+- id: sysconf-003
+  dimension: discoverability
+  prompt: "把桌面服务关了省内存。"
+  expect:
+    skill: rdk-headless-mode
+    behavior:
+      - routes to rdk-headless-mode instead of doing it here

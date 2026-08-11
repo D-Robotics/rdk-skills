@@ -1,0 +1,113 @@
+{
+  "skill_name": "rdk-board-knowledge",
+  "description": "Test prompts that verify rdk-board-knowledge triggers and produces correct RDK board-baseline and on-board failure-diagnosis guidance. Prompts are written the way a real RDK robotics developer would phrase them (Chinese), pasting errors or asking which board they are on. Run with-skill vs baseline and grade the assertions against the canonical board facts.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "identify-board-before-answering",
+      "prompt": "板子刚到手,SSH 上去了,我不知道这是哪块 RDK,想先确认型号再装环境,怎么查?",
+      "expected_output": "Run a read-only socinfo identity probe first; map output to X3/X5/Ultra/S100/S100P/S600 and do not assume X5.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "Tells the user to read on-board identity first, e.g. cat /sys/class/socinfo/board_id (and som_name / /proc/device-tree/model) plus cat /etc/version, rather than guessing from the user's words." },
+        { "id": "1b", "text": "Explicitly says do NOT assume X5 when the output is unclear — ask for more logs instead." },
+        { "id": "1c", "text": "Notes the probe is read-only/safe and that no flashing, upgrade, or GPIO action should happen before the board is confirmed." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "x5-ultra-march-not-interchangeable",
+      "prompt": "我在 RDK X5 上转好的 .bin 模型,直接拷到 RDK Ultra 上能跑吗?都是 Bayes 架构吧?",
+      "expected_output": "No — X5 is march bayes-e and Ultra is march bayes; they are distinct marches and .bin artifacts do not interchange, recompile per board.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "Answers NO: the .bin will not just run across X5 and Ultra." },
+        { "id": "2b", "text": "States the marches differ — X5 is bayes-e and Ultra is bayes — even though both are the 'Bayes' family." },
+        { "id": "2c", "text": "Tells the user to recompile/re-convert with the matching toolchain --march for the target board." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "s600-jazzy-not-humble",
+      "prompt": "在我的 S600 上跑 ros2 launch,报 /opt/tros/humble/setup.bash: No such file or directory,是不是系统坏了?",
+      "expected_output": "S600 is Ubuntu 24.04 / ROS2 Jazzy, so TROS lives at /opt/tros/jazzy with tros-jazzy-* packages; source the jazzy setup.bash.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Identifies that S600 runs Ubuntu 24.04 / ROS2 Jazzy, not Humble." },
+        { "id": "3b", "text": "Tells the user to source /opt/tros/jazzy/setup.bash (packages tros-jazzy-*), not the humble path." },
+        { "id": "3c", "text": "Notes humble paths apply to X3/X5/Ultra/S100/S100P only, so the premise (system broken) is wrong." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "fresh-s100-ssh-eth1",
+      "prompt": "新到的 S100 直连电脑,ssh 一直 timeout,Wi-Fi 也没配,怎么连上去?",
+      "expected_output": "A fresh S100/S600 has eth1 fixed at static 192.168.127.10 (eth0 is DHCP); set the PC NIC to the same subnet and ssh to 192.168.127.10.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Says the outer wired port eth1 has a fixed static IP 192.168.127.10 (mask 255.255.255.0), while eth0 is DHCP." },
+        { "id": "4b", "text": "Tells the user to set their PC NIC to the same subnet (e.g. 192.168.127.100/24) then ssh root@192.168.127.10 or sunrise@192.168.127.10." },
+        { "id": "4c", "text": "Does not send the user chasing Wi-Fi/router config first." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "xburn-s600-media-ufs",
+      "prompt": "我有一块变砖的 S600 要重新刷系统,用 Xburn 应该怎么设?介质选什么?",
+      "expected_output": "S-series flash via xburn; for a bricked board use DFU+Fastboot, enter DFU per board rev (S600 V0P1 jumper / V0P2 FLASH switch, FLS red LED), product RDKS600, media ufs (S100 is emmc), type secure, switches set with power off.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Routes to xburn (S-series only; X3/X5/Ultra use SD card) and uses DFU+Fastboot mode for a blank/bricked board." },
+        { "id": "5b", "text": "Sets product RDKS600 and media = ufs (and notes S100/S100P media = emmc), firmware type secure." },
+        { "id": "5c", "text": "Says to enter DFU per S600 rev (V0P1 short the jumper / V0P2 set FLASH switch ON, PWR KEY OFF then ON until FLS red LED) and to flip boot switches only with the board powered off." }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "default-accounts-both",
+      "prompt": "RDK 板子默认账户密码是什么?是不是只有 root/root?",
+      "expected_output": "Every RDK image ships both sunrise/sunrise (normal) and root/root (super); sunrise is the desktop autologin user, root is often the SSH channel.",
+      "files": [],
+      "assertions": [
+        { "id": "6a", "text": "States both accounts ship on every image: sunrise/sunrise (normal user) and root/root (super user)." },
+        { "id": "6b", "text": "Corrects the 'only root/root' premise — sunrise also exists (and is the desktop autologin)." }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "s100-can-not-socketcan",
+      "prompt": "在 S100 上配 CAN,我照 X5 的 SocketCAN 教程 ip link set can0 up,结果根本没有 can0,为什么?",
+      "expected_output": "Only X5 exposes CAN as SocketCAN (can0); S100/S100P/S600 route CAN through the MCU domain (CANHAL) with no can0 netdev — use the MCU-domain CAN connectors/HAL, not ip link.",
+      "files": [],
+      "assertions": [
+        { "id": "7a", "text": "Explains that only X5 exposes CAN as SocketCAN (can0 netdev, cansend/candump)." },
+        { "id": "7b", "text": "States S100/S100P/S600 route CAN through the MCU domain (CANHAL), so there is no can0 and ip link will not work." },
+        { "id": "7c", "text": "Points the user to the S-series MCU-domain CAN connectors / CAN HAL instead of SocketCAN tooling." }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "usb-camera-sigabrt-format",
+      "prompt": "USB 摄像头的 ros2 launch 一跑就 exit code -6 / SIGABRT 崩了,板子是 X5,怎么排?",
+      "expected_output": "Almost always a format issue: USB cameras default to YUYV, switch to MJPEG at a listed resolution (try 640x480); read real modes with v4l2-ctl --list-formats-ext; RDK USB-cam default node is /dev/video8.",
+      "files": [],
+      "assertions": [
+        { "id": "8a", "text": "Identifies this as a camera-format crash and tells the user to switch the USB camera to MJPEG (default is YUYV), validating 640x480 first." },
+        { "id": "8b", "text": "Tells the user to read real supported modes with v4l2-ctl --list-formats-ext and match width/height/fps to a listed entry exactly." },
+        { "id": "8c", "text": "Notes the RDK USB-camera default device node is /dev/video8, not /dev/video0." }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "board-probe-script-verification",
+      "prompt": "怎么确认我当前这块板的型号？有没有一键查的脚本？",
+      "expected_output": "References the board_probe.sh script to read /sys/class/socinfo/board_id and som_name for a structured JSON identity probe, rather than asking the user to run raw cat commands.",
+      "files": [],
+      "assertions": [
+        { "id": "9a", "text": "References or suggests running scripts/board_probe.sh (or equivalent board_probe.sh) as the recommended way to identify the board." },
+        { "id": "9b", "text": "Mentions the script outputs structured JSON with board_id and/or som_name fields." },
+        { "id": "9c", "text": "Notes the script is read-only and safe (does not modify board state) or degrades gracefully off-board." }
+      ]
+    }
+  ]
+}

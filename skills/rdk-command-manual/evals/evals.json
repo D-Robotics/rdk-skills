@@ -1,0 +1,64 @@
+{
+  "skill_name": "rdk-command-manual",
+  "description": "Test prompts that verify rdk-command-manual triggers and produces correct, board-aware command-manual answers. Prompts are phrased the way a real RDK developer would ask (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "boardid-x5-no-getset",
+      "prompt": "hrut_boardid 在 RDK X5 上为什么没有 g、s 这些选项？该怎么用？",
+      "expected_output": "Explains the g/s/G/S/c/C set is X3-only; on X5 hrut_boardid is print-only with -h.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "States the g/s/G/S/c/C sub-options are X3-only." },
+        { "id": "1b", "text": "States that on X5 hrut_boardid only prints the current boardid (its only flag is -h)." },
+        { "id": "1c", "text": "Does NOT claim a write/set option exists on X5." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "rdkos_info-d-vs-default",
+      "prompt": "rdkos_info -d 和默认输出有什么区别？我想收集信息发 issue。",
+      "expected_output": "Detailed mode appends 300 log lines vs default simple mode 30 lines; recommends it as a bug-report snapshot.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "Says -d is detailed mode with the latest 300 log lines." },
+        { "id": "2b", "text": "Says the default (-s simple) shows 30 log lines (or that default differs by log-line count)." },
+        { "id": "2c", "text": "Recommends rdkos_info as the snapshot to collect for a bug report." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "s100-miniboot-not-x-path",
+      "prompt": "S100 上怎么更新 miniboot？用 rdk-miniboot-update 吗？",
+      "expected_output": "rdk-miniboot-update is X-series; not in the S appendix; route S100 to the OTA miniboot flow (and xburn for full flashing).",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Notes rdk-miniboot-update is documented for X-series and is not in the S-series command appendix." },
+        { "id": "3b", "text": "Routes S100 miniboot update to the OTA flow (or recommends verifying on-board with which / -h first)." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "srpi-config-not-ultra",
+      "prompt": "RDK Ultra 上 srpi-config 怎么开 SSH？菜单在哪？",
+      "expected_output": "srpi-config is NOT available on Ultra (documented for X3/X5/X3 Module only); SSH is under Interface Options on the supported boards.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "States srpi-config is not supported on RDK Ultra (X3/X5/X3 Module only)." },
+        { "id": "4b", "text": "On supported boards, places SSH under Interface Options." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "devmem-syntax",
+      "prompt": "devmem 怎么读写寄存器？位宽参数怎么填？",
+      "expected_output": "devmem ADDRESS [WIDTH [VALUE]]; WIDTH 8/16/32 default 32; VALUE present=write, absent=read.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Gives the syntax devmem ADDRESS [WIDTH [VALUE]]." },
+        { "id": "5b", "text": "States WIDTH is 8/16/32 and defaults to 32 when omitted." },
+        { "id": "5c", "text": "States that providing VALUE writes, omitting it reads." }
+      ]
+    }
+  ]
+}

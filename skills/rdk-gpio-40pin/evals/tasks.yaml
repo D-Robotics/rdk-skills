@@ -1,0 +1,28 @@
+# rdk-gpio-40pin evaluation tasks
+
+- id: gpio-001
+  dimension: correctness
+  prompt: "怎么用 GPIO 点亮一个 LED？"
+  expect:
+    skill: rdk-gpio-40pin
+    behavior:
+      - runs pin_check.sh to confirm Hobot.GPIO availability
+      - uses official Hobot.GPIO API (setmode/setup/output/cleanup)
+      - reminds about 3.3V level and power-off wiring
+
+- id: gpio-002
+  dimension: correctness
+  prompt: "X5 的 40PIN 哪个脚是 3.3V？"
+  expect:
+    skill: rdk-gpio-40pin
+    behavior:
+      - retrieves 40pin_define.md via rdk-docs-reference instead of memory
+      - states the numbering mode (BOARD physical) with source path
+
+- id: gpio-003
+  dimension: discoverability
+  prompt: "MIPI 摄像头怎么接？"
+  expect:
+    skill: rdk-camera-setup
+    behavior:
+      - routes to rdk-camera-setup, not this skill

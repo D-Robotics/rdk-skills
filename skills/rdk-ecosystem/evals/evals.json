@@ -1,0 +1,64 @@
+{
+  "skill_name": "rdk-ecosystem",
+  "description": "Test prompts that verify rdk-ecosystem triggers and produces correct, source-grounded board-selection and cross-platform guidance. Prompts are phrased the way a real RDK buyer/developer would (Chinese). Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "x5-deepseek-expectation",
+      "prompt": "RDK X5 8GB 能流畅跑 DeepSeek 7B 做对话吗？",
+      "expected_output": "Calibrates expectations: X5 cannot smoothly run 7B; smooth 7-8B is S600; warns native Ollama is CPU-only.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "Says X5 cannot smoothly run a 7B model (X5 is ≤2B-class); does not claim it runs DeepSeek 7B well." },
+        { "id": "1b", "text": "Points to S600 for smooth 7-8B (e.g. Qwen3-8B w4 ≈ 31 TPS), or at least names S600 as the large-model board." },
+        { "id": "1c", "text": "Warns that native Ollama/llama.cpp runs CPU-only and does not use the BPU." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "x5-vs-s100-selection",
+      "prompt": "我做机器人项目，买 X5 还是 S100？",
+      "expected_output": "Asks the use case, then differentiates: X5 for vision/ROS2/small LLM value; S100 for 1.5-3B LLM/VLM + MCU hard real-time control / multi-camera.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "Asks for or keys on the use case before recommending (does not blindly pick one)." },
+        { "id": "2b", "text": "Positions X5 as the value pick for robot vision / ROS2 / YOLO / small LLM ≤2B." },
+        { "id": "2c", "text": "Positions S100 for 1.5-3B LLM/VLM and/or MCU-domain hard real-time control (R52+) or multi-GMSL cameras." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "rdk-vs-jetson-comparison",
+      "prompt": "RDK X5 和 Jetson Orin Nano 比，哪个更强？",
+      "expected_output": "Refuses a blind 'RDK better', notes TOPS units differ, admits RDK weak spots, asks use case + budget + doc-language.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Does NOT just say 'RDK is better'; asks use case / budget / doc-language or frames the choice by scenario." },
+        { "id": "3b", "text": "Notes X5 ~10 TOPS INT8 BPU and Orin Nano Super ~67 TOPS are different units / not directly comparable." },
+        { "id": "3c", "text": "Admits RDK lags Jetson on CUDA porting / large local LLM / English resources, and favors RDK for ROS2/TROS Chinese-doc robotics." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "s100-internvl3-8b-overclaim",
+      "prompt": "S100 能跑 InternVL3-8B 吗？想做多模态。",
+      "expected_output": "Corrects the over-claim: official S100 VLM list tops at InternVL3-2B; 8B not in the doc; lists what S100 actually runs.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Says the official S100 VLM support tops out at InternVL3-2B and InternVL3-8B is not in the doc." },
+        { "id": "4b", "text": "Lists what S100/X5 actually run for VLM (InternVL2.5-1B / InternVL3-1B/2B / SmolVLM2)." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "s600-llm-runtime",
+      "prompt": "S600 上怎么跑本地大模型，用 hobot_llamacpp 吗？",
+      "expected_output": "S600 LLM uses the D-Robotics_LLM_S600 SDK (oellm_runtime / libxlm.so), NOT hobot_llamacpp; routes the build to rdk-llm-deployment.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Says S600 LLM uses the D-Robotics_LLM_S600 SDK / oellm_runtime, not hobot_llamacpp." },
+        { "id": "5b", "text": "Mentions S600 runs smooth 7-8B (e.g. Qwen3-8B w4 ≈ 31 TPS) and/or routes the build to rdk-llm-deployment." }
+      ]
+    }
+  ]
+}

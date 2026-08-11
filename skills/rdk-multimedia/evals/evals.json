@@ -1,0 +1,66 @@
+{
+  "skill_name": "rdk-multimedia",
+  "description": "Test prompts that verify rdk-multimedia triggers and produces correct, board-aware low-level multimedia guidance (hardware codec, capture, scale, display) the way a real RDK developer would phrase them in Chinese. Run with-skill vs baseline and grade the assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "ffmpeg-software-encode-trap",
+      "prompt": "我在 RDK X5 上用 ffmpeg 编码 H.264，CPU 直接占满了，怎么搞成硬件编码？",
+      "expected_output": "Identifies ffmpeg as software encoding, routes to the VPU via sp_dev / HB_VENC, and suggests proving it with a demo.",
+      "files": [],
+      "assertions": [
+        { "id": "1a", "text": "Says ffmpeg defaults to a software encoder, which is why the CPU is pinned." },
+        { "id": "1b", "text": "Routes to the hardware VPU via sp_dev (sp_start_encode / SP_ENCODER_H264) or HB_VENC, not ffmpeg thread tuning." },
+        { "id": "1c", "text": "Mentions proving the hardware path with a demo such as vio2encoder in /app/cdev_demo/." }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "vps-channels-upscale",
+      "prompt": "X 系的 VPS 一个 IPU 能输出几路？哪一路能放大？",
+      "expected_output": "7 channels chn0-chn6; chn5 is the only upscale channel (max 1.5x); chn0-4 downscale.",
+      "files": [],
+      "assertions": [
+        { "id": "2a", "text": "States the VPS has 7 output channels (chn0-chn6)." },
+        { "id": "2b", "text": "States chn5 is the only channel that can upscale (and that it is limited, ~1.5x)." },
+        { "id": "2c", "text": "States chn0-chn4 are downscale (and does not claim arbitrary upscale on any channel)." }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "s600-vpu-multicore-u-flag",
+      "prompt": "S600 编解码示例里的 -u 参数是干嘛的？为什么在 S100 上不生效？",
+      "expected_output": "-u selects the VPU core id (0/1/2); only S600 has multiple VPU cores, so -u is S600-only.",
+      "files": [],
+      "assertions": [
+        { "id": "3a", "text": "Explains -u selects the VPU core id (values 0/1/2, default 0)." },
+        { "id": "3b", "text": "States only S600 has multiple VPU cores, so -u only takes effect on S600 (not S100/S100P)." },
+        { "id": "3c", "text": "Does NOT claim S100 has multiple VPU cores." }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "encode-stride-alignment",
+      "prompt": "我编码 H.264 报尺寸/stride 错误，我的图像是 1920x1082，怎么回事？",
+      "expected_output": "Height 1082 is not 8-byte aligned; align W/H to 8 (stride to 32) or crop with VIDEO_CROP_INFO_S.",
+      "files": [],
+      "assertions": [
+        { "id": "4a", "text": "Explains H.264/H.265 require width and height 8-byte aligned (and stride 32-byte aligned), so 1082 is invalid." },
+        { "id": "4b", "text": "Recommends aligning to 1080 (or an 8-aligned height) or cropping with VIDEO_CROP_INFO_S." },
+        { "id": "4c", "text": "Does NOT suggest blindly resubmitting the same unaligned frame to the encoder." }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "s-series-not-vot",
+      "prompt": "我在 S600 上想用 HB_VOT 把画面输出到屏幕，怎么初始化 VOT？",
+      "expected_output": "S-series has no HB_VOT; display goes through IDE/IDU and MIPI DSI / MIPI CSI2 Device. Correct the wrong stack.",
+      "files": [],
+      "assertions": [
+        { "id": "5a", "text": "Says the S-series does not have HB_VOT / the X-series VOT stack." },
+        { "id": "5b", "text": "States S-series display uses IDE/IDU, output via MIPI DSI or MIPI CSI2 Device." },
+        { "id": "5c", "text": "Does NOT invent HB_VOT initialization steps for the S600." }
+      ]
+    }
+  ]
+}
