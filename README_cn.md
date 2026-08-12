@@ -66,6 +66,22 @@ cd rdk-device-skills
 ./install.sh --targets claude,cursor  # 只装到指定 Agent
 ```
 
+### 方式五：Workspace 集成型 Pack（OE 工具链）
+
+部分 Pack 需要 workspace 初始化——安装脚本会将脚本、文档、平台配置铺设到 `.drobotics/`，并注入路由规则到 `CLAUDE.md`。整包安装，不支持逐个 skill 安装：
+
+```bash
+git clone https://github.com/D-Robotics/oe-skills-x5.git
+cd oe-skills-x5
+bash setup.sh $PROJECT_ROOT
+```
+
+或者告诉你的 AI：
+
+```
+Install D-Robotics OE-Skills-X5: clone https://github.com/D-Robotics/oe-skills-x5 and run bash setup.sh with my project root.
+```
+
 ---
 
 ## Skill 目录

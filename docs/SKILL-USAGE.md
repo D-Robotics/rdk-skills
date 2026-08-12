@@ -37,6 +37,16 @@ cd rdk-device-skills
 ./install.sh --targets claude,cursor  # 只装指定 Agent
 ```
 
+### 方式 4：Workspace 集成型 Pack（OE 工具链）
+
+OE-Skills-X5 等需要 workspace 初始化的 Pack，整包安装而非逐个 skill：
+
+```bash
+git clone https://github.com/D-Robotics/oe-skills-x5.git
+cd oe-skills-x5
+bash setup.sh $PROJECT_ROOT          # 铺设 .drobotics/ + 注入路由规则
+```
+
 安装完成后**重启 Agent 会话**使新技能生效。
 
 ---

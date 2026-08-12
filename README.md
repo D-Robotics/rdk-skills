@@ -66,6 +66,22 @@ cd rdk-device-skills
 ./install.sh --targets claude,cursor  # specific agents only
 ```
 
+### Option 5: Workspace-integrated packs (OE Tool Chain)
+
+Some packs require workspace initialization — they install scripts, docs, and platform configs into `.drobotics/` and inject routing rules into `CLAUDE.md`. Install the whole pack, not individual skills:
+
+```bash
+git clone https://github.com/D-Robotics/oe-skills-x5.git
+cd oe-skills-x5
+bash setup.sh $PROJECT_ROOT
+```
+
+Or tell your AI:
+
+```
+Install D-Robotics OE-Skills-X5: clone https://github.com/D-Robotics/oe-skills-x5 and run bash setup.sh with my project root.
+```
+
 ---
 
 ## Skill Catalog

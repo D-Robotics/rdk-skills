@@ -1,14 +1,61 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
-name: OE Tool Chain
-repo: D-Robotics/oe-skills
-description: OpenExplorer tool chain skills — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Supports S-series (S100/S100P/S600) and X-series (X5).
-# OE-Skills uses bulk layout — the source drobotics/skills/ directory
-# contains 61 skills across 4 groups (drobotics-router / s / x5 / llm).
-# The sync workflow rsyncs the entire tree under catalog_dir "oe-skills".
+name: OE Tool Chain (X5)
+repo: D-Robotics/oe-skills-x5
+description: OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Workspace-integrated pack requiring setup.sh initialization.
+# OE-Skills-X5 is a workspace-integrated pack, not a flat skill collection.
+# Each skill depends on .drobotics/ resources (scripts, docs, schemas, platforms)
+# laid down by setup.sh. Users install the whole pack, not individual skills.
+install_type: workspace
+install_script: setup.sh
+install_instructions: |
+  bash setup.sh $PROJECT_ROOT
+  # or tell your AI: "Install D-Robotics OE-Skills-X5 from the marketplace"
 skills:
-  - path: drobotics/skills/
-    catalog_dir: oe-skills
+  - path: x5/skills/x5-router/
+    catalog_dir: x5-router
+  - path: x5/skills/x5-environment-setup/
+    catalog_dir: x5-environment-setup
+  - path: x5/skills/x5-environment-probe/
+    catalog_dir: x5-environment-probe
+  - path: x5/skills/x5-environment-install/
+    catalog_dir: x5-environment-install
+  - path: x5/skills/x5-ptq-deploy/
+    catalog_dir: x5-ptq-deploy
+  - path: x5/skills/x5-model-preflight/
+    catalog_dir: x5-model-preflight
+  - path: x5/skills/x5-calibration-data-prepare/
+    catalog_dir: x5-calibration-data-prepare
+  - path: x5/skills/x5-ptq-config-authoring/
+    catalog_dir: x5-ptq-config-authoring
+  - path: x5/skills/x5-ptq-compile/
+    catalog_dir: x5-ptq-compile
+  - path: x5/skills/x5-qat-deploy/
+    catalog_dir: x5-qat-deploy
+  - path: x5/skills/x5-qat-adaptation/
+    catalog_dir: x5-qat-adaptation
+  - path: x5/skills/x5-qat-training/
+    catalog_dir: x5-qat-training
+  - path: x5/skills/x5-qat-compile/
+    catalog_dir: x5-qat-compile
+  - path: x5/skills/x5-runtime-deploy/
+    catalog_dir: x5-runtime-deploy
+  - path: x5/skills/x5-runtime-cpp-infer/
+    catalog_dir: x5-runtime-cpp-infer
+  - path: x5/skills/x5-runtime-perf-eval/
+    catalog_dir: x5-runtime-perf-eval
+  - path: x5/skills/x5-board-monitor/
+    catalog_dir: x5-board-monitor
+  - path: x5/skills/x5-bpu-python-api/
+    catalog_dir: x5-bpu-python-api
+  - path: x5/skills/x5-model-diagnostics/
+    catalog_dir: x5-model-diagnostics
+  - path: x5/skills/x5-accuracy-diagnostics/
+    catalog_dir: x5-accuracy-diagnostics
+  - path: x5/skills/x5-consistency-diagnostics/
+    catalog_dir: x5-consistency-diagnostics
+  - path: x5/skills/x5-performance-diagnostics/
+    catalog_dir: x5-performance-diagnostics
 links:
   contributing: false
   discussions: false
