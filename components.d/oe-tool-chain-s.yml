@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+name: OE Tool Chain (S)
+repo: D-Robotics/oe-skills-s
+description: Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization.
+# oe-skills-s is a workspace-integrated pack, not a flat skill collection.
+# Skills live under horizon/skills/<module>/<skill>/ with module-level
+# routers and nested sub-skills that reference each other by relative
+# paths — the sync mirrors the whole tree under catalog_dir "oe-skills-s"
+# (bulk layout, kept for this existing pack's structure).
+install_type: workspace
+install_script: setup.sh
+install_instructions: |
+  bash setup.sh $PROJECT_ROOT
+  # or tell your AI: "Install D-Robotics OE-Skills-S from the marketplace"
+skills:
+  - path: horizon/skills/
+    catalog_dir: oe-skills-s
+links:
+  contributing: false
+  discussions: false

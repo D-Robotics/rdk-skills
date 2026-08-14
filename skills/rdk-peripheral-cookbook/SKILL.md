@@ -1,6 +1,8 @@
 ---
 name: rdk-peripheral-cookbook
 description: Hands-on peripheral driving on RDK boards — GPIO/I2C/SPI/UART/PWM, servos, DC/stepper/BLDC motors, LED/WS2812, audio (ALSA), and CAN (X5 SocketCAN vs S100/S600 MCU-domain CANHAL) — plus cross-platform pin/bus mapping and zero-driver diagnosis. Use whenever the user wants to actually light an LED, spin a motor, read a sensor, play/record audio, wire a servo, bring up CAN, or when a peripheral plugged into the board is "not detected / no driver". 触发词:点灯、GPIO 不工作、libgpiod、i2cdetect、PCA9685、舵机、步进电机、无刷、WS2812 灯带、ALSA 播放录音、aplay、CAN、SocketCAN、cansend、candump、S100 CAN、S600 自锁口、40PIN 接线、拨码开关、设备不识别没驱动. Routing — pure GPIO pin-number facts / per-board pinout tables → rdk-hardware (cite it when wiring); device error-code lookup / "板子报错" → rdk-board-knowledge; connector/cable/accessory part numbers → rdk-accessories.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK Peripheral Cookbook

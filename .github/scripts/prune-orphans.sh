@@ -68,9 +68,11 @@ if [ "$orphan_count" -gt 5 ]; then
 fi
 
 echo "prune-orphans: removing $orphan_count orphaned skill dir(s):"
+truncate -s 0 /tmp/pruned-orphans.txt 2>/dev/null || : > /tmp/pruned-orphans.txt
 while read -r dirname; do
   echo "  - $dirname"
   rm -rf "skills/$dirname"
+  echo "$dirname" >> /tmp/pruned-orphans.txt
 done < "$orphans"
 
 rm -f "$registered_dirs" "$exception_dirs" "$orphans"

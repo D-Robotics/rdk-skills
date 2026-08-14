@@ -1,6 +1,8 @@
 ---
 name: rdk-ecosystem
 description: RDK product-line awareness and buying/selection judgment — which board to buy (X3/X5/Ultra/S100/S100P/S600), whether a given model (YOLO / LLM / VLM) will actually run, how RDK compares to Jetson / Raspberry Pi / RK3588, calibrating LLM/VLM expectations, and where the official ecosystem entry points live (product pages, Model Zoo, NodeHub, forum). Use whenever someone is choosing or comparing boards or asking "can it run X". 触发词:买哪块板、选型、X3 还是 X5、S100 还是 S600、能不能跑 DeepSeek、能不能跑 Qwen、能不能跑 7B、RDK 和 Jetson/树莓派/RK3588 哪个好、跨平台对比、端侧大模型期待、VLM 能跑吗、Model Zoo、NodeHub 在哪、官方资料入口。Routing — cross-platform comparison anchored on RDK (RDK vs X) stays here; single-platform specs/toolchain → jetson-knowledge / rpi-knowledge / rk-knowledge; hardware-subsystem facts → rdk-hardware; on-board model deployment → rdk-device; how LLM/VLM actually runs on-board → rdk-llm-deployment; locate a GitHub repo / source → rdk-source-map; pin down a doc-site chapter / authoritative URL → rdk-doc-finder; one command syntax → rdk-command-manual.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK Ecosystem & Board Selection

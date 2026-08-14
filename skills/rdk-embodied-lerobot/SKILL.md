@@ -1,6 +1,8 @@
 ---
 name: rdk-embodied-lerobot
 description: Deploy a trained embodied-AI policy onto an RDK board — LeRobot ACT imitation policies and Pi0 VLA (openpi) — by exporting to ONNX, compiling to a BPU `.hbm`, and running the on-board control loop that drives a robot arm. Use whenever the user has an ACT checkpoint or a Pi0 model and wants it on RDK S100/S100P/S600, mentions export_bpu_actpolicy.py / bpu_control_robot.py / build_all.sh / hbm-runtime / openpi_runtime / piper_node, or asks "怎么把 ACT 部署到板上 / Pi0 怎么跑". 触发词:具身智能、ACT 部署、模仿学习策略上板、LeRobot 上 RDK、Pi0、openpi、VLA、视觉语言动作、机械臂策略、bpu_control_robot、export_bpu_actpolicy、SO-101 跑到 S100、双臂 mango。Routing — generic .onnx→.bin/.hbm quantization (non-policy models) → rdk-device; ros2 commands/env → rdk-ros; on-board LLM/VLM chat & voice → rdk-llm-deployment; S100 CPU/BPU/MCU heterogeneous split, firmware burn, board-agent handoff → rdk-board-delegate; raw error-code lookup → rdk-board-knowledge.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK Embodied AI: LeRobot ACT & Pi0 VLA Deployment

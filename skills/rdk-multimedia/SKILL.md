@@ -1,6 +1,8 @@
 ---
 name: rdk-multimedia
 description: Drive the RDK board's LOW-LEVEL multimedia hardware pipeline — hardware H.264/H.265/JPEG/MJPEG encode/decode, camera VIN/ISP capture, VPS/PYM scale-crop-rotate, HDMI/MIPI display — via sp_dev (/app/cdev_demo C/Python API) and HB_VIN/HB_VPS/HB_VENC/HB_VDEC/HB_VOT on X3/X5/Ultra, or the /app/multimedia_samples + MediaCodec stack on S100/S100P/S600. Use whenever the user moves raw pixel streams between hardware units (capture/encode/decode/scale/display) WITHOUT a ROS layer. 触发词:硬件编码、H264/H265/JPEG 编解码、VPU 软编很慢、stride 对齐报错、VPS 缩放、PYM 金字塔、多路缩放、HDMI/VOT 显示、sp_dev、cdev_demo、vio2encoder、decoder2display、rtsp2display、HB_VENC、HB_VPS、MediaCodec、sample_codec、S600 VPU 多核、IDU 显示。Routing — model inference / .bin/.hbm BPU deploy → rdk-device; capture-encode as a ROS2 node (hobot_codec, image topic, usb_cam/mipi_cam launch) → rdk-ros; which camera to buy / CAM wiring → rdk-accessories; UNSUPPORTED MIPI sensor that won't start (no MCLK / i2c NACK) → rdk-mipi-camera-bringup; GPIO/I2C/PWM/motors → rdk-peripheral-cookbook.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK Multimedia Hardware Pipeline (codec / capture / scale / display)

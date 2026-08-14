@@ -1,0 +1,12 @@
+{
+  "name": "d-robotics-skills",
+  "version": "1.0.0",
+  "description": "Guided help for D-Robotics RDK boards, BPU inference, OE tool chain, and robotics workflows.",
+  "display_name": "D-Robotics",
+  "category": "Coding",
+  "author": {
+    "name": "D-Robotics",
+    "url": "https://github.com/D-Robotics/rdk-skills"
+  },
+  "license": "Apache-2.0 AND CC-BY-4.0"
+}

@@ -1,6 +1,8 @@
 ---
 name: rdk-board-delegate
 description: Deep S-series (S100/S100P/S600) "big-brain / little-brain" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc load, IPC, UART, CAN) AND the Acore/Linux subsystems unique to S boards (hbmem zero-copy shared memory, Acore↔MCU/VDSP/BPU IPC with real-time core pinning, PCIe RC/EP, EtherCAT master, PTP/gPTP, OTA + miniboot, VDSP). Also covers delegating a board task to the OpenClaw agent (board_openclaw_chat / board_openclaw_delegate) with a complete handoff packet. Use whenever the user works on S100/S100P/S600 MCU firmware, real-time joint/motor control, CPU↔MCU IPC, EtherCAT/PTP, PCIe, system upgrade, the vector DSP, or asks how the CPU+BPU+MCU split works. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — .hbm compile → rdk-device; ready-made models → rdk-model-zoo; ROS/stereo/lidar → rdk-ros; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK S-Series Heterogeneous Development & Board Delegation

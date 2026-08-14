@@ -82,9 +82,15 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 
 ---
 
-## 四、当前目录内容（v1.1.0 首发）
+## 四、当前目录内容
 
-首批 25 个设备侧 skill：
+目录当前包含 **81 个 skill**：
+
+- **26 个设备侧 skill**（`rdk-device-skills` Pack，扁平布局）
+- **22 个 OE 工具链 X5 skill**（`oe-skills-x5` Pack，workspace 集成型，批量布局镜像为 `skills/oe-skills-x5/`）
+- **33 个 OE 工具链 S 系列 skill**（`oe-skills-s` Pack，workspace 集成型，批量布局镜像为 `skills/oe-skills-s/`）
+
+### 设备侧 26 个
 
 | 分组 | Skill |
 |---|---|
@@ -96,6 +102,16 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 | 文档与知识 | rdk-docs-reference、rdk-board-knowledge、rdk-hardware、rdk-command-manual、rdk-source-map |
 | 选型与生态 | rdk-ecosystem、rdk-accessories |
 | 高级部署 | rdk-llm-deployment、rdk-embodied-lerobot、rdk-board-delegate、rdk-model-zoo、rdk-multimedia、rdk-peripheral-cookbook |
+
+### OE 工具链 X5（22 个）
+
+环境准备 `x5-environment-setup` / `x5-environment-probe` / `x5-environment-install`；PTQ 链路 `x5-ptq-deploy` / `x5-model-preflight` / `x5-calibration-data-prepare` / `x5-ptq-config-authoring` / `x5-ptq-compile`；QAT 链路 `x5-qat-deploy` / `x5-qat-adaptation` / `x5-qat-training` / `x5-qat-compile`；Runtime 链路 `x5-runtime-deploy` / `x5-runtime-cpp-infer` / `x5-runtime-perf-eval`；观测与诊断 `x5-board-monitor` / `x5-bpu-python-api` / `x5-model-diagnostics` / `x5-accuracy-diagnostics` / `x5-consistency-diagnostics` / `x5-performance-diagnostics`；入口 `x5-router`。
+
+该 Pack 是 **workspace 集成型**：整包安装（`git clone https://github.com/D-Robotics/oe-skills-x5.git` + `bash setup.sh $PROJECT_ROOT`），不逐 skill 安装。
+
+### OE 工具链 S（33 个）
+
+镜像自 `oe-skills-s` 的 `horizon/skills/` 整树（批量布局），模块：`hbdk` / `hmct` / `horizon_tc_ui` / `horizon-router` / `plugin` / `ucp`，含模块级路由与嵌套子 skill。安装方式同 X5：`git clone https://github.com/D-Robotics/oe-skills-s.git` + `bash setup.sh $PROJECT_ROOT`。
 
 支持的板卡：RDK X3 / X5 / Ultra / S100 / S100P / S600（X 系列模型格式 `.bin`，S 系列 `.hbm`）。
 

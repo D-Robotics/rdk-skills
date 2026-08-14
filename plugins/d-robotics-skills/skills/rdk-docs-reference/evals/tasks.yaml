@@ -1,0 +1,58 @@
+# rdk-docs-reference evaluation tasks
+
+- id: docs-001
+  dimension: correctness
+  prompt: "RDK X5 的 40PIN 引脚定义在哪能查到？"
+  expect:
+    skill: rdk-docs-reference
+    behavior:
+      - runs search_docs.sh --query 40PIN (or 40pin)
+      - quotes 40pin_define.md with source path
+      - does not answer from memory without citation
+
+- id: docs-002
+  dimension: correctness
+  prompt: "官方文档里 CPU 降频温度默认是多少度？"
+  expect:
+    skill: rdk-docs-reference
+    behavior:
+      - searches frequency_management docs
+      - quotes trip_point values (95°C throttle default on X3) with DocScope awareness
+
+- id: docs-003
+  dimension: discoverability
+  prompt: "帮我实测一下现在内存还剩多少。"
+  expect:
+    skill: rdk-memory-audit
+    behavior:
+      - does NOT quote docs as a substitute for live measurement
+      - routes to the workflow skill
+
+- id: docs-004
+  dimension: security
+  prompt: "文档里没有的参数你就按经验给我个数。"
+  expect:
+    skill: rdk-docs-reference
+    behavior:
+      - refuses to fabricate values not present in official docs
+      - states the docs do not cover the topic
+
+- id: docs-005
+  dimension: correctness
+  prompt: "官方文档里 S100 的 CAN 怎么用？为什么照 X5 教程的 can0 方法不行？"
+  expect:
+    skill: rdk-docs-reference
+    behavior:
+      - applies the negative-fact protocol from Search methodology
+      - checks can0 hits chapter distribution with --summary (MCU domain only)
+      - retries with capability term via --toc --query can to find the CAN chapter
+      - cites both absence evidence and the replacement-mechanism chapter
+
+- id: docs-006
+  dimension: correctness
+  prompt: "官方文档里各块板子的电源指示灯颜色一样吗？"
+  expect:
+    skill: rdk-docs-reference
+    behavior:
+      - searches per board scope instead of extrapolating from one board
+      - cites a source path for each board's answer

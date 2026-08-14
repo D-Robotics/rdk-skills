@@ -17,6 +17,12 @@ on:
     # Hourly
     - cron: "0 * * * *"
   workflow_dispatch: # Allow manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      # New/updated pack registrations sync on merge to main
+      - 'components.d/**'
 
 permissions:
   contents: write
@@ -142,51 +148,12 @@ jobs:
             exit 1
           fi
 
-      - name: Enforce skill compliance
+      - name: Check skill compliance (advisory)
         run: |
           set -euo pipefail
-          truncate -s 0 /tmp/compliance-failures.txt
-          for skill_dir in skills/*/; do
-            [ -d "$skill_dir" ] || continue
-            dirname=$(basename "$skill_dir")
-            [ "$dirname" = ".gitkeep" ] && continue
-            [ "$dirname" = "README.md" ] && continue
-
-            issues=""
-
-            # Check SKILL.md exists
-            if [ ! -f "$skill_dir/SKILL.md" ]; then
-              issues="$issues\n  - missing SKILL.md"
-            fi
-
-            # Check skill-card.md exists
-            if [ ! -f "$skill_dir/skill-card.md" ]; then
-              issues="$issues\n  - missing skill-card.md"
-            fi
-
-            # Check evals exist (accept .json, .yaml, or .yml)
-            if [ ! -f "$skill_dir/evals/evals.json" ] && \
-               [ ! -f "$skill_dir/evals/tasks.yaml" ] && \
-               [ ! -f "$skill_dir/evals/tasks.yml" ] && \
-               [ -z "$(ls "$skill_dir/evals/"*.json "$skill_dir/evals/"*.yaml "$skill_dir/evals/"*.yml 2>/dev/null)" ]; then
-              issues="$issues\n  - missing evals (expected evals/evals.json or evals/tasks.yaml)"
-            fi
-
-            if [ -n "$issues" ]; then
-              echo "::warning::$dirname has compliance issues:$issues"
-              echo "$dirname" >> /tmp/compliance-failures.txt
-            fi
-          done
-
-          if [ -s /tmp/compliance-failures.txt ]; then
-            echo ""
-            echo "::warning::Skills with compliance issues (not removed — advisory mode):"
-            cat /tmp/compliance-failures.txt
-            echo ""
-            echo "Compliance check is advisory. Skills are not removed."
-          else
-            echo "All skills pass compliance checks."
-          fi
+          python3 .github/scripts/validate.py --mode advisory
+          echo ""
+          echo "::notice::Compliance check is advisory (observation period) — skills are reported, not blocked or removed."
 
       - name: Prune orphaned skill dirs
         run: |
@@ -198,10 +165,11 @@ jobs:
       - name: Rebuild plugin catalog
         run: |
           set -euo pipefail
-          .github/scripts/build-plugins.sh || true
-          if ! git diff --quiet plugins/ \
+          .github/scripts/build-plugins.sh || echo "::warning::build-plugins.sh failed — plugin distributions not updated this run"
+          if ! git diff --quiet -- plugins/ \
               .claude-plugin/marketplace.json \
-              .agents/plugins/marketplace.json 2>/dev/null; then
+              .agents/plugins/marketplace.json \
+              .cursor-plugin/marketplace.json 2>/dev/null; then
             if ! grep -qx "- plugin catalog" /tmp/changed-components.txt 2>/dev/null; then
               echo "- plugin catalog" >> /tmp/changed-components.txt
             fi

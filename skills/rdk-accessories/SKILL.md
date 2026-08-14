@@ -1,6 +1,8 @@
 ---
 name: rdk-accessories
 description: Bring up D-Robotics OFFICIAL finished accessories — GS130W / GS130Wi binocular depth cameras, the RDK IMU Module (Bosch BMI088), and the RDK S100/S600 Camera & MCU-Port expansion boards — covering selection, wiring/FFC orientation, mounting, and driver/SDK bring-up. These are plug-and-play modules with official pinouts and official SDK/IIO drivers, which is exactly what separates them from DIY peripherals. Use whenever the user asks how to connect/run one of these named parts, which launch file to use, how many CAN/GMSL/MIPI an expansion board has, or which board a part supports. 触发词:GS130W、GS130Wi、双目相机怎么接、22pin 线序、mipi_cam dual、RDK IMU 模组、BMI088、IMU 读数、IIO 驱动、rdk-imu-module-sdk、S100 相机扩展板、S600 相机扩展板、MCU 扩展板、几路 CAN、几路 GMSL、GMSL 供电、扩展板装在哪块板。Routing — DIY a sensor/motor/LED on raw GPIO/I2C/SPI/PWM → rdk-peripheral-cookbook; the board's OWN 40PIN/CAN/Ethernet/compute facts → rdk-hardware; bringing up an UNSUPPORTED MIPI sensor → rdk-mipi-camera-bringup; model deploy / TROS node dev → rdk-device / rdk-ros.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK Official Accessories

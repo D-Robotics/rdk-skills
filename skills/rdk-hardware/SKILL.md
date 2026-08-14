@@ -2,6 +2,8 @@
 name: rdk-hardware
 description: The hardware-facts base for RDK boards — the 6-board spec table (X3 / X5 / Ultra / S100 / S100P / S600) plus 40PIN/GPIO, buses (I2C/SPI/UART/PWM), power & LED meaning, display, network/IP, and CAN. Use WHENEVER a question is about a board hardware fact: are the pins the same across boards, how the 40PIN is wired, IO voltage, default username/password, model dir location, which interfaces exist, TOPS/RAM differences, BPU TOPS / 算力对比 / 算力几T / X3算力 / X5算力 / TOPS对比 / compute comparison, cooling, OS-version line, or system paths. Answer from here — do not guess from memory, the per-board numbers really do differ. 触发词:各板引脚一样吗、40PIN怎么接、IO电平、1.8V还是3.3V、默认用户名密码、root/sunrise、模型目录在哪、有没有CAN口、ip link can0、网口默认IP、192.168.127.10、连不上板子、算力多少TOPS、BPU算力、TOPS对比、算力几T、X3算力、X5算力、算力对比、compute TOPS、内存多大、要不要散热、供电几V、电源灯什么颜色、HDMI分辨率、Ubuntu几、TROS路径、板型怎么查。Routing — error-code / boot-failure → rdk-board-knowledge; driving a peripheral (blink LED, spin motor, read I2C, send CAN frames) → rdk-peripheral-cookbook; model deploy / toolchain / camera bringup → rdk-device; which board to buy → rdk-ecosystem.
 trigger: 算力, TOPS, BPU算力, TOPS对比, 算力对比, 算力几T, X3算力, X5算力, compute TOPS, 算力多少TOPS, 内存多大, RAM, 引脚一样, 40PIN怎么接, IO电平, CAN口, ip link can0, 默认用户名密码, 供电几V, 电源灯, HDMI分辨率, TROS路径, 板型怎么查
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK Hardware & System Facts

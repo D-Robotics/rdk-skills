@@ -1,6 +1,8 @@
 ---
 name: rdk-llm-deployment
 description: Run on-device LLM / VLM chat and the voice stack (ASR→LLM→TTS, plus the xiaozhi 小智 assistant) on D-Robotics RDK boards. Covers hobot_llamacpp GGUF LLM/VLM on X5/S100, the S600 oellm_runtime / D-Robotics_LLM_S600 SDK path, the legacy hobot_llm on X3, and sensevoice_ros2 + hobot_tts. Use whenever the user wants a chatbot / 看图问答 / 语音助手 on the board, asks which LLM/VLM a board can run, or hits a board↔stack mismatch (e.g. trying hobot_llamacpp on S600). 触发词:端侧大模型、在板上跑 LLM、llama.cpp BPU、GGUF、hobot_llamacpp、InternVL、SmolVLM、Qwen3、VLM 看图问答、语音助手、小智、xiaozhi、语音识别、ASR、sensevoice、语音合成、TTS、hobot_tts、hobot_llm、oellm、S600 跑大模型。Routing — robot ACTION policies (VLA / Pi0 / LeRobot) → rdk-embodied-lerobot; ready-made vision detection/classification/segmentation + CLIP perception models → rdk-model-zoo; "can THIS board even run an LLM" sizing/expectation only → rdk-ecosystem; ROS2 env setup → rdk-ros.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK On-Device LLM / VLM / Voice Deployment
