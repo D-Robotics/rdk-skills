@@ -12,7 +12,7 @@
       "name": "dsh-plugin-rdk",
       "npm": "dsh-plugin-rdk",
       "repository": "https://github.com/D-Robotics/dsh-plugin-rdk",
-      "description": "Native RDK skill catalog for DeepSeek Harness — registers the vendored RDK skill packs into the harness skill registry, adds the rdk_skills catalog tool and the rdk_board_detect board detector.",
+      "description": "Native RDK skill catalog for DeepSeek Harness (77 skills across 5 packs: rdk-device-skills, bsp-skills, oe-skills-x5, oe-skills-s, and the rdk-skills hub). Includes the rdk_skills catalog tool, rdk_board_detect device detector, and rdk_oe_setup workspace installer (runs the official OE pack setup.sh).",
       "install": "dsh plugin --profile <name> add dsh-plugin-rdk"
     }
   ]
