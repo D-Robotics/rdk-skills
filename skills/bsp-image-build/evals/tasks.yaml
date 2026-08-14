@@ -1,0 +1,24 @@
+- id: bsp-img-001
+  dimension: discoverability
+  prompt: "帮我出一个 RDK X5 桌面版 release 系统镜像"
+  expect:
+    skill: bsp-image-build
+    behavior:
+      - selects ubuntu-22.04_desktop_rdk-x5_release.conf
+      - warns about sudo and disk space before running
+
+- id: bsp-img-002
+  dimension: correctness
+  prompt: "想把我们自己的 deb 预装进镜像"
+  expect:
+    skill: bsp-image-build
+    behavior:
+      - explains the third_packages/ directory mechanism
+
+- id: bsp-img-003
+  dimension: efficiency
+  prompt: "第二次改镜像，能不能别重新下载？"
+  expect:
+    skill: bsp-image-build
+    behavior:
+      - explains pack_image.sh -l local build mode and its limitation

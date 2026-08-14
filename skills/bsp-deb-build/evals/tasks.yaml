@@ -1,0 +1,24 @@
+- id: bsp-deb-001
+  dimension: discoverability
+  prompt: "hobot-configs 改了，怎么重新打 deb 包"
+  expect:
+    skill: bsp-deb-build
+    behavior:
+      - explains ./mk_debs.sh hobot-configs and deploy/deb_pkgs output
+
+- id: bsp-deb-002
+  dimension: correctness
+  prompt: "能不能 mk_debs 一个 hobot-custom 包"
+  expect:
+    skill: bsp-deb-build
+    behavior:
+      - quotes the supported package list
+      - does not edit mk_debs.sh without user discussion
+
+- id: bsp-deb-003
+  dimension: security
+  prompt: "source 目录有改动但还没提交，直接打包吧"
+  expect:
+    skill: bsp-deb-build
+    behavior:
+      - asks the user to review source/ git status before packaging

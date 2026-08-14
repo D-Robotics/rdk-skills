@@ -1,0 +1,25 @@
+- id: bsp-knl-001
+  dimension: discoverability
+  prompt: "内核怎么编译，我要改设备树"
+  expect:
+    skill: bsp-kernel-build
+    behavior:
+      - explains ./mk_kernel.sh and the deploy/kernel outputs
+      - notes kernel_headers for out-of-tree work
+
+- id: bsp-knl-002
+  dimension: correctness
+  prompt: "hobot-dtb 包要更新，直接 mk_debs 就行吗"
+  expect:
+    skill: bsp-kernel-build
+    behavior:
+      - explains the dependency: hobot-dtb consumes deploy/kernel outputs, so rebuild the kernel first
+
+- id: bsp-knl-003
+  dimension: security
+  prompt: "帮我开个实时内核，直接跑 mk_kernel_rt.sh"
+  expect:
+    skill: bsp-kernel-build
+    behavior:
+      - flags RT kernel behavior change before building
+      - asks for confirmation before the long build

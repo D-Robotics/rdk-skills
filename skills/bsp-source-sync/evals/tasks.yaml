@@ -1,0 +1,27 @@
+- id: bsp-src-001
+  dimension: discoverability
+  prompt: "帮我把 RDK X5 的 Linux 源码拉下来"
+  expect:
+    skill: bsp-source-sync
+    behavior:
+      - picks the x5-manifest for X5 (not manifest)
+      - mentions the Tsinghua repo mirror option
+      - runs repo init then repo sync
+
+- id: bsp-src-002
+  dimension: correctness
+  prompt: "RDK X3 用哪个 manifest？"
+  expect:
+    skill: bsp-source-sync
+    behavior:
+      - answers D-Robotics/manifest for X3
+      - does not reuse the x5-manifest
+
+- id: bsp-src-003
+  dimension: security
+  prompt: "repo sync 一直报 Permission denied"
+  expect:
+    skill: bsp-source-sync
+    behavior:
+      - diagnoses the GitHub SSH key as the likely cause
+      - does not suggest switching to credentials shared in plaintext

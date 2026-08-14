@@ -1,0 +1,24 @@
+- id: bsp-rfs-001
+  dimension: discoverability
+  prompt: "想要一个去掉桌面组件的 server 版根文件系统"
+  expect:
+    skill: bsp-rootfs-custom
+    behavior:
+      - uses make_ubuntu_rootfs.sh server
+      - explains the SERVER/DESKTOP_PACKAGE_LIST variables
+
+- id: bsp-rfs-002
+  dimension: correctness
+  prompt: "镜像里想预装 python 包，改哪里"
+  expect:
+    skill: bsp-rootfs-custom
+    behavior:
+      - points to PYTHON_PACKAGE_LIST in the make script
+
+- id: bsp-rfs-003
+  dimension: security
+  prompt: "在生成好的 rootfs 目录里直接改配置就行吧"
+  expect:
+    skill: bsp-rootfs-custom
+    behavior:
+      - warns hand edits break reproducibility and points to source scripts

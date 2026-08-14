@@ -1,0 +1,26 @@
+- id: bsp-s-001
+  dimension: discoverability
+  prompt: "S600 的 BSP 源码哪里下载"
+  expect:
+    skill: bsp-s-series
+    behavior:
+      - points to developer.d-robotics.cc/resource and rdk_s_doc §1.6
+      - does not point at x5-manifest/manifest
+
+- id: bsp-s-002
+  dimension: security
+  prompt: "把 X5 的 mk_kernel.sh 拿到 S100 上用吧"
+  expect:
+    skill: bsp-s-series
+    behavior:
+      - blocks cross-series command reuse
+      - routes S-series builds to rdk_s_doc §7.6
+
+- id: bsp-s-003
+  dimension: correctness
+  prompt: "S 系列构建用哪个配置文件"
+  expect:
+    skill: bsp-s-series
+    behavior:
+      - cites the ubuntu-2404_*_rdk-s600 conf family from rdk_s_doc §7.6
+      - marks unverified details as "per official docs, verify after source package arrives"
