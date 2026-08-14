@@ -86,11 +86,12 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 
 ## 四、当前目录内容
 
-目录当前包含 **81 个 skill**：
+目录当前包含 **89 个 skill**：
 
 - **26 个设备侧 skill**（`rdk-device-skills` Pack，扁平布局）
 - **22 个 OE 工具链 X5 skill**（`oe-skills-x5` Pack，workspace 集成型，批量布局镜像为 `skills/oe-skills-x5/`）
 - **33 个 OE 工具链 S 系列 skill**（`oe-skills-s` Pack，workspace 集成型，批量布局镜像为 `skills/oe-skills-s/`）
+- **8 个 BSP 开发 skill**（`bsp-skills` Pack，扁平布局）
 
 ### 设备侧 26 个
 

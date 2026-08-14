@@ -3,6 +3,20 @@
   "notGrouped": "bottom",
   "groupings": [
     {
+      "title": "BSP Development",
+      "description": "Host-side board support package development — cross-compilation environment, source sync, system images, kernel/DTB/drivers, deb packages, bootloader, and rootfs customization for RDK X3/X5, plus S-series source acquisition.",
+      "skills": [
+        "bsp-env-setup",
+        "bsp-source-sync",
+        "bsp-image-build",
+        "bsp-kernel-build",
+        "bsp-deb-build",
+        "bsp-bootloader-build",
+        "bsp-rootfs-custom",
+        "bsp-s-series"
+      ]
+    },
+    {
       "title": "Device Diagnostics",
       "description": "Read-only health snapshots, memory auditing, log forensics, and network diagnostics for D-Robotics RDK boards.",
       "skills": [
