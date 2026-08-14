@@ -5,10 +5,11 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0%20%2F%20CC--BY--4.0-green.svg)](#许可证)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Specification-blue)](https://agentskills.io)
+[![Sync](https://github.com/D-Robotics/rdk-skills/actions/workflows/sync-skills.yml/badge.svg)](https://github.com/D-Robotics/rdk-skills/actions/workflows/sync-skills.yml)
 
 > 中文 | [English](README.md)
 
-面向 D-Robotics RDK 开发者套件的官方 Agent Skills 目录。每个 Skill 是一组可移植的指令文件，让 AI 编程助手（Claude Code、Codex、Cursor 等）能够诊断板卡、跑通推理流水线、调校 BSP、部署模型——所有能力都基于 D-Robotics 官方文档，而非模型记忆。
+面向 D-Robotics RDK 开发者套件的官方 Agent Skills 目录。每个 Skill 是一组可移植的指令文件，让 AI 编程助手（Claude Code、Codex、Cursor 等）能够诊断板卡、量化编译模型、跑通推理流水线、配置板端系统、部署到 RDK 板卡——所有能力都基于 D-Robotics 官方文档，而非模型记忆。
 
 本仓库是**中央目录（Hub）**：各 Skill Pack 在独立的产品仓库中维护源头，本仓库负责镜像同步、统一索引和安装入口。用户只需跟这一个仓库打交道。
 
@@ -46,6 +47,8 @@ npx skills add d-robotics/rdk-skills
 
 CLI 会列出所有可用 Skill，选择后自动安装到对应 Agent 的 skills 目录。
 
+> CLI 覆盖扁平布局的 Skill（RDK Device Skills）。Workspace 集成型 Pack（OE 工具链）不支持逐个安装——请整包安装，见[方式五](#方式五workspace-集成型-packoe-工具链-x5--s)。
+
 ### 方式三：Claude Code 插件市场
 
 ```
@@ -66,25 +69,41 @@ cd rdk-device-skills
 ./install.sh --targets claude,cursor  # 只装到指定 Agent
 ```
 
-### 方式五：Workspace 集成型 Pack（OE 工具链）
+### 方式五：Workspace 集成型 Pack（OE 工具链 X5 / S）
 
 部分 Pack 需要 workspace 初始化——安装脚本会将脚本、文档、平台配置铺设到 `.drobotics/`，并注入路由规则到 `CLAUDE.md`。整包安装，不支持逐个 skill 安装：
 
 ```bash
+# X5 工具链
 git clone https://github.com/D-Robotics/oe-skills-x5.git
 cd oe-skills-x5
 bash setup.sh $PROJECT_ROOT
+
+# S 系列工具链（Horizon OE）
+git clone https://github.com/D-Robotics/oe-skills-s.git
+cd oe-skills-s
+bash setup.sh $PROJECT_ROOT
 ```
 
-或者告诉你的 AI：
+或者告诉你的 AI（需先按方式三装好 Hub 插件，插件内含 pack 安装器 skill）：
 
 ```
-Install D-Robotics OE-Skills-X5: clone https://github.com/D-Robotics/oe-skills-x5 and run bash setup.sh with my project root.
+Install D-Robotics OE-Skills-X5 into this project.
 ```
+
+pack 安装器会读取 `components.d/` 中的注册信息、克隆 Pack 仓库、在你确认项目根目录后执行 `setup.sh` 并校验安装结果，支持所有 `install_type: workspace` 的 Pack（OE 工具链 X5 和 S）。
+
+### 更新 Skill
+
+- 扁平 Skill：`npx skills update`（或重新 `npx skills add d-robotics/rdk-skills` 选择）
+- Hub 插件：`/plugin` 中管理 `d-robotics-skills` 插件即可更新 finder/installer
+- 目录本身每小时自动同步一次；克隆安装的 Pack 用 `git pull` + 重新执行 `setup.sh` 更新
 
 ---
 
 ## Skill 目录
+
+列在 Pack 目录（`oe-skills-x5/`、`oe-skills-s/`）下的 Skill 属于 workspace 集成型 Pack——可在此浏览，安装需整包走[方式五](#方式五workspace-集成型-packoe-工具链-x5--s)；其余 Skill 用方式一~四单独安装。
 
 <!-- skills-table-start -->
 | 产品 | 说明 | Skills |
@@ -104,6 +123,10 @@ Install D-Robotics OE-Skills-X5: clone https://github.com/D-Robotics/oe-skills-x
 - **目录仓库问题**（README 错误、同步流水线故障、分发渠道）——[在这里提 Issue](../../issues/new/choose)
 - **提问或讨论**——[GitHub Discussions](../../discussions)
 - **安全漏洞**——按 [SECURITY.md](SECURITY.md) 的流程私下报告，**不要**开公开 Issue
+
+**指南文档：**
+- 使用方安装与用法 — [docs/SKILL-USAGE.md](docs/SKILL-USAGE.md)
+- 注册新 Pack / PR 规范 — [docs/PR-SUBMISSION.md](docs/PR-SUBMISSION.md) 与 [CONTRIBUTING.md](CONTRIBUTING.md)
 
 各产品源头仓库：
 
@@ -143,11 +166,15 @@ skills/<skill-name>/
 D-Robotics/rdk-skills/
 ├── skills/                      # 镜像目录（同步流水线写入，只读）
 │   ├── README.md                 # 安装指引
-│   └── <skill-name>/            # 扁平结构，每个 Skill 一个顶层目录
+│   ├── d-robotics-pack-installer/ # Hub 内置安装器 skill（catalog 例外）
+│   ├── <skill-name>/             # 扁平布局 Skill（RDK Device Skills）
+│   ├── oe-skills-x5/             # workspace Pack 镜像（批量布局，X5 工具链）
+│   └── oe-skills-s/              # workspace Pack 镜像（批量布局，S 系列工具链）
 ├── components.d/                # Pack 注册表（每个产品一个 YAML）
 │   ├── README.md                 # 注册规范
 │   ├── rdk-device.yml
-│   └── oe-tool-chain.yml
+│   ├── oe-tool-chain.yml
+│   └── oe-tool-chain-s.yml
 ├── plugins.d/                   # 插件构建配置
 │   ├── README.md
 │   ├── _defaults.yml
@@ -156,6 +183,7 @@ D-Robotics/rdk-skills/
 ├── .claude-plugin/              # Claude Code marketplace
 ├── .agents/plugins/             # Codex marketplace
 ├── .cursor-plugin/              # Cursor marketplace
+├── docs/                        # PR 提交规范 + Skill 使用文档
 ├── .github/
 │   ├── workflows/                # 同步流水线、DCO 检查
 │   └── scripts/                  # 同步、校验、README 重生成、orphan 清理

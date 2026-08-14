@@ -5,10 +5,11 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0%20%2F%20CC--BY--4.0-green.svg)](#license)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Specification-blue)](https://agentskills.io)
+[![Sync](https://github.com/D-Robotics/rdk-skills/actions/workflows/sync-skills.yml/badge.svg)](https://github.com/D-Robotics/rdk-skills/actions/workflows/sync-skills.yml)
 
 > English | [中文](README_cn.md)
 
-Official Agent Skills catalog for D-Robotics RDK developer kits. Each skill is a portable instruction set that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) how to diagnose boards, run inference pipelines, customize BSP, and deploy models — grounded in official D-Robotics documentation, not model memory.
+Official Agent Skills catalog for D-Robotics RDK developer kits. Each skill is a portable instruction set that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) how to diagnose boards, quantize and compile models, run inference pipelines, configure on-device systems, and deploy to RDK boards — grounded in official D-Robotics documentation, not model memory.
 
 This repository is the **central catalog (Hub)**: each Skill Pack maintains its source in an independent product repo, and this repo mirrors, indexes, and serves as the single install entry point.
 
@@ -46,6 +47,8 @@ npx skills add d-robotics/rdk-skills
 
 The CLI lists all available skills and installs the selected one into the appropriate agent skill directory.
 
+> The CLI covers flat-layout skills (RDK Device Skills). Workspace-integrated packs (OE Tool Chain) are not individually installable — install those whole via [Option 5](#option-5-workspace-integrated-packs-oe-tool-chain-x5--s).
+
 ### Option 3: Claude Code plugin marketplace
 
 ```
@@ -66,13 +69,19 @@ cd rdk-device-skills
 ./install.sh --targets claude,cursor  # specific agents only
 ```
 
-### Option 5: Workspace-integrated packs (OE Tool Chain)
+### Option 5: Workspace-integrated packs (OE Tool Chain X5 / S)
 
 Some packs require workspace initialization — they install scripts, docs, and platform configs into `.drobotics/` and inject routing rules into `CLAUDE.md`. Install the whole pack, not individual skills:
 
 ```bash
+# X5 tool chain
 git clone https://github.com/D-Robotics/oe-skills-x5.git
 cd oe-skills-x5
+bash setup.sh $PROJECT_ROOT
+
+# S-series tool chain (Horizon OE)
+git clone https://github.com/D-Robotics/oe-skills-s.git
+cd oe-skills-s
 bash setup.sh $PROJECT_ROOT
 ```
 
@@ -84,9 +93,17 @@ Install D-Robotics OE-Skills-X5 into this project.
 
 The pack installer reads the pack registration in `components.d/`, clones the pack repo, runs `setup.sh` with your confirmed project root, and verifies the installed workspace. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S).
 
+### Updating skills
+
+- Flat skills: `npx skills update` (or re-run `npx skills add d-robotics/rdk-skills` and select again).
+- Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder/installer skills.
+- The catalog itself refreshes automatically every hour (sync pipeline) — cloned pack repos update with `git pull` + re-run `setup.sh`.
+
 ---
 
 ## Skill Catalog
+
+Skills listed under a pack directory (`oe-skills-x5/`, `oe-skills-s/`) belong to workspace-integrated packs — browse them here, install the whole pack via [Option 5](#option-5-workspace-integrated-packs-oe-tool-chain-x5--s). All other skills install individually via Options 1–4.
 
 <!-- skills-table-start -->
 | Product | Description | Skills |
@@ -106,6 +123,10 @@ The pack installer reads the pack registration in `components.d/`, clones the pa
 - **Catalog repo issues** (README errors, sync pipeline failures, distribution channels) — [open an issue here](../../issues/new/choose)
 - **Questions or discussion** — [GitHub Discussions](../../discussions)
 - **Security vulnerabilities** — follow the disclosure process in [SECURITY.md](SECURITY.md); do not open a public issue
+
+**Guides:**
+- End-user install & usage — [docs/SKILL-USAGE.md](docs/SKILL-USAGE.md)
+- Registering a new pack / PR rules — [docs/PR-SUBMISSION.md](docs/PR-SUBMISSION.md) and [CONTRIBUTING.md](CONTRIBUTING.md)
 
 Product source repos:
 
@@ -145,11 +166,15 @@ Follows the [Agent Skills specification](https://agentskills.io/specification):
 D-Robotics/rdk-skills/
 ├── skills/                      # mirror directory (written by sync pipeline, read-only)
 │   ├── README.md                 # install guidance
-│   └── <skill-name>/            # flat layout, one top-level dir per skill
+│   ├── d-robotics-pack-installer/ # hub-native installer skill (catalog exception)
+│   ├── <skill-name>/             # flat-layout skills (RDK Device Skills)
+│   ├── oe-skills-x5/             # workspace pack mirror (bulk layout, X5 tool chain)
+│   └── oe-skills-s/              # workspace pack mirror (bulk layout, S-series tool chain)
 ├── components.d/                # Pack registry (one YAML per product)
 │   ├── README.md                 # registration schema
 │   ├── rdk-device.yml
-│   └── oe-tool-chain.yml
+│   ├── oe-tool-chain.yml
+│   └── oe-tool-chain-s.yml
 ├── plugins.d/                   # plugin build configuration
 │   ├── README.md
 │   ├── _defaults.yml
@@ -158,6 +183,7 @@ D-Robotics/rdk-skills/
 ├── .claude-plugin/              # Claude Code marketplace
 ├── .agents/plugins/             # Codex marketplace
 ├── .cursor-plugin/              # Cursor marketplace
+├── docs/                        # PR submission rules + skill usage guide
 ├── .github/
 │   ├── workflows/                # sync pipeline, DCO check
 │   └── scripts/                  # sync, validate, regenerate-readme, prune-orphans
