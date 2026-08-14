@@ -76,11 +76,13 @@ cd oe-skills-x5
 bash setup.sh $PROJECT_ROOT
 ```
 
-Or tell your AI:
+Or tell your AI (works with the Hub plugin from Option 3, which ships the pack-installer skill):
 
 ```
-Install D-Robotics OE-Skills-X5: clone https://github.com/D-Robotics/oe-skills-x5 and run bash setup.sh with my project root.
+Install D-Robotics OE-Skills-X5 into this project.
 ```
+
+The pack installer reads the pack registration in `components.d/`, clones the pack repo, runs `setup.sh` with your confirmed project root, and verifies the installed workspace. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S).
 
 ---
 

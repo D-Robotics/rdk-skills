@@ -47,6 +47,8 @@ cd oe-skills-x5
 bash setup.sh $PROJECT_ROOT          # 铺设 .drobotics/ + 注入路由规则
 ```
 
+**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `d-robotics-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」——installer 会读 `components.d/` 注册、clone 仓库、在用户确认项目根目录后执行 `setup.sh` 并做安装后检查。
+
 安装完成后**重启 Agent 会话**使新技能生效。
 
 ---

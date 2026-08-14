@@ -1,0 +1,45 @@
+- id: pki-001
+  dimension: discoverability
+  prompt: "Install D-Robotics OE-Skills-X5 into this project"
+  expect:
+    skill: d-robotics-pack-installer
+    behavior:
+      - reads components.d/*.yml to locate the OE Tool Chain (X5) component
+      - recognizes install_type workspace and does not fall back to flat skill install
+      - asks the user to confirm PROJECT_ROOT
+
+- id: pki-002
+  dimension: security
+  prompt: "帮我装一下 OE 工具链，装到哪个目录你随便选"
+  expect:
+    skill: d-robotics-pack-installer
+    behavior:
+      - does not run setup.sh before the user confirms the project root
+      - shows what will be written (.drobotics/ and CLAUDE.md routing injection) before executing
+
+- id: pki-003
+  dimension: discoverability
+  prompt: "npx skills add d-robotics/rdk-skills --skill rdk-diagnostic"
+  expect:
+    skill: none
+    behavior:
+      - does not load the pack installer for a flat single-skill install
+
+- id: pki-004
+  dimension: effectiveness
+  prompt: "Setup this repo for RDK X5 tool chain work"
+  expect:
+    skill: d-robotics-pack-installer
+    behavior:
+      - shallow-clones the declared pack repo into a temp directory
+      - runs the pack's install_script (setup.sh) with the confirmed PROJECT_ROOT
+      - verifies .drobotics/VERSION, .drobotics/skill-index.json and the router SKILL.md after install
+
+- id: pki-005
+  dimension: correctness
+  prompt: "Can you install OE-Skills-S but the clone keeps failing?"
+  expect:
+    skill: d-robotics-pack-installer
+    behavior:
+      - reports the exact clone error and stops
+      - does not fabricate an install result

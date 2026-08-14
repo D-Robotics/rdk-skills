@@ -165,7 +165,9 @@ def validate_skill(skill_dir):
             l2.append(f"SKILL.md references scripts/{ref} but file missing")
 
     scripts_dir = skill_dir / "scripts"
-    if scripts_dir.is_dir() and shutil.which("bash"):
+    # bash -n runs only on POSIX (CI ubuntu). On Windows, shutil.which("bash")
+    # may find WSL bash, which mangles Windows paths and produces false errors.
+    if scripts_dir.is_dir() and sys.platform != "win32" and shutil.which("bash"):
         for f in scripts_dir.iterdir():
             if not f.name.endswith(".sh"):
                 continue
@@ -173,7 +175,7 @@ def validate_skill(skill_dir):
             if r.returncode != 0:
                 l2.append(f"bash -n failed for scripts/{f.name}: {r.stderr.decode().strip()}")
     elif scripts_dir.is_dir():
-        # e.g. local Windows runs without bash — skip syntax check, not a violation
+        # e.g. local Windows runs without a usable bash — skip syntax check, not a violation
         pass
 
     for ref in set(re.findall(r"references/([\w./-]+\.md)", content)):

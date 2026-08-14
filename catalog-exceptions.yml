@@ -4,4 +4,8 @@
 # daily sync prunes it (see .github/scripts/prune-orphans.sh).
 #
 # Add an entry only with a documented reason and an owner.
-exceptions: []
+exceptions:
+  - dir: d-robotics-pack-installer
+    reason: Hub-native infrastructure skill for installing workspace-integrated packs; maintained via direct PR (no components.d upstream)
+    owner: Machao615
+    component: D-Robotics Skills
