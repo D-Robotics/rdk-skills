@@ -59,14 +59,29 @@ for idx in $sorted_indices; do
 
   # Build skill links
   skill_links=""
+  append_skill_link() {
+    local skill_dir="$1" skill_name="$2"
+    local link="[ \`$skill_name\`](skills/$skill_dir)"
+    if [ -z "$skill_links" ]; then
+      skill_links="$link"
+    else
+      skill_links="$skill_links, $link"
+    fi
+  }
+
   while read -r catalog_dir; do
-    if [ -d "skills/$catalog_dir" ]; then
-      link="[ \`$catalog_dir\`](skills/$catalog_dir)"
-      if [ -z "$skill_links" ]; then
-        skill_links="$link"
-      else
-        skill_links="$skill_links, $link"
-      fi
+    if [ -f "skills/$catalog_dir/SKILL.md" ]; then
+      # Flat entry: the catalog_dir itself is the skill.
+      append_skill_link "$catalog_dir" "$catalog_dir"
+    elif [ -d "skills/$catalog_dir" ]; then
+      # Bulk entry: expand to every nested SKILL.md directory so the
+      # README still surfaces individual skills of workspace-integrated
+      # packs (e.g. OE Tool Chain X5 / S mirrored as one tree).
+      while IFS= read -r skill_md; do
+        skill_dir="${skill_md#skills/}"
+        skill_dir="${skill_dir%/SKILL.md}"
+        append_skill_link "$skill_dir" "$(basename "$skill_dir")"
+      done < <(find "skills/$catalog_dir" -name SKILL.md -type f | sort)
     fi
   done < <(yq -r ".components[$idx].skills[].catalog_dir" "$CONFIG")
 
