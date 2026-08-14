@@ -80,8 +80,16 @@ for idx in $sorted_indices; do
 "
 
   # Help table row
-  contributing=$(yq ".components[$idx].links.contributing // \"CONTRIBUTING.md\"" "$CONFIG")
-  discussions=$(yq ".components[$idx].links.discussions // true" "$CONFIG")
+  # NOTE: read raw values and default in shell — yq's `//` operator treats
+  # boolean `false` as "missing" and would wrongly fall back to the default.
+  contributing=$(yq ".components[$idx].links.contributing" "$CONFIG")
+  discussions=$(yq ".components[$idx].links.discussions" "$CONFIG")
+  if [ "$contributing" = "null" ] || [ -z "$contributing" ]; then
+    contributing="CONTRIBUTING.md"
+  fi
+  if [ "$discussions" = "null" ] || [ -z "$discussions" ]; then
+    discussions="true"
+  fi
 
   contributing_link="—"
   if [ "$contributing" != "false" ]; then

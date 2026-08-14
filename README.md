@@ -110,8 +110,8 @@ Product source repos:
 <!-- help-table-start -->
 | Product | Issues | Discussions | Contributing |
 |---------|--------|-------------|--------------|
-| **OE Tool Chain (S)** | [Issues](https://github.com/D-Robotics/oe-skills-s/issues) | [Discussions](https://github.com/D-Robotics/oe-skills-s/discussions) | [Contributing](https://github.com/D-Robotics/oe-skills-s/blob/main/CONTRIBUTING.md) |
-| **OE Tool Chain (X5)** | [Issues](https://github.com/D-Robotics/oe-skills-x5/issues) | [Discussions](https://github.com/D-Robotics/oe-skills-x5/discussions) | [Contributing](https://github.com/D-Robotics/oe-skills-x5/blob/main/CONTRIBUTING.md) |
+| **OE Tool Chain (S)** | [Issues](https://github.com/D-Robotics/oe-skills-s/issues) | — | — |
+| **OE Tool Chain (X5)** | [Issues](https://github.com/D-Robotics/oe-skills-x5/issues) | — | [Contributing](https://github.com/D-Robotics/oe-skills-x5/blob/main/CONTRIBUTING.md) |
 | **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | [Discussions](https://github.com/D-Robotics/rdk-device-skills/discussions) | [Contributing](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
 <!-- help-table-end -->
 
