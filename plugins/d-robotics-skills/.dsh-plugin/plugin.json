@@ -1,0 +1,19 @@
+{
+  "name": "d-robotics-skills",
+  "version": "1.0.0",
+  "description": "Guided help for D-Robotics RDK boards, BPU inference, OE tool chain, and robotics workflows.",
+  "author": {
+    "name": "D-Robotics",
+    "url": "https://github.com/D-Robotics/rdk-skills"
+  },
+  "license": "Apache-2.0 AND CC-BY-4.0",
+  "plugins": [
+    {
+      "name": "dsh-plugin-rdk",
+      "npm": "dsh-plugin-rdk",
+      "repository": "https://github.com/D-Robotics/dsh-plugin-rdk",
+      "description": "Native RDK skill catalog for DeepSeek Harness — registers the vendored RDK skill packs into the harness skill registry, adds the rdk_skills catalog tool and the rdk_board_detect board detector.",
+      "install": "dsh plugin --profile <name> add dsh-plugin-rdk"
+    }
+  ]
+}

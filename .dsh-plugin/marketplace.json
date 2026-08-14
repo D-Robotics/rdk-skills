@@ -1,0 +1,20 @@
+{
+    "name": "d-robotics-dsh",
+    "owner": {
+        "name": "D-Robotics",
+        "url": "https://github.com/D-Robotics/rdk-skills"
+    },
+    "metadata": {
+        "description": "D-Robotics DeepSeek Harness (DSH) plugin marketplace — npm/git-installable dsh bundles for the RDK ecosystem.",
+        "version": "1.0.0"
+    },
+    "plugins": [
+        {
+            "name": "dsh-plugin-rdk",
+            "npm": "dsh-plugin-rdk",
+            "repository": "https://github.com/D-Robotics/dsh-plugin-rdk",
+            "description": "Native RDK skill catalog for DeepSeek Harness — registers the vendored RDK skill packs into the harness skill registry, adds the rdk_skills catalog tool and the rdk_board_detect board detector.",
+            "install": "dsh plugin --profile <name> add dsh-plugin-rdk"
+        }
+    ]
+}

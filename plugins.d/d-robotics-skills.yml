@@ -55,6 +55,18 @@ include_skills:
 #   version, author, homepage, repository, license,
 #   brand_color, capabilities
 
+# DeepSeek Harness (DSH) bundles published by this plugin.
+# build-plugins.sh renders these into .dsh-plugin/plugin.json and the
+# top-level .dsh-plugin/marketplace.json. Each entry is a dsh bundle:
+# installable via `dsh plugin --profile <name> add <npm>` (GitHub topic:
+# dsh-plugin).
+dsh_plugins:
+  - name: dsh-plugin-rdk
+    npm: dsh-plugin-rdk
+    repository: https://github.com/D-Robotics/dsh-plugin-rdk
+    description: Native RDK skill catalog for DeepSeek Harness — registers the vendored RDK skill packs into the harness skill registry, adds the rdk_skills catalog tool and the rdk_board_detect board detector.
+    install: "dsh plugin --profile <name> add dsh-plugin-rdk"
+
 # By default this plugin is added (true) in all self-hosted marketplace.json files. Uncomment to opt out.
 # marketplace_enabled:
 #   claude: false

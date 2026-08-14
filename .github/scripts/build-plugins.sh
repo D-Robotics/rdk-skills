@@ -49,6 +49,7 @@ done
 claude_plugins="[]"
 codex_plugins="[]"
 cursor_plugins="[]"
+dsh_bundles="[]"
 
 for pname in $plugin_files; do
   yml_file="plugins.d/${pname}.yml"
@@ -106,7 +107,30 @@ for pname in $plugin_files; do
 }
 EOF
     done
+
+    # Generate the DeepSeek Harness (DSH) plugin manifest when the plugin
+    # declares dsh_plugins bundles.
+    dsh_entry_list=$(yq -o json '.dsh_plugins // []' "$yml_file")
+    if [ "$dsh_entry_list" != "[]" ]; then
+      mkdir -p "$plugin_dir/.dsh-plugin"
+      cat > "$plugin_dir/.dsh-plugin/plugin.json" <<EOF
+{
+  "name": "$name",
+  "version": "$version",
+  "description": "$short_description",
+  "author": {
+    "name": "$author_name",
+    "url": "$author_url"
+  },
+  "license": "$default_license",
+  "plugins": $dsh_entry_list
+}
+EOF
+    fi
   fi
+
+  # Accumulate marketplace entries
+  dsh_bundles=$(echo "$dsh_bundles" | yq -o json -r ". + $(yq -o json '.dsh_plugins // []' "$yml_file")")
 
   # Accumulate marketplace entries
   claude_plugins=$(echo "$claude_plugins" | yq -o json -r ". + [{
@@ -188,7 +212,30 @@ json.dump(marketplace, open('.cursor-plugin/marketplace.json', 'w'), indent=4)
 print('.cursor-plugin/marketplace.json generated')
 "
 
-  rm -f /tmp/claude-plugins.json /tmp/codex-plugins.json /tmp/cursor-plugins.json
+  # Generate the DeepSeek Harness (DSH) marketplace: installable dsh bundles
+  # (npm / git), discoverable through the dsh-plugin GitHub topic.
+  mkdir -p .dsh-plugin
+  echo "$dsh_bundles" | yq -P -o json > /tmp/dsh-bundles.json
+  python3 -c "
+import json
+bundles = json.load(open('/tmp/dsh-bundles.json'))
+marketplace = {
+    'name': 'd-robotics-dsh',
+    'owner': {
+        'name': 'D-Robotics',
+        'url': 'https://github.com/D-Robotics/rdk-skills'
+    },
+    'metadata': {
+        'description': 'D-Robotics DeepSeek Harness (DSH) plugin marketplace — npm/git-installable dsh bundles for the RDK ecosystem.',
+        'version': '1.0.0'
+    },
+    'plugins': bundles
+}
+json.dump(marketplace, open('.dsh-plugin/marketplace.json', 'w'), indent=4)
+print('.dsh-plugin/marketplace.json generated')
+"
+
+  rm -f /tmp/claude-plugins.json /tmp/codex-plugins.json /tmp/cursor-plugins.json /tmp/dsh-bundles.json
 fi
 
 echo "Plugin build complete."

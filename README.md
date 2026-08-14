@@ -69,7 +69,18 @@ cd rdk-device-skills
 ./install.sh --targets claude,cursor  # specific agents only
 ```
 
-### Option 5: Workspace-integrated packs (OE Tool Chain X5 / S)
+### Option 5: DeepSeek Harness (DSH) plugin
+
+Install the whole RDK skill ecosystem into DeepSeek Harness as a native plugin bundle (npm package `dsh-plugin-rdk`, GitHub topic [`dsh-plugin`](https://github.com/topics/dsh-plugin)):
+
+```bash
+dsh plugin --profile <name> add dsh-plugin-rdk   # or: add github:<owner>/dsh-plugin-rdk
+dsh --profile <name>
+```
+
+The bundle registers every skill in this catalog into the harness skill registry (so they load through the built-in `skill` tool), and adds two model tools: `rdk_skills` (browse/search the catalog) and `rdk_board_detect` (detect whether the host is an RDK board). See `.dsh-plugin/marketplace.json` and the plugin repo for details.
+
+### Option 6: Workspace-integrated packs (OE Tool Chain X5 / S)
 
 Some packs require workspace initialization — they install scripts, docs, and platform configs into `.drobotics/` and inject routing rules into `CLAUDE.md`. Install the whole pack, not individual skills:
 
@@ -97,6 +108,7 @@ The pack installer reads the pack registration in `components.d/`, clones the pa
 
 - Flat skills: `npx skills update` (or re-run `npx skills add d-robotics/rdk-skills` and select again).
 - Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder/installer skills.
+- DSH bundle: `dsh plugin --profile <name> update dsh-plugin-rdk` (skill content refreshes with each bundle release).
 - The catalog itself refreshes automatically every hour (sync pipeline) — cloned pack repos update with `git pull` + re-run `setup.sh`.
 
 ---
@@ -108,6 +120,7 @@ Skills listed under a pack directory (`oe-skills-x5/`, `oe-skills-s/`) belong to
 <!-- skills-table-start -->
 | Product | Description | Skills |
 |---------|-------------|--------|
+| **BSP Skills** | Board Support Package (BSP) development skills for RDK boards — host cross-compilation environment, repo/manifest source sync, system image build, kernel/DTB/driver modules, hobot-* deb packages, bootloader/miniboot, Ubuntu rootfs customization for X3/X5, and S-series source acquisition. | [ `bsp-env-setup`](skills/bsp-env-setup), [ `bsp-source-sync`](skills/bsp-source-sync), [ `bsp-image-build`](skills/bsp-image-build), [ `bsp-kernel-build`](skills/bsp-kernel-build), [ `bsp-deb-build`](skills/bsp-deb-build), [ `bsp-bootloader-build`](skills/bsp-bootloader-build), [ `bsp-rootfs-custom`](skills/bsp-rootfs-custom), [ `bsp-s-series`](skills/bsp-s-series) |
 | **OE Tool Chain (S)** | Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization. | [ `hbdk-manual`](skills/oe-skills-s/hbdk/hbdk-manual), [ `j6-hbdk-compile`](skills/oe-skills-s/hbdk/j6-hbdk-compile), [ `j6-hmct-cosine-similarity-tuning`](skills/oe-skills-s/hmct/j6-hmct-cosine-similarity-tuning), [ `hmct`](skills/oe-skills-s/hmct), [ `hb-analyzer-performance`](skills/oe-skills-s/horizon_tc_ui/hb-analyzer-performance), [ `horizon-tc-ui`](skills/oe-skills-s/horizon_tc_ui/horizon-tc-ui), [ `board-detection`](skills/oe-skills-s/horizon-router/board-detection), [ `oe-llm-package-detection`](skills/oe-skills-s/horizon-router/oe-llm-package-detection), [ `oe-llm-package-install`](skills/oe-skills-s/horizon-router/oe-llm-package-install), [ `oe-package-detection`](skills/oe-skills-s/horizon-router/oe-package-detection), [ `oe-package-install`](skills/oe-skills-s/horizon-router/oe-package-install), [ `horizon-router`](skills/oe-skills-s/horizon-router), [ `j6-plugin-dynamic-block`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block), [ `j6-plugin-insert-quant-dequant`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant), [ `j6-plugin-prepare`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-prepare), [ `j6-plugin-set-fake-quantize`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize), [ `j6-plugin-set-march`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-set-march), [ `j6-plugin-adaptation`](skills/oe-skills-s/plugin/j6-plugin-adaptation), [ `j6-plugin-consistency-debug`](skills/oe-skills-s/plugin/j6-plugin-consistency-debug), [ `j6-plugin-export`](skills/oe-skills-s/plugin/j6-plugin-export), [ `j6-plugin-graph-diff`](skills/oe-skills-s/plugin/j6-plugin-graph-diff), [ `j6-hbdk-export-compile`](skills/oe-skills-s/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile), [ `j6-plugin-quantization`](skills/oe-skills-s/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization), [ `j6-plugin-hbdk-generating`](skills/oe-skills-s/plugin/j6-plugin-hbdk-generating), [ `j6-plugin-model-check-result`](skills/oe-skills-s/plugin/j6-plugin-model-check-result), [ `j6-plugin-precision-tuning`](skills/oe-skills-s/plugin/j6-plugin-precision-tuning), [ `j6-board-monitor`](skills/oe-skills-s/ucp/j6-board-monitor), [ `j6-ucp-hbm-infer`](skills/oe-skills-s/ucp/j6-ucp-hbm-infer), [ `j6-ucp-infer-generating`](skills/oe-skills-s/ucp/j6-ucp-infer-generating), [ `j6-ucp-model-perf-eval`](skills/oe-skills-s/ucp/j6-ucp-model-perf-eval), [ `j6-ucp-perfetto-trace-analysis`](skills/oe-skills-s/ucp/j6-ucp-perfetto-trace-analysis), [ `j6-ucp-perfetto-trace-catcher`](skills/oe-skills-s/ucp/j6-ucp-perfetto-trace-catcher), [ `ucp`](skills/oe-skills-s/ucp) |
 | **OE Tool Chain (X5)** | OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Workspace-integrated pack requiring setup.sh initialization. | [ `x5-accuracy-diagnostics`](skills/oe-skills-x5/x5-accuracy-diagnostics), [ `x5-board-monitor`](skills/oe-skills-x5/x5-board-monitor), [ `x5-bpu-python-api`](skills/oe-skills-x5/x5-bpu-python-api), [ `x5-calibration-data-prepare`](skills/oe-skills-x5/x5-calibration-data-prepare), [ `x5-consistency-diagnostics`](skills/oe-skills-x5/x5-consistency-diagnostics), [ `x5-environment-install`](skills/oe-skills-x5/x5-environment-install), [ `x5-environment-probe`](skills/oe-skills-x5/x5-environment-probe), [ `x5-environment-setup`](skills/oe-skills-x5/x5-environment-setup), [ `x5-model-diagnostics`](skills/oe-skills-x5/x5-model-diagnostics), [ `x5-model-preflight`](skills/oe-skills-x5/x5-model-preflight), [ `x5-performance-diagnostics`](skills/oe-skills-x5/x5-performance-diagnostics), [ `x5-ptq-compile`](skills/oe-skills-x5/x5-ptq-compile), [ `x5-ptq-config-authoring`](skills/oe-skills-x5/x5-ptq-config-authoring), [ `x5-ptq-deploy`](skills/oe-skills-x5/x5-ptq-deploy), [ `x5-qat-adaptation`](skills/oe-skills-x5/x5-qat-adaptation), [ `x5-qat-compile`](skills/oe-skills-x5/x5-qat-compile), [ `x5-qat-deploy`](skills/oe-skills-x5/x5-qat-deploy), [ `x5-qat-training`](skills/oe-skills-x5/x5-qat-training), [ `x5-router`](skills/oe-skills-x5/x5-router), [ `x5-runtime-cpp-infer`](skills/oe-skills-x5/x5-runtime-cpp-infer), [ `x5-runtime-deploy`](skills/oe-skills-x5/x5-runtime-deploy), [ `x5-runtime-perf-eval`](skills/oe-skills-x5/x5-runtime-perf-eval) |
 | **RDK Device Skills** | Device-side skills for RDK boards — diagnostics, memory audit, headless mode, camera, vision pipeline, model deploy & benchmarking, GPIO, TROS, doc search, hardware specs, board selection, model zoo, peripherals, accessories, LLM/VLM deployment, embodied AI, S-series delegate, command manual, source map. | [ `rdk-diagnostic`](skills/rdk-diagnostic), [ `rdk-memory-audit`](skills/rdk-memory-audit), [ `rdk-headless-mode`](skills/rdk-headless-mode), [ `rdk-camera-setup`](skills/rdk-camera-setup), [ `rdk-vision-pipeline`](skills/rdk-vision-pipeline), [ `rdk-model-deploy`](skills/rdk-model-deploy), [ `rdk-model-benchmark`](skills/rdk-model-benchmark), [ `rdk-docs-reference`](skills/rdk-docs-reference), [ `rdk-system-config`](skills/rdk-system-config), [ `rdk-network-remote`](skills/rdk-network-remote), [ `rdk-system-maintain`](skills/rdk-system-maintain), [ `rdk-log-forensics`](skills/rdk-log-forensics), [ `rdk-gpio-40pin`](skills/rdk-gpio-40pin), [ `rdk-tros-setup`](skills/rdk-tros-setup), [ `rdk-ecosystem`](skills/rdk-ecosystem), [ `rdk-hardware`](skills/rdk-hardware), [ `rdk-board-knowledge`](skills/rdk-board-knowledge), [ `rdk-model-zoo`](skills/rdk-model-zoo), [ `rdk-multimedia`](skills/rdk-multimedia), [ `rdk-peripheral-cookbook`](skills/rdk-peripheral-cookbook), [ `rdk-accessories`](skills/rdk-accessories), [ `rdk-llm-deployment`](skills/rdk-llm-deployment), [ `rdk-embodied-lerobot`](skills/rdk-embodied-lerobot), [ `rdk-board-delegate`](skills/rdk-board-delegate), [ `rdk-command-manual`](skills/rdk-command-manual), [ `rdk-source-map`](skills/rdk-source-map) |
@@ -133,6 +146,7 @@ Product source repos:
 <!-- help-table-start -->
 | Product | Issues | Discussions | Contributing |
 |---------|--------|-------------|--------------|
+| **BSP Skills** | [Issues](https://github.com/D-Robotics/bsp-skills/issues) | — | [Contributing](https://github.com/D-Robotics/bsp-skills/blob/main/CONTRIBUTING.md) |
 | **OE Tool Chain (S)** | [Issues](https://github.com/D-Robotics/oe-skills-s/issues) | — | — |
 | **OE Tool Chain (X5)** | [Issues](https://github.com/D-Robotics/oe-skills-x5/issues) | — | [Contributing](https://github.com/D-Robotics/oe-skills-x5/blob/main/CONTRIBUTING.md) |
 | **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | [Discussions](https://github.com/D-Robotics/rdk-device-skills/discussions) | [Contributing](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
@@ -183,6 +197,7 @@ D-Robotics/rdk-skills/
 ├── .claude-plugin/              # Claude Code marketplace
 ├── .agents/plugins/             # Codex marketplace
 ├── .cursor-plugin/              # Cursor marketplace
+├── .dsh-plugin/                 # DeepSeek Harness (DSH) bundle marketplace
 ├── docs/                        # PR submission rules + skill usage guide
 ├── .github/
 │   ├── workflows/                # sync pipeline, DCO check
