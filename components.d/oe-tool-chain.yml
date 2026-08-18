@@ -10,6 +10,12 @@ description: OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compil
 # (bulk layout — kept for this existing pack's structure, same as oe-skills-s).
 install_type: workspace
 install_script: setup.sh
+workspace_dir: .drobotics
+verify_paths:
+  - .drobotics/X5.md
+  - .drobotics/VERSION
+  - .drobotics/skill-index.json
+  - .drobotics/skills/x5-router/SKILL.md
 install_instructions: |
   bash setup.sh $PROJECT_ROOT
   # or tell your AI: "Install D-Robotics OE-Skills-X5 from the marketplace"

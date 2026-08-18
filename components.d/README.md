@@ -35,6 +35,17 @@
 | `links.contributing` | `CONTRIBUTING.md` | 源头仓库的贡献指南路径，设为 `false` 表示无 |
 | `links.discussions` | `true` | 设为 `false` 表示仓库无 Discussions |
 
+## Workspace Pack 安装契约
+
+`install_type: workspace` 的 Pack 必须额外声明以下字段，目录生成器会将它们写入 Pack 注册表；字段缺失会导致生成失败。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `workspace_dir` | string | 安装脚本在用户项目中写入的相对目录 |
+| `verify_paths` | non-empty list[string] | 用于确认安装成功的项目相对文件或目录路径 |
+
+两个字段中的每条路径必须是非空 POSIX 相对路径：不能是绝对路径、不能包含 `..`，也不能使用反斜杠 `\\`。例如 X5 Pack 使用 `.drobotics`，并验证 `.drobotics/skills/x5-router/SKILL.md`。
+
 ## 示例
 
 ```yaml

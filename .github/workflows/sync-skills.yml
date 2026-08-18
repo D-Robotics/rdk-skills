@@ -42,6 +42,9 @@ jobs:
         with:
           ref: main
 
+      - name: Install catalog generator dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
       - name: Verify yq is available
         run: yq --version
 
