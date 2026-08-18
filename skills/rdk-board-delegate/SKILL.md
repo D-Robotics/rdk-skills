@@ -1,6 +1,6 @@
 ---
 name: rdk-board-delegate
-description: 'S-series (S100/S100P/S600) "big-brain / little-brain" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc, IPC, UART, CAN) and Acore/Linux-specific hbmem zero-copy, CPU↔MCU/VDSP/BPU IPC, PCIe, EtherCAT, PTP/gPTP, OTA/miniboot, and VDSP. Covers OpenClaw board-task delegation. Use for S-series MCU firmware, real-time joint/motor control, IPC, EtherCAT/PTP, PCIe, upgrades, VDSP, or CPU+BPU+MCU architecture. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — S-series .hbm compile → horizon-router; ready-made models → rdk-model-zoo; ROS/stereo/lidar application development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.'
+description: 'S-series (S100/S100P/S600) "big-brain / little-brain" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc, IPC, UART, CAN) and Acore/Linux-specific hbmem zero-copy, CPU↔MCU/VDSP/BPU IPC, PCIe, EtherCAT, PTP/gPTP, OTA/miniboot, and VDSP. Covers OpenClaw board-task delegation. Use for S-series MCU firmware, real-time joint/motor control, IPC, EtherCAT/PTP, PCIe, upgrades, VDSP, or CPU+BPU+MCU architecture. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); S-series .hbm compile → horizon-router; ready-made models → rdk-model-zoo; ROS/stereo/lidar application development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.'
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -10,6 +10,10 @@ license: Apache-2.0
 S100/S100P/S600 are **not** "X-series with more TOPS". They are a single SoC with three heterogeneous compute domains that close the perception→decision→control loop on-chip: **CPU (Acore, the "big brain") + BPU (decision) + MCU (the "little brain", hard real-time)**. The single most important thing to get right is **which domain a task belongs to and how the two brains talk** — put a millisecond joint loop on the MCU over IPC, never on a Linux RT thread, and never confuse the MCU's `remoteproc` firmware load with MCU0's `fastboot`/Xburn flashing.
 
 > Scope: **RDK S100 / S100P / S600 only** (Nash BPU, `.hbm` artifacts). X3/X5/Ultra have no MCU subsystem and none of this applies. Sources are the official D-Robotics `rdk_s_doc` repo (`docs/07_Advanced_development/05_mcu_development`, `02_linux_development`, `03_multimedia_development`) and `developer.d-robotics.cc`. Every non-trivial claim was re-verified against those docs.
+
+## Workspace router availability gate
+
+Before an S-series toolchain handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)` into the confirmed project root. After installation, restart the agent session and retry the original handoff.
 
 ## The three compute domains (the foundation)
 

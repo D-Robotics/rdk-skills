@@ -1,6 +1,6 @@
 ---
 name: rdk-embodied-lerobot
-description: 'Deploy a trained embodied-AI policy onto an RDK board — LeRobot ACT imitation policies and Pi0 VLA (openpi) — by exporting to ONNX, compiling to a BPU `.hbm`, and running the on-board control loop that drives a robot arm. Use whenever the user has an ACT checkpoint or a Pi0 model and wants it on RDK S100/S100P/S600, mentions export_bpu_actpolicy.py / bpu_control_robot.py / build_all.sh / hbm-runtime / openpi_runtime / piper_node, or asks "怎么把 ACT 部署到板上 / Pi0 怎么跑". 触发词:具身智能、ACT 部署、模仿学习策略上板、LeRobot 上 RDK、Pi0、openpi、VLA、视觉语言动作、机械臂策略、bpu_control_robot、export_bpu_actpolicy、SO-101 跑到 S100、双臂 mango。Routing — generic non-policy .onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for the board''s official toolchain docs; ros2 commands/env → rdk-tros-setup; on-board LLM/VLM chat & voice → rdk-llm-deployment; S100 CPU/BPU/MCU heterogeneous split, firmware burn, board-agent handoff → rdk-board-delegate; raw error-code lookup → rdk-board-knowledge.'
+description: 'Deploy trained LeRobot ACT or Pi0/openpi VLA policies on RDK S-series: export to ONNX, compile to BPU `.hbm`, and run the board control loop. Use for ACT/Pi0 deployment, export_bpu_actpolicy.py, bpu_control_robot.py, build_all.sh, hbm-runtime, openpi_runtime, or piper_node. 触发词:具身智能、ACT 部署、模仿学习策略上板、LeRobot 上 RDK、Pi0、openpi、VLA、机械臂策略、SO-101、双臂 mango。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); generic non-policy .onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; ros2 commands/env → rdk-tros-setup; LLM/VLM → rdk-llm-deployment; S-series heterogeneous work → rdk-board-delegate; errors → rdk-board-knowledge.'
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -12,6 +12,10 @@ Take a trained robot-control **policy** and run it on an RDK board's BPU: a LeRo
 **The single most important thing:** a board can only run an **OE-compiled `.hbm`**. It cannot run a raw `.pt`/ONNX policy, and the on-board control script (`bpu_control_robot.py`) loads `.hbm` + `.npy` normalization files, never the PyTorch checkpoint. If the user copied a checkpoint to the board expecting it to drive the arm, stop and route them through the export→compile loop first.
 
 > Sources: official D-Robotics repos [rdk_LeRobot_tools](https://github.com/D-Robotics/rdk_LeRobot_tools) (`stable` / `s100` / `s600` branches), [openpi_runtime](https://github.com/D-Robotics/openpi_runtime) (`develop`), [huggingface.co/D-Robotics/openpi](https://huggingface.co/D-Robotics/openpi). Every non-trivial claim below is verified against those READMEs/scripts.
+
+## Workspace router availability gate
+
+Before an X5 conversion handoff, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` into the confirmed project root. Before an S-series conversion handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)`. After installation, restart the agent session and retry the original handoff.
 
 ## Scope boundary — read this before answering
 

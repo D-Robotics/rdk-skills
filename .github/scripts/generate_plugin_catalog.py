@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path, PurePosixPath
+import re
 from typing import Literal
 
 import yaml
@@ -10,6 +11,22 @@ import yaml
 
 class CatalogError(ValueError):
     """Raised when catalog data cannot be safely generated."""
+
+
+REPOSITORY_SLUG = re.compile(
+    r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/"
+    r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?"
+)
+
+
+def require_repository_slug(value: object) -> str:
+    if (
+        not isinstance(value, str)
+        or ".." in value
+        or REPOSITORY_SLUG.fullmatch(value) is None
+    ):
+        raise CatalogError(f"repo must use exact owner/repo syntax: {value!r}")
+    return value
 
 
 def require_safe_relative(value: str, field: str) -> str:
@@ -54,7 +71,7 @@ def build_pack_registry(repo_root: Path, components: list[dict]) -> dict:
         packs.append(
             {
                 "name": component["name"],
-                "repo": component["repo"],
+                "repo": require_repository_slug(component.get("repo")),
                 "ref": component.get("ref", "main"),
                 "install_type": "workspace",
                 "install_script": component["install_script"],
@@ -96,7 +113,7 @@ def build_skill_index(repo_root: Path, components: list[dict], exceptions: list[
                         skill_path,
                         component["name"],
                         install_type,
-                        component["repo"],
+                        require_repository_slug(component.get("repo")),
                     )
                 )
 

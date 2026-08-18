@@ -57,7 +57,7 @@ The CLI lists all available skills and installs the selected one into the approp
 
 Run `/plugin`, browse the Discover tab, and install.
 
-The Hub plugin uses `rdk-skill-finder` to search the catalog. For a flat skill it returns the appropriate installation command; for a workspace-integrated skill it hands the request to `rdk-pack-installer`.
+The Hub plugin uses `rdk-skill-finder` to search the catalog. For a flat skill it returns exactly `npx skills add d-robotics/rdk-skills --skill <skill-name>`; for a workspace-integrated skill it hands the request to `rdk-pack-installer`.
 
 ### Option 4: Clone a Pack repo directly
 

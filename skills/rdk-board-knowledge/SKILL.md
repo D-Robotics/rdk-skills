@@ -1,6 +1,6 @@
 ---
 name: rdk-board-knowledge
-description: 'Identify the RDK board, confirm its SoC/OS/TROS baseline (BPU TOPS → rdk-hardware), diagnose camera/model/BPU/TROS/ROS2/APT/GPIO/I2C/serial/power/network errors, correct common misconceptions, and flash S-series (S100/S100P/S600) with xburn DFU/Fastboot. Use for errors/logs, board identity, broken board functions, FAQ-style questions, or S-series flashing. 触发词:报错、排查、诊断、卡死、连不上、识别板型、确认板子、是哪块板、板型基线、系统版本、摄像头没画面、模型跑不了、ros2 command not found、NO_PUBKEY、GPIO 权限、供电不足、under-voltage、xburn、烧录、刷机、进下载模式、DFU、Fastboot、变砖、S100/S600 烧录、官方 FAQ、默认账户密码。Routing — pin/connector/spec facts → rdk-hardware; self-trained conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; peripheral drivers → rdk-peripheral-cookbook; product selection → rdk-ecosystem; exact docs → rdk-docs-reference.'
+description: 'Identify the RDK board, confirm its SoC/OS/TROS baseline (BPU TOPS → rdk-hardware), diagnose camera/model/BPU/TROS/ROS2/APT/GPIO/I2C/serial/power/network errors, correct common misconceptions, and flash S-series (S100/S100P/S600) with xburn DFU/Fastboot. Use for errors/logs, board identity, broken board functions, FAQ-style questions, or S-series flashing. 触发词:报错、排查、诊断、卡死、连不上、识别板型、确认板子、是哪块板、板型基线、系统版本、摄像头没画面、模型跑不了、ros2 command not found、NO_PUBKEY、GPIO 权限、供电不足、under-voltage、xburn、烧录、刷机、进下载模式、DFU、Fastboot、变砖、S100/S600 烧录、官方 FAQ、默认账户密码。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); pin/connector/spec facts → rdk-hardware; self-trained conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; peripheral drivers → rdk-peripheral-cookbook; product selection → rdk-ecosystem; exact docs → rdk-docs-reference.'
 trigger: 报错, 排查, 诊断, 卡死, 连不上, 识别板型, 确认板子, 是哪块板, 板型基线, 系统版本, 摄像头没画面, 模型跑不了, ros2 command not found, NO_PUBKEY, GPIO权限, 供电不足, under-voltage, xburn, 烧录, 刷机, 进下载模式, DFU, Fastboot, 变砖, S100烧录, S600烧录, 官方FAQ, 默认账户密码
 version: 1.0.0
 license: Apache-2.0
@@ -11,6 +11,10 @@ license: Apache-2.0
 Before answering any RDK problem, **confirm the board from on-board facts, not from the user's words.** The board determines every downstream answer — package names, TROS path, toolchain, camera node, default IP. Guessing the board (e.g. assuming X5) is the single most common way these answers go wrong.
 
 > Sources: official D-Robotics docs `rdk_doc` / `rdk_x_doc` / `rdk_s_doc` (08_FAQ + 01_Quick_start/install_os), the OpenExplorer / 天工开物 (TianGong) toolchains, and reproduced community cases. Facts are carried over with provenance; nothing is invented.
+
+## Workspace router availability gate
+
+Before an X5 conversion handoff, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` into the confirmed project root. Before an S-series conversion handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)`. After installation, restart the agent session and retry the original handoff.
 
 ## The one move that matters most
 

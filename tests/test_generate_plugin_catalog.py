@@ -75,6 +75,17 @@ skills:
             packs["D-Robotics/oe-skills-s"]["verify_paths"],
         )
 
+    def test_pack_registry_defaults_missing_ref_to_main(self):
+        registry = catalog.build_pack_registry(self.repo, catalog.load_components(self.repo))
+
+        self.assertEqual(
+            {pack["repo"]: pack["ref"] for pack in registry["packs"]},
+            {
+                "D-Robotics/oe-skills-s": "main",
+                "D-Robotics/oe-skills-x5": "main",
+            },
+        )
+
 
 class SkillIndexTests(unittest.TestCase):
     def setUp(self):
@@ -186,6 +197,38 @@ skills:
 
 
 class CatalogValidationTests(unittest.TestCase):
+    def test_rejects_unsafe_repository_slugs(self):
+        unsafe_repositories = (
+            "",
+            "owner",
+            "/repo",
+            "owner/",
+            "owner/repo/extra",
+            "owner name/repo",
+            "owner/repo name",
+            "owner/../repo",
+            "owner/re..po",
+            "owner/repo;echo-owned",
+            "owner/repo$(echo-owned)",
+            "owner\\repo",
+        )
+        for repository in unsafe_repositories:
+            with self.subTest(repository=repository):
+                component = {
+                    "name": "Unsafe Repository",
+                    "repo": repository,
+                    "install_type": "workspace",
+                    "install_script": "setup.sh",
+                    "workspace_dir": ".workspace",
+                    "verify_paths": [".workspace/VERSION"],
+                }
+
+                with self.assertRaisesRegex(
+                    catalog.CatalogError,
+                    "repo must use exact owner/repo syntax",
+                ):
+                    catalog.build_pack_registry(Path("."), [component])
+
     def test_rejects_workspace_component_without_workspace_dir(self):
         component = {
             "name": "Missing Workspace Directory",

@@ -1,6 +1,6 @@
 ---
 name: rdk-model-zoo
-description: 'Run a ready-made RDK Model Zoo BPU model — choose its board branch, download the matching .bin/.hbm, run its sample, and read benchmark latency/FPS/accuracy. Use for precompiled YOLO/classification/segmentation/OCR, Model Zoo samples, branches, downloads, and benchmarks. 触发词:Model Zoo、现成模型、预编译模型、官方转好的、有没有现成的 bin/hbm、模型仓、跑示例 sample、哪个分支、archive.d-robotics 下载、benchmark 帧率精度、YOLO11 哪块板能跑、模型性能对比。Routing — own .pt/.onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; TROS/ROS2 node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM chat → rdk-llm-deployment; board/model selection → rdk-ecosystem; ACT/VLA/Pi0 policies → rdk-embodied-lerobot.'
+description: 'Run a ready-made RDK Model Zoo BPU model — choose its board branch, download the matching .bin/.hbm, run its sample, and read benchmark latency/FPS/accuracy. Use for precompiled YOLO/classification/segmentation/OCR, Model Zoo samples, branches, downloads, and benchmarks. 触发词:Model Zoo、现成模型、预编译模型、官方转好的、有没有现成的 bin/hbm、模型仓、跑示例 sample、哪个分支、archive.d-robotics 下载、benchmark 帧率精度、YOLO11 哪块板能跑、模型性能对比。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); own .pt/.onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; TROS/ROS2 node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM chat → rdk-llm-deployment; board/model selection → rdk-ecosystem; ACT/VLA/Pi0 policies → rdk-embodied-lerobot.'
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -10,6 +10,10 @@ license: Apache-2.0
 The Model Zoo is the official collection of **out-of-the-box, pre-compiled BPU models** plus full-link conversion tutorials. The single most important fact: **the branch you clone IS your board.** Cloning the wrong branch is the #1 failure — the model artifact or the runtime API will not match your hardware.
 
 > Sources: official D-Robotics repos verified for this skill — [rdk_model_zoo](https://github.com/D-Robotics/rdk_model_zoo) (`rdk_x5` / `rdk_x3` / `rdk_s` branches), [rdk_model_zoo_s](https://github.com/D-Robotics/rdk_model_zoo_s) (`s100` archive), and [model_zoo_doc](https://github.com/D-Robotics/model_zoo_doc) appendix benchmarks. Facts carry provenance; nothing is invented.
+
+## Workspace router availability gate
+
+Before an X5 conversion handoff, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` into the confirmed project root. Before an S-series conversion handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)`. After installation, restart the agent session and retry the original handoff.
 
 ## The one rule that matters most
 

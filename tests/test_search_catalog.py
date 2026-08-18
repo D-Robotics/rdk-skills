@@ -108,6 +108,17 @@ class SearchCatalogTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0)
         self.assertEqual(len(payload["matches"]), 1)
 
+    def test_cli_rejects_zero_limit_instead_of_false_fallback(self):
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "X5", "--limit", "0"],
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertEqual(completed.stdout, b"")
+        self.assertIn(b"--limit must be at least 1", completed.stderr)
+
     def test_flat_match_has_required_fields_and_fixed_install_action(self):
         match = self.finder.search(self.index, "rdk-diagnostic")["matches"][0]
         self.assertEqual(

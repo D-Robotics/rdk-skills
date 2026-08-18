@@ -160,8 +160,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--install-type", choices=("flat", "workspace"))
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args(argv)
-    if args.limit is not None and args.limit < 0:
-        parser.error("--limit must be zero or greater")
+    if args.limit is not None and args.limit < 1:
+        parser.error("--limit must be at least 1")
 
     default_index = Path(__file__).resolve().parents[1] / "references" / "skill-index.json"
     index_path = Path(os.environ.get("RDK_SKILL_INDEX", default_index))

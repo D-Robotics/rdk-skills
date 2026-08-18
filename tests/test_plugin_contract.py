@@ -29,6 +29,23 @@ class PluginContractTests(unittest.TestCase):
         self.assertNotIn("components.d", text)
         self.assertTrue((self.skill_dir / "references" / "pack-registry.json").is_file())
 
+    def test_installer_validates_repo_slug_and_uses_fixed_clone_target(self):
+        text = self.skill_md.read_text(encoding="utf-8")
+
+        self.assertIn("exact `owner/repo` syntax", text)
+        self.assertIn("no whitespace, `..`, shell metacharacters, or extra path segments", text)
+        self.assertIn("https://github.com/<repo>.git <tmp>/pack", text)
+        self.assertIn("bash <tmp>/pack/<install_script> <PROJECT_ROOT>", text)
+        self.assertNotIn("<tmp>/<repo>", text)
+
+    def test_installer_treats_agent_setup_as_read_only_context(self):
+        text = self.skill_md.read_text(encoding="utf-8")
+
+        self.assertIn("optional read-only context", text)
+        self.assertIn("must not replace or add to the validated `install_script`", text)
+        self.assertIn("separate explicit confirmation", text)
+        self.assertIn("within the confirmed `PROJECT_ROOT`", text)
+
     def test_hub_device_mirror_has_no_retired_routes(self):
         retired = (
             "rdk-device",
@@ -42,6 +59,44 @@ class PluginContractTests(unittest.TestCase):
             for route in retired:
                 pattern = rf"(?<![a-z0-9-]){re.escape(route)}(?![a-z0-9-])"
                 self.assertIsNone(re.search(pattern, text, re.I), f"{path}: {route}")
+
+    def test_workspace_router_handoffs_have_install_fallbacks(self):
+        expected_routes = {
+            "rdk-board-delegate": {"horizon-router": "OE Tool Chain (S)"},
+            "rdk-board-knowledge": {
+                "x5-router": "OE Tool Chain (X5)",
+                "horizon-router": "OE Tool Chain (S)",
+            },
+            "rdk-embodied-lerobot": {
+                "x5-router": "OE Tool Chain (X5)",
+                "horizon-router": "OE Tool Chain (S)",
+            },
+            "rdk-hardware": {
+                "x5-router": "OE Tool Chain (X5)",
+                "horizon-router": "OE Tool Chain (S)",
+            },
+            "rdk-model-zoo": {
+                "x5-router": "OE Tool Chain (X5)",
+                "horizon-router": "OE Tool Chain (S)",
+            },
+        }
+        for skill_name, routes in expected_routes.items():
+            text = (self.repo / "skills" / skill_name / "SKILL.md").read_text(
+                encoding="utf-8"
+            )
+            frontmatter = text.split("---", 2)[1]
+            self.assertIn("availability-gated", frontmatter, skill_name)
+            self.assertIn("## Workspace router availability gate", text, skill_name)
+            self.assertIn("`rdk-pack-installer`", text, skill_name)
+            self.assertIn("restart", text.casefold(), skill_name)
+            self.assertIn("retry", text.casefold(), skill_name)
+            for router, pack in routes.items():
+                atomic_fallback = (
+                    f"check whether `{router}` is available in the current session. "
+                    f"If unavailable, do not hand off: use `rdk-pack-installer` "
+                    f"to install `{pack}`"
+                )
+                self.assertIn(atomic_fallback, text, skill_name)
 
     def test_plugin_definition_includes_three_hub_skills(self):
         config = yaml.safe_load(
@@ -71,6 +126,13 @@ class PluginContractTests(unittest.TestCase):
         self.assertTrue(
             (plugin_skills / "rdk-skill-finder/references/skill-index.json").is_file()
         )
+
+    def test_finder_docs_show_exact_flat_install_command(self):
+        command = "npx skills add d-robotics/rdk-skills --skill <skill-name>"
+        for relative_path in ("README.md", "README_cn.md", "docs/SKILL-USAGE.md"):
+            with self.subTest(relative_path=relative_path):
+                text = (self.repo / relative_path).read_text(encoding="utf-8")
+                self.assertIn(command, text)
 
     def test_dry_run_does_not_regenerate_catalog_files(self):
         missing = [tool for tool in ("bash", "yq", "rsync") if shutil.which(tool) is None]
