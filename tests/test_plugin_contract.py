@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -22,6 +23,20 @@ class PluginContractTests(unittest.TestCase):
         self.assertIn("references/pack-registry.json", text)
         self.assertNotIn("components.d", text)
         self.assertTrue((self.skill_dir / "references" / "pack-registry.json").is_file())
+
+    def test_hub_device_mirror_has_no_retired_routes(self):
+        retired = (
+            "rdk-device",
+            "rdk-doc-finder",
+            "rdk-ros",
+            "rdk-mipi-camera-bringup",
+            "rdk-perf-investigator",
+        )
+        for path in (self.repo / "skills").glob("rdk-*/SKILL.md"):
+            text = path.read_text(encoding="utf-8")
+            for route in retired:
+                pattern = rf"(?<![a-z0-9-]){re.escape(route)}(?![a-z0-9-])"
+                self.assertIsNone(re.search(pattern, text, re.I), f"{path}: {route}")
 
 
 if __name__ == "__main__":

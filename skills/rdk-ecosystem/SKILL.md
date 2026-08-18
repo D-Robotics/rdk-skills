@@ -1,6 +1,6 @@
 ---
 name: rdk-ecosystem
-description: RDK product-line awareness and buying/selection judgment — which board to buy (X3/X5/Ultra/S100/S100P/S600), whether a given model (YOLO / LLM / VLM) will actually run, how RDK compares to Jetson / Raspberry Pi / RK3588, calibrating LLM/VLM expectations, and where the official ecosystem entry points live (product pages, Model Zoo, NodeHub, forum). Use whenever someone is choosing or comparing boards or asking "can it run X". 触发词:买哪块板、选型、X3 还是 X5、S100 还是 S600、能不能跑 DeepSeek、能不能跑 Qwen、能不能跑 7B、RDK 和 Jetson/树莓派/RK3588 哪个好、跨平台对比、端侧大模型期待、VLM 能跑吗、Model Zoo、NodeHub 在哪、官方资料入口。Routing — cross-platform comparison anchored on RDK (RDK vs X) stays here; single-platform specs/toolchain → jetson-knowledge / rpi-knowledge / rk-knowledge; hardware-subsystem facts → rdk-hardware; on-board model deployment → rdk-device; how LLM/VLM actually runs on-board → rdk-llm-deployment; locate a GitHub repo / source → rdk-source-map; pin down a doc-site chapter / authoritative URL → rdk-doc-finder; one command syntax → rdk-command-manual.
+description: RDK board selection — which board to buy (X3/X5/Ultra/S100/S100P/S600), whether YOLO/LLM/VLM will run, comparison with Jetson/Raspberry Pi/RK3588, LLM/VLM expectations, and official ecosystem entry points. Use when choosing/comparing boards or asking "can it run X". 触发词:买哪块板、选型、X3 还是 X5、S100 还是 S600、能不能跑 DeepSeek、能不能跑 Qwen、能不能跑 7B、RDK 和 Jetson/树莓派/RK3588 哪个好、跨平台对比、端侧大模型期待、VLM 能跑吗、Model Zoo、NodeHub 在哪、官方资料入口。Routing — RDK-vs-X stays here; single-platform specs/toolchain → jetson-knowledge / rpi-knowledge / rk-knowledge; hardware facts → rdk-hardware; on-board model deployment → rdk-model-deploy; LLM/VLM runtime → rdk-llm-deployment; GitHub source → rdk-source-map; authoritative docs → rdk-docs-reference; command syntax → rdk-command-manual.
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -101,13 +101,13 @@ Jetson Orin Nano Super figures: NVIDIA developer blog (67 TOPS sparse, 6-core A7
 
 From rdk_s_doc `06_Application_case` (community showcase list, each entry links to `developer.d-robotics.cc/forumDetail/...`). Use these to answer "can a board like S100 really do embodied / robotics, any benchmarks":
 - Quadruped (Unitree Go2 reproducing CoRL2022 *Walk These Ways* multi-gait); humanoid "little Pi" + voice (locomotion transfer keeping 99.9% quant accuracy, 0.6ms inference, MDTC voice wake); low-speed vehicle BEV (multi-task 60FPS / 17ms / ≈0.8% NDS loss); fully open-source dual-arm LeRobot (ACT autonomous laundry folding, full kit <¥5000, 46ms to generate 50 action steps); TRON1 biped (locomotion transfer 99.99% accuracy, ~1h deploy).
-- These are "can it run / is there a benchmark" evidence, not steps. Reproduce LeRobot/ACT → `rdk-embodied-lerobot`; voice/LLM → `rdk-llm-deployment`; ROS2/nav → `rdk-ros`. X-series (X5) full build-level case studies (AMR, CNN line-follower) live in `rdk-ros`'s app-cases reference.
+- These are "can it run / is there a benchmark" evidence, not steps. Reproduce LeRobot/ACT → `rdk-embodied-lerobot`; voice/LLM → `rdk-llm-deployment`; ROS2/nav application development has no dedicated Skill: use `rdk-docs-reference` to search `tros_doc`. X-series (X5) full build-level case studies (AMR, CNN line-follower) are documented in `tros_doc`.
 
 ## Official resource three-tier priority
 
 When sourcing facts, prefer in this order:
 1. **On the board itself** — `apt show tros-humble-<pkg>` / `dpkg -l | grep <pkg>` / `ros2 pkg prefix <pkg>` is always ground truth.
-2. **Official docs** — the site split (2026): X-series → `rdk_x_doc`, S-series → `rdk_s_doc`, TROS → `tros_doc`, Model Zoo → `model_zoo_doc`, Studio → `rdk_studio_doc`, accessories → `accessories_doc`. To pin the exact chapter/URL, use `rdk-doc-finder`.
+2. **Official docs** — the site split (2026): X-series → `rdk_x_doc`, S-series → `rdk_s_doc`, TROS → `tros_doc`, Model Zoo → `model_zoo_doc`, Studio → `rdk_studio_doc`, accessories → `accessories_doc`. To pin the exact chapter/URL, use `rdk-docs-reference`.
 3. **GitHub source** — `github.com/D-Robotics/<repo>` (use `rdk-source-map` to locate the repo).
 
 If the three disagree, **trust the board**; treat doc/GitHub differences as a "possibly different version" hint to the user. Community cases → `developer.d-robotics.cc/forum`.
@@ -156,4 +156,4 @@ When answering from this skill, follow these rules — never fabricate facts, co
 | Read this | When |
 |-----------|------|
 | [hardware-notes.md](references/hardware-notes.md) | Full board-generation positioning, the cross-platform comparison table with provenance, and the LLM/VLM calibration deep-dive |
-| [official-docs.md](references/official-docs.md) | Official doc/resource index by topic (getting-started, Studio, vision, ROS, toolchain, LLM, hardware, ecosystem) — pair with rdk-doc-finder for exact chapter URLs |
+| [official-docs.md](references/official-docs.md) | Official doc/resource index by topic (getting-started, Studio, vision, ROS, toolchain, LLM, hardware, ecosystem) — pair with rdk-docs-reference for exact chapter URLs |

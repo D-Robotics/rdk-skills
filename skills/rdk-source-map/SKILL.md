@@ -1,6 +1,6 @@
 ---
 name: rdk-source-map
-description: Map and disambiguate repositories in the D-Robotics GitHub org (350 public / ~440 total incl. private) — tell the user what a repo is, which layer it belongs to, which board it targets, which repo to use for a task, and how to build an RDK OS image or TROS workspace from source. Use whenever the user sees a D-Robotics repo and doesn't know what it does, can't tell hobot- (hyphen, BSP) from hobot_ (underscore, ROS2 app), asks "which repo do I clone for X", or wants the repo/manifest/rdk-gen/vcstool source-build flow. 触发词:这个仓库是干嘛的、属于哪一层、对应哪块板、该 clone 哪个仓、hobot- 和 hobot_ 区别、连字符 下划线、rdk-gen、manifest、repo sync、vcstool、ros2.repos、从源码构建镜像、定制内核、编译 TROS、x5-rdk-gen、s100-rdk-gen。Routing — finding a doc-site chapter → rdk-doc-finder; running a ready-made model on-board → rdk-model-zoo; ROS node usage → rdk-ros; embodied/LLM deployment → rdk-embodied-lerobot / rdk-llm-deployment.
+description: 'Map D-Robotics GitHub repositories — identify their layer and target board, choose a repository, or build an RDK OS image/TROS workspace from source. Use when a user cannot classify a D-Robotics repo, distinguish hobot- (hyphen, BSP) from hobot_ (underscore, ROS2 app), asks "which repo do I clone for X", or needs repo/manifest/rdk-gen/vcstool source-build flow. 触发词:这个仓库是干嘛的、属于哪一层、对应哪块板、该 clone 哪个仓、hobot- 和 hobot_ 区别、连字符 下划线、rdk-gen、manifest、repo sync、vcstool、ros2.repos、从源码构建镜像、定制内核、编译 TROS、x5-rdk-gen、s100-rdk-gen。Routing — doc-site chapter → rdk-docs-reference; ready-made model → rdk-model-zoo; TROS install, environment, commands, and running existing nodes/examples → rdk-tros-setup; writing or modifying a ROS node/application has no dedicated Skill: use rdk-docs-reference to search tros_doc; embodied/LLM deployment → rdk-embodied-lerobot / rdk-llm-deployment.'
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -73,13 +73,14 @@ Both flows, with exact commands, are in [os-image-build.md](references/os-image-
 | I want to… | Go to this repo family |
 | --- | --- |
 | Run a ready-made BPU model | `rdk_model_zoo` (X3/X5 branches) / `rdk_model_zoo_s` (S, default branch `s100`) → skill `rdk-model-zoo` |
-| Use a vision/perception ROS node (detect/stereo/SLAM/calib) | `hobot_*` underscore + `mono*/stereo*/face_*/hand_*` → skill `rdk-ros` |
+| Install TROS, set its environment, run an existing ROS node/example | `tros_*` / installed `hobot_*` package → skill `rdk-tros-setup` |
+| Write or modify a vision/perception ROS node/application | `hobot_*` underscore + `mono*/stereo*/face_*/hand_*` → no dedicated Skill; use `rdk-docs-reference` to search `tros_doc` |
 | On-device LLM/VLM/speech | `hobot_llamacpp`/`hobot_llm`/`hobot_xlm`/`hobot_tts`/`hobot_audio` → skill `rdk-llm-deployment` |
 | Embodied / arm / LeRobot / VLA | `rdk_LeRobot_tools`/`lerobot`/`openpi*`/`RoboTwin` → skill `rdk-embodied-lerobot` |
 | **Build/customize an OS image, kernel, driver, add a sensor** | `*-rdk-gen` + `*-manifest` + `kernel`/`uboot`/`bootloader` + `hobot-*` (hyphen) |
 | Compile all of TROS from source | `robot_dev_config` (entry) + `tros_*` |
 | Package a TROS app into a deb for the app center | `nodehub_*` (READMEs mostly reference TROS docs) |
-| Read official doc source | `rdk_doc` (main, 17★) / `rdk_x_doc` / `rdk_s_doc` / `rdk_oe_s_doc` / `tros_doc` / `model_zoo_doc` / `xburn_doc` → skill `rdk-doc-finder` |
+| Read official doc source | `rdk_doc` (main, 17★) / `rdk_x_doc` / `rdk_s_doc` / `rdk_oe_s_doc` / `tros_doc` / `model_zoo_doc` / `xburn_doc` → skill `rdk-docs-reference` |
 
 The full 12-family map with representative repo lists is in [repo-families.md](references/repo-families.md).
 
