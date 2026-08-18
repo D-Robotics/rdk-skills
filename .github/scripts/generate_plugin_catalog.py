@@ -14,7 +14,14 @@ class CatalogError(ValueError):
 
 def require_safe_relative(value: str, field: str) -> str:
     path = PurePosixPath(value)
-    if not value or path.is_absolute() or ".." in path.parts or "\\" in value:
+    is_windows_drive_path = len(value) >= 2 and value[0].isalpha() and value[1] == ":"
+    if (
+        not value
+        or path.is_absolute()
+        or is_windows_drive_path
+        or ".." in path.parts
+        or "\\" in value
+    ):
         raise CatalogError(f"{field} must be a safe POSIX relative path: {value!r}")
     return value
 

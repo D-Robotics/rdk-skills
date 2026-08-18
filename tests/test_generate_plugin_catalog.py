@@ -235,6 +235,22 @@ class CatalogValidationTests(unittest.TestCase):
                 ):
                     catalog.build_pack_registry(Path("."), [component])
 
+    def test_rejects_windows_drive_qualified_workspace_path(self):
+        component = {
+            "name": "Windows Drive Workspace Directory",
+            "repo": "D-Robotics/windows-drive-workspace-dir",
+            "install_type": "workspace",
+            "install_script": "setup.sh",
+            "workspace_dir": "C:/outside",
+            "verify_paths": [".workspace/VERSION"],
+        }
+
+        with self.assertRaisesRegex(
+            catalog.CatalogError,
+            "workspace_dir must be a safe POSIX relative path",
+        ):
+            catalog.build_pack_registry(Path("."), [component])
+
     def test_rejects_parent_verify_path(self):
         component = {
             "name": "Unsafe Verification Path",
