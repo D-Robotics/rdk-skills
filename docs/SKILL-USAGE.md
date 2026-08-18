@@ -25,6 +25,8 @@ CLI 会列出全部可用 skill，交互式选择后安装到对应 Agent 的技
 
 然后 `/plugin` → Discover 标签页浏览安装。
 
+Hub 插件通过 `rdk-skill-finder` 搜索目录：扁平 Skill 会返回对应安装命令；workspace 集成型 Skill 会交给 `rdk-pack-installer` 处理。
+
 ### 方式 3：直接克隆 Pack 仓库
 
 各 Pack 仓库自带 `install.sh`（如适用），支持 symlink/copy 两种模式：
@@ -47,7 +49,7 @@ cd oe-skills-x5
 bash setup.sh $PROJECT_ROOT          # 铺设 .drobotics/ + 注入路由规则
 ```
 
-**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `d-robotics-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」——installer 会读 `components.d/` 注册、clone 仓库、在用户确认项目根目录后执行 `setup.sh` 并做安装后检查。
+**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」——installer 会读随包注册表、clone 仓库、在用户确认项目根目录后执行 `setup.sh` 并做安装后检查。
 
 安装完成后**重启 Agent 会话**使新技能生效。
 

@@ -57,6 +57,8 @@ The CLI lists all available skills and installs the selected one into the approp
 
 Run `/plugin`, browse the Discover tab, and install.
 
+The Hub plugin uses `rdk-skill-finder` to search the catalog. For a flat skill it returns the appropriate installation command; for a workspace-integrated skill it hands the request to `rdk-pack-installer`.
+
 ### Option 4: Clone a Pack repo directly
 
 Each Pack repo ships an `install.sh` supporting both symlink and copy modes across multiple agent runtimes:
@@ -96,18 +98,18 @@ cd oe-skills-s
 bash setup.sh $PROJECT_ROOT
 ```
 
-Or tell your AI (works with the Hub plugin from Option 3, which ships the pack-installer skill):
+Or tell your AI (works with the Hub plugin from Option 3, which ships `rdk-pack-installer`):
 
 ```
 Install D-Robotics OE-Skills-X5 into this project.
 ```
 
-The pack installer reads the pack registration in `components.d/`, clones the pack repo, runs `setup.sh` with your confirmed project root, and verifies the installed workspace. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S).
+`rdk-pack-installer` reads its bundled pack registry, clones the pack repo, runs `setup.sh` with your confirmed project root, and verifies the installed workspace. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S).
 
 ### Updating skills
 
 - Flat skills: `npx skills update` (or re-run `npx skills add d-robotics/rdk-skills` and select again).
-- Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder/installer skills.
+- Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder and installer skills.
 - DSH bundle: `dsh plugin --profile <name> update dsh-plugin-rdk` (skill content refreshes with each bundle release).
 - The catalog itself refreshes automatically every hour (sync pipeline) — cloned pack repos update with `git pull` + re-run `setup.sh`.
 
@@ -180,7 +182,7 @@ Follows the [Agent Skills specification](https://agentskills.io/specification):
 D-Robotics/rdk-skills/
 ├── skills/                      # mirror directory (written by sync pipeline, read-only)
 │   ├── README.md                 # install guidance
-│   ├── d-robotics-pack-installer/ # hub-native installer skill (catalog exception)
+│   ├── rdk-pack-installer/        # hub-native installer skill (catalog exception)
 │   ├── <skill-name>/             # flat-layout skills (RDK Device Skills)
 │   ├── oe-skills-x5/             # workspace pack mirror (bulk layout, X5 tool chain)
 │   └── oe-skills-s/              # workspace pack mirror (bulk layout, S-series tool chain)

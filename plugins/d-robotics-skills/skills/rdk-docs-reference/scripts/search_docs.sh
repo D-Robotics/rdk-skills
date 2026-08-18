@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # rdk-docs-reference: full-text search over the official D-Robotics doc repos
-# (rdk_x_doc / rdk_s_doc). Read-only; results are file:line:matched-line.
+# (rdk_x_doc / rdk_s_doc / tros_doc). Read-only; results are file:line:matched-line.
 #
 # Usage:
-#   search_docs.sh --query <kw> [--query <kw2> ...] [--repo x|s|all] [--limit N]
+#   search_docs.sh --query <kw> [--query <kw2> ...] [--repo x|s|tros|all] [--limit N]
 #   search_docs.sh --query <kw> --summary          # hits grouped by doc chapter
-#   search_docs.sh --toc [--query <kw>] [--repo x|s|all]  # list/filter doc paths
+#   search_docs.sh --toc [--query <kw>] [--repo x|s|tros|all]  # list/filter doc paths
 
 set -euo pipefail
 
@@ -36,8 +36,9 @@ repo_dirs() {
   case "$REPO" in
     x)   echo "$DOCS_ROOT/rdk_x_doc/docs" ;;
     s)   echo "$DOCS_ROOT/rdk_s_doc/docs" ;;
-    all) echo "$DOCS_ROOT/rdk_x_doc/docs $DOCS_ROOT/rdk_s_doc/docs" ;;
-    *) echo "invalid --repo '$REPO' (valid: x, s, all)" >&2; exit 1 ;;
+    tros) echo "$DOCS_ROOT/tros_doc/docs" ;;
+    all) echo "$DOCS_ROOT/rdk_x_doc/docs $DOCS_ROOT/rdk_s_doc/docs $DOCS_ROOT/tros_doc/docs" ;;
+    *) echo "invalid --repo '$REPO' (valid: x, s, tros, all)" >&2; exit 1 ;;
   esac
 }
 
@@ -53,6 +54,7 @@ if [ -z "$DIRS" ]; then
   echo "Fetch them first:" >&2
   echo "  git clone --depth 1 https://github.com/D-Robotics/rdk_x_doc.git $DOCS_ROOT/rdk_x_doc" >&2
   echo "  git clone --depth 1 https://github.com/D-Robotics/rdk_s_doc.git $DOCS_ROOT/rdk_s_doc" >&2
+  echo "  git clone --depth 1 https://github.com/D-Robotics/tros_doc.git $DOCS_ROOT/tros_doc" >&2
   exit 2
 fi
 
@@ -70,7 +72,7 @@ if [ "$TOC" -eq 1 ]; then
 fi
 
 if [ "${#QUERIES[@]}" -eq 0 ]; then
-  echo "usage: search_docs.sh --query <kw> [--query <kw2>] [--repo x|s|all] [--limit N] | --toc" >&2
+  echo "usage: search_docs.sh --query <kw> [--query <kw2>] [--repo x|s|tros|all] [--limit N] | --toc" >&2
   exit 1
 fi
 

@@ -165,10 +165,13 @@ jobs:
             echo "- orphan pruning" >> /tmp/changed-components.txt
           fi
 
+      - name: Run catalog tests
+        run: python3 -m unittest discover -s tests -v
+
       - name: Rebuild plugin catalog
         run: |
           set -euo pipefail
-          .github/scripts/build-plugins.sh || echo "::warning::build-plugins.sh failed — plugin distributions not updated this run"
+          .github/scripts/build-plugins.sh
           if ! git diff --quiet -- plugins/ \
               .claude-plugin/marketplace.json \
               .agents/plugins/marketplace.json \

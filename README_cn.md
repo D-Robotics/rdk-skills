@@ -57,6 +57,8 @@ CLI 会列出所有可用 Skill，选择后自动安装到对应 Agent 的 skill
 
 运行 `/plugin`，在 Discover 标签页浏览安装。
 
+Hub 插件通过 `rdk-skill-finder` 搜索目录：扁平 Skill 会返回对应安装命令；workspace 集成型 Skill 会交给 `rdk-pack-installer` 处理。
+
 ### 方式四：直接克隆 Pack 仓库
 
 每个 Pack 仓库自带 `install.sh`，支持 symlink 和 copy 两种模式，可同时安装到多个 Agent 运行时：
@@ -85,13 +87,13 @@ cd oe-skills-s
 bash setup.sh $PROJECT_ROOT
 ```
 
-或者告诉你的 AI（需先按方式三装好 Hub 插件，插件内含 pack 安装器 skill）：
+或者告诉你的 AI（需先按方式三装好 Hub 插件，插件内含 `rdk-pack-installer`）：
 
 ```
 Install D-Robotics OE-Skills-X5 into this project.
 ```
 
-pack 安装器会读取 `components.d/` 中的注册信息、克隆 Pack 仓库、在你确认项目根目录后执行 `setup.sh` 并校验安装结果，支持所有 `install_type: workspace` 的 Pack（OE 工具链 X5 和 S）。
+`rdk-pack-installer` 会读取随包注册表、克隆 Pack 仓库、在你确认项目根目录后执行 `setup.sh` 并校验安装结果，支持所有 `install_type: workspace` 的 Pack（OE 工具链 X5 和 S）。
 
 ### 更新 Skill
 
@@ -168,7 +170,7 @@ skills/<skill-name>/
 D-Robotics/rdk-skills/
 ├── skills/                      # 镜像目录（同步流水线写入，只读）
 │   ├── README.md                 # 安装指引
-│   ├── d-robotics-pack-installer/ # Hub 内置安装器 skill（catalog 例外）
+│   ├── rdk-pack-installer/        # Hub 内置安装器 skill（catalog 例外）
 │   ├── <skill-name>/             # 扁平布局 Skill（RDK Device Skills）
 │   ├── oe-skills-x5/             # workspace Pack 镜像（批量布局，X5 工具链）
 │   └── oe-skills-s/              # workspace Pack 镜像（批量布局，S 系列工具链）

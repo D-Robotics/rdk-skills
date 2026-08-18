@@ -2,6 +2,8 @@ import re
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 class PluginContractTests(unittest.TestCase):
     def setUp(self):
@@ -37,6 +39,35 @@ class PluginContractTests(unittest.TestCase):
             for route in retired:
                 pattern = rf"(?<![a-z0-9-]){re.escape(route)}(?![a-z0-9-])"
                 self.assertIsNone(re.search(pattern, text, re.I), f"{path}: {route}")
+
+    def test_plugin_definition_includes_three_hub_skills(self):
+        config = yaml.safe_load(
+            (self.repo / "plugins.d/d-robotics-skills.yml").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(
+            config["include_skills"],
+            [
+                "skills/rdk-skill-finder/",
+                "skills/rdk-pack-installer/",
+                "skills/rdk-docs-reference/",
+            ],
+        )
+
+    def test_generated_plugin_contains_three_hub_skills(self):
+        plugin_skills = self.repo / "plugins/d-robotics-skills/skills"
+        names = {path.name for path in plugin_skills.iterdir()}
+
+        self.assertEqual(
+            names,
+            {"rdk-skill-finder", "rdk-pack-installer", "rdk-docs-reference"},
+        )
+        self.assertTrue(
+            (plugin_skills / "rdk-pack-installer/references/pack-registry.json").is_file()
+        )
+        self.assertTrue(
+            (plugin_skills / "rdk-skill-finder/references/skill-index.json").is_file()
+        )
 
 
 if __name__ == "__main__":
