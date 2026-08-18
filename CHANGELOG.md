@@ -5,6 +5,18 @@
 
 本文件记录本项目的所有重要变更。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased]
+
+### 新增
+
+- 为 workspace Pack 提供随分发包提交的确定性注册表，并新增 `rdk-skill-finder`，可发现扁平 Skill 或将 workspace Skill 交接给安装器。
+
+### 变更
+
+- 将安装器统一为 `rdk-pack-installer`，使其从自身打包的注册表读取安装与验证契约；插件同时分发 finder、installer 和 `rdk-docs-reference`。
+- 在设备 Skill 源头及 Hub 镜像中移除失效路由，替换为现有能力或明确的 `rdk-docs-reference` 文档检索交接。
+- 统一公开许可证说明：代码与脚本采用 Apache-2.0，文档内容采用 CC-BY-4.0；Skill 顶层 frontmatter 继续遵循 ADR 0004 使用 `license: Apache-2.0`。
+
 ## [0.3.0] - 2026-08-04
 
 ### 变更
