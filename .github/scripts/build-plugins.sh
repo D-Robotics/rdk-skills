@@ -24,8 +24,11 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
-# Refresh and validate catalog data before any plugin distribution is removed.
-python3 .github/scripts/generate_plugin_catalog.py --repo-root .
+# Validate catalog inputs before any plugin distribution is removed. A dry run
+# checks includes without regenerating tracked catalog data.
+if [ "$DRY_RUN" -eq 0 ]; then
+  python3 .github/scripts/generate_plugin_catalog.py --repo-root .
+fi
 python3 .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-includes
 
 # Load defaults

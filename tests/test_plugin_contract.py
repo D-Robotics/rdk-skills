@@ -1,4 +1,7 @@
 import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -68,6 +71,42 @@ class PluginContractTests(unittest.TestCase):
         self.assertTrue(
             (plugin_skills / "rdk-skill-finder/references/skill-index.json").is_file()
         )
+
+    def test_dry_run_does_not_regenerate_catalog_files(self):
+        missing = [tool for tool in ("bash", "yq", "rsync") if shutil.which(tool) is None]
+        if missing:
+            self.skipTest(f"build dependencies unavailable: {', '.join(missing)}")
+
+        catalog_paths = (
+            self.repo / "skills/rdk-pack-installer/references/pack-registry.json",
+            self.repo / "skills/rdk-skill-finder/references/skill-index.json",
+        )
+        before = {
+            path: (path.read_bytes(), path.stat().st_mtime_ns) for path in catalog_paths
+        }
+
+        # Normalize a temporary copy because Windows checkouts materialize the
+        # tracked shell script with CRLF while CI executes its LF blob directly.
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            script = Path(temporary_directory) / "build-plugins.sh"
+            script.write_text(
+                (self.repo / ".github/scripts/build-plugins.sh").read_text(
+                    encoding="utf-8"
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            result = subprocess.run(
+                ["bash", str(script), "--dry-run"],
+                cwd=self.repo,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for path, snapshot in before.items():
+            self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), snapshot)
 
 
 if __name__ == "__main__":
