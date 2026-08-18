@@ -142,6 +142,13 @@ def load_index(path: Path) -> dict[str, Any]:
         return validate_index(json.load(index_file))
 
 
+def write_json(payload: dict[str, Any]) -> None:
+    """Write CLI JSON as UTF-8 independently of the console code page."""
+    sys.stdout.buffer.write(
+        (json.dumps(payload, ensure_ascii=False) + "\n").encode("utf-8")
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("query", metavar="QUERY")
@@ -165,9 +172,9 @@ def main(argv: list[str] | None = None) -> int:
             limit=args.limit,
         )
     except (OSError, ValueError, json.JSONDecodeError) as error:
-        print(json.dumps({"error": str(error), "matches": [], "fallback": None}, ensure_ascii=False))
+        write_json({"error": str(error), "matches": [], "fallback": None})
         return 1
-    print(json.dumps(result, ensure_ascii=False))
+    write_json(result)
     return 0
 
 

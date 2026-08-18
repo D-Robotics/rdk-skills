@@ -56,6 +56,28 @@ class SearchCatalogTests(unittest.TestCase):
         self.assertEqual(result["matches"][0]["install_type"], "workspace")
         self.assertEqual(result["matches"][0]["action"], "use rdk-pack-installer")
 
+    def test_cli_writes_utf8_json_under_cp936_output_encoding(self):
+        environment = {
+            key: value
+            for key, value in os.environ.items()
+            if key not in {"PYTHONIOENCODING", "PYTHONUTF8"}
+        }
+        environment["PYTHONIOENCODING"] = "cp936"
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "模型量化", "--install-type", "workspace"],
+            env=environment,
+            capture_output=True,
+            check=False,
+        )
+        try:
+            stdout = completed.stdout.decode("utf-8")
+        except UnicodeDecodeError as error:
+            self.fail(f"CLI stdout was not UTF-8: {error}")
+        payload = json.loads(stdout)
+        self.assertEqual(completed.returncode, 0, completed.stderr.decode("cp936"))
+        self.assertEqual(payload["matches"][0]["install_type"], "workspace")
+        self.assertEqual(payload["matches"][0]["action"], "use rdk-pack-installer")
+
     def test_no_match_uses_docs_fallback_without_inventing_skill(self):
         result = self.finder.search(self.index, "完全无关的诗歌创作")
         self.assertEqual(result["matches"], [])
