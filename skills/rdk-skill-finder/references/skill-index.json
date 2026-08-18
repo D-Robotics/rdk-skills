@@ -1,0 +1,733 @@
+{
+  "schema_version": 1,
+  "skills": [
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-adaptation",
+      "description": "为用户的浮点 PyTorch 模型适配地平线机器人公司的 QAT 工具 `horizon_plugin_pytorch`。这是一个编排型 skill，必须按固定顺序依次调用：`__SKILL_j6-plugin-__set-march` → `__SKILL_j6-plugin-__insert-quant-dequant` → `__SKILL_j6-plugin-__dynamic-block` → `__SKILL_j6-plugin-__prepare` → `__SKILL_j6-plugin-__set-fake-quantize`。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__adaptation",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-consistency-debug",
+      "description": "当用户遇到 Horizon Plugin PyTorch 训练部署一致性问题（QAT 模型正常但 BC/HBM 掉点、export/convert/compile 阶段精度偏差）时使用。本 skill 引导用户按 qat.pt -> qat.export.pt -> qat.bc -> quantized.bc -> hbm 分段定位问题，并在每个阶段帮助适配工具、分析工具产出物。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__consistency-debug",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block",
+      "description": "在适配 horizon_plugin_pytorch（prepare/JIT_STRIP）时，自动为动态控制流/动态循环中涉及算子替换或融合的逻辑添加 dynamic_block 标注，避免 scope/替换错乱与 forward 报错。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__dynamic-block",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-export",
+      "description": "使用 horizon_plugin_pytorch 的 hbdk4.export 将 QAT 模型导出为 HBIR IR 模块。以独立导出脚本的形式执行，不在训练或评测脚本中添加导出逻辑。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__export",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-graph-diff",
+      "description": "对比两份 FX Graph 计算图文件，精确定位计算图结构和算子参数差异，并根据 diff 报告在原始模型代码中找到对应的差异位置。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__graph-diff",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-hbdk-generating",
+      "description": "为基础网络结构生成从量化到编译的完整流程代码（set_march → Quant/DeQuant → 量化配置 → prepare → 校准 → QAT → export → convert → remove_io_op → statistics → compile HBM）。当用户需要同时覆盖量化和编译多个步骤时触发，如\"帮我写量化编译全流程代码\"、\"Conv+BN+ReLU 量化部署\"、\"地平线量化编译\"、\"基础结构量化到 HBM\"。即使用户没有明确说\"全流程\"，只要涉及从量化到编译的多个步骤都应触发。如果用户只需要量化或只需要编译，应路由到对应子 skill。关键词：\"量化编译\"、\"量化部署\"、\"全流程\"、\"set_march 到 HBM\"、\"地平线量化\"、\"Horizon 量化编译\"、\"基础结构量化\"、\"QAT 量化编译\"。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__hbdk-generating",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant",
+      "description": "为浮点 PyTorch 模型插入部署边界 QuantStub/DeQuantStub（horizon_plugin_pytorch）。满足：quant/dequant 是部署边界；每个输入/输出各自独立 stub；QuantStub 初始化不设置 scale。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__insert-quant-dequant",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-model-check-result",
+      "description": "在 horizon_plugin_pytorch 量化配置检查中，读取并分析 prepare 产出的 model_check_result.txt，定位模型结构与 qconfig 问题（算子融合、共享模块、qconfig 异常、averaging_constant 非默认值、算子输入浮点检查）。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__model-check-result",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-precision-tuning",
+      "description": "当用户遇到 Horizon Plugin PyTorch 精度调优问题时使用。本 skill 聚焦 PyTorch 侧精度调优，不处理 export、convert、compile 或板端一致性问题。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__precision-tuning",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-prepare",
+      "description": "在适配 horizon_plugin_pytorch 的过程中对浮点模型执行 prepare（仅添加 prepare 调用；qconfig_setter 固定为全部双 int8 模板；不包含 dynamic_block 相关修改）。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__prepare",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization",
+      "description": "为基础网络结构生成量化流程代码（set_march → 插入 Quant/DeQuant → 配置量化参数 → prepare → 校准 → QAT 训练）。务必在用户提到模型量化、量化流程、QAT 校准、Horizon 量化适配、HistogramObserver/MinMaxObserver 配置、量化参数配置、校准训练、QuantStub 插入时触发此 skill，即使用户只问其中一个步骤，只要涉及 Horizon 量化流程的任何环节都应触发。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__quantization",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize",
+      "description": "在适配 horizon_plugin_pytorch 的量化流程中，为模型设置 fake quantize 状态（QAT/CALIBRATION/VALIDATION）。只添加/调用 set_fake_quantize，不做其他修改。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__set-fake-quantize",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-set-march",
+      "description": "在适配 horizon_plugin_pytorch 的过程中，为脚本或入口添加 march 设置逻辑。",
+      "install_type": "workspace",
+      "name": "__SKILL_j6-plugin-__set-march",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon-router/board-detection",
+      "description": "板卡硬件平台检测 Skill。当任务涉及板端运行、板端推理、远端 HBM、性能压测或 BPU 实测，且 .horizon/.env.board 不存在或不完整时触发。自动完成板卡 IP 获取、SSH 架构探测、平台信息写入。",
+      "install_type": "workspace",
+      "name": "board-detection",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/bsp-bootloader-build",
+      "description": "Build the minimal boot image (miniboot / nand_disk.img) from the bootloader source using xbuild.sh lunch — covers selecting the board config and compiling uboot/miniboot for RDK X5. Use when the user wants to rebuild bootloader/miniboot, asks what nand_disk.img is, or needs a custom minimal boot firmware. 触发词:miniboot、bootloader、uboot、nand_disk.img、xbuild、最小启动镜像. Do not use for kernel or full image builds; X3 flow is not yet documented — say so instead of guessing.",
+      "install_type": "flat",
+      "name": "bsp-bootloader-build",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-deb-build",
+      "description": "Rebuild the official hobot-* debian packages with mk_debs.sh (all or a named package like hobot-boot / hobot-dtb / hobot-multimedia). Use when the user wants to repackage a hobot-* component, inject fixes into the image via deb, or asks which packages can be built. 触发词:hobot-* 包、mk_debs、deb 包、重新打包、hobot-boot、hobot-configs. Do not use for kernel compilation itself (bsp-kernel-build) or full images (bsp-image-build).",
+      "install_type": "flat",
+      "name": "bsp-deb-build",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-env-setup",
+      "description": "Prepare the host cross-compilation environment for RDK BSP development — Ubuntu host packages, the gcc-arm-11.2 aarch64 toolchain under /opt, the repo tool, and GitHub SSH keys. Use when the user wants to set up a build machine for RDK X3/X5 system development, or hits missing-build-tool errors (make/cmake/bc/bison not found, toolchain missing). 触发词:BSP 环境、编译环境搭建、交叉编译工具链、gcc-arm-11.2、repo 工具、build 机器准备. Do not use for S-series environments (bsp-s-series) or for building images/kernels directly (bsp-image-build / bsp-kernel-build).",
+      "install_type": "flat",
+      "name": "bsp-env-setup",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-image-build",
+      "description": "Build an RDK system image identical to the official release using pack_image.sh — choose a build_params config (ubuntu-22.04 desktop/server × rdk-x5/rdk-x3 × beta/release), local build mode -l, and third_packages preinstalls. Use when the user wants to build/flash-able RDK OS image, customize preinstalled debs, or asks what pack_image.sh does. 触发词:系统镜像、整机镜像、pack_image.sh、desktop/server 版本、build_params、third_packages、.img. Do not use for kernel-only builds (bsp-kernel-build), deb-only builds (bsp-deb-build), or S-series (bsp-s-series).",
+      "install_type": "flat",
+      "name": "bsp-image-build",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-kernel-build",
+      "description": "Build the RDK Linux kernel, device tree, and driver modules with mk_kernel.sh (X5 also offers mk_kernel_rt.sh for the real-time kernel). Use when the user wants to compile the kernel, rebuild dtb, add driver modules, or needs kernel_headers for out-of-tree builds. 触发词:编译内核、内核、设备树、dtb、驱动模块、mk_kernel、实时内核、RT 内核、kernel headers. Do not use for full images (bsp-image-build), deb packaging (bsp-deb-build), or S-series (bsp-s-series).",
+      "install_type": "flat",
+      "name": "bsp-kernel-build",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-rootfs-custom",
+      "description": "Make and customize the RDK Ubuntu root filesystem — samplefs/make_ubuntu_rootfs.sh (desktop/server), debootstrap/chroot tooling, the package-list variables (BASE/DESKTOP/SERVER_PACKAGE_LIST…), and hobot_customize_rootfs.sh for users/services. Use when the user wants to build a custom samplefs, add/remove preinstalled apt or python packages, or create users/autostart entries in the image. 触发词:根文件系统、rootfs、samplefs、debootstrap、定制系统、预装软件包、创建用户、自启动. Do not use for whole-image builds (bsp-image-build) or S-series (bsp-s-series).",
+      "install_type": "flat",
+      "name": "bsp-rootfs-custom",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-s-series",
+      "description": "Entry point for S-series (S100/S100P/S600) BSP work — where to get the BSP source (developer.d-robotics.cc/resource download center), where the official environment/build guides live (rdk_s_doc §7.2.1 environment, §7.6 rdk_gen build system with ubuntu-2404_*_rdk-s600 conf), and how it differs from the X-series build flow. Use when the user wants S-series BSP source, S100/S600 system build, or asks whether X-series bsp skills apply to S boards. 触发词:S100 BSP、S600 BSP、S 系列源码、S 系列系统构建、nash、rdk_s_doc、下载中心. Do not apply X3/X5 build commands to S boards.",
+      "install_type": "flat",
+      "name": "bsp-s-series",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/bsp-source-sync",
+      "description": "Sync the RDK Linux source tree (kernel, bootloader, hobot-* package sources) using repo and the official manifests — X5 uses D-Robotics/x5-manifest, X3 uses D-Robotics/manifest. Use when the user wants to download/checkout the BSP source, switch branches, or repo init/sync fails. 触发词:repo init、repo sync、同步源码、下载源码、manifest、源码树、develop 分支. Do not use for building after the source is ready (bsp-image-build and later skills), or for S-series source acquisition (bsp-s-series).",
+      "install_type": "flat",
+      "name": "bsp-source-sync",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon_tc_ui/hb-analyzer-performance",
+      "description": "使用 hb_analyzer 分析 J5/J6 模型性能。当用户提到模型文件（.onnx/.bc/.hbm）并想了解性能、延时、带宽、BPU利用率、瓶颈、实测、对比时触发。常见场景：评测模型、检查性能、找瓶颈、板端测试、分析 perf JSON。关键词：\"性能\"、\"延时\"、\"带宽\"、\"BPU\"、\"瓶颈\"、\"太慢\"、\"实测\"、\"对比\"、\"评测\"、\"hb_analyzer\"。即使用户没明确说\"分析\"，只要提到模型+性能相关词就应该触发。",
+      "install_type": "workspace",
+      "name": "hb-analyzer-performance",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/hmct",
+      "description": "HMCT 模型转换与 PTQ 量化总入口——优先使用 hb_compile + YAML 配置方式。 根据用户意图自动路由： (1) 提供了校准数据 → 使用 hb_config_generator 生成 YAML 配置，再调用 j6-hbdk-compile 执行编译； (2) 未提供校准数据 → 使用 hb_config_generator 生成快速验证配置，再调用 j6-hbdk-compile 验证； (3) 用户希望进行精度调优 → 转交 j6-hmct-cosine-similarity-tuning SKILL 执行多阶段调优； (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。 当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。",
+      "install_type": "workspace",
+      "name": "hmct-workflow",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon-router",
+      "description": "OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 Horizon 子 Skill。",
+      "install_type": "workspace",
+      "name": "horizon-router",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon_tc_ui/horizon-tc-ui",
+      "description": "OpenExplorer 工具链 CLI 包的集成 Skill。适用于处理 hb_compile、hb_model_info、 hb_verifier、hb_analyzer、hb_config_generator、hb_eval_preprocess 等工具相关问题， 包括 YAML 配置编写、ONNX/Caffe 模型编译、PTQ 量化、HBIR/HBM 产物生成、 模型信息查看、精度验证、性能分析、评估数据预处理和板端部署验证。 当用户提到 OpenExplorer、horizon_tc_ui、工具链、编译模型、生成 YAML、量化、 calibration、HBIR、HBM、march、fast-perf、check 模式、板端推理、 定点/浮点 BC 模型判断等场景时，应优先使用本 Skill。",
+      "install_type": "workspace",
+      "name": "horizon-tc-ui",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp/j6-board-monitor",
+      "description": "RDK S 系列开发板资源监控与推理期间资源采集。当用户需要监控 BPU 占用率、DDR 带宽、内存使用时触发。支持三种场景：(1) Scenario A：CV 模型在指定帧率（如 10Hz）推理期间同步采集 BPU/DDR/内存数据；(2) Scenario B：独立监控板端硬件资源（无推理负载）；(3) Scenario C：LLM 模型循环推理期间同步采集资源数据，使用 simple_demo_request 保持模型持续运行。关键词：BPU 监控、DDR 带宽、内存使用、资源监控、设定帧率推理、LLM 推理监控、hrt_ucp_monitor、hrut_ddr、simple_demo_request、板端资源评估。注意：不要用 hbm_infer/gRPC 做高频推理监控（通信开销太大）。",
+      "install_type": "workspace",
+      "name": "j6-board-monitor",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/hbdk/j6-hbdk-compile",
+      "description": "通用模型编译 skill。基于 YAML 配置文件驱动，支持 ONNX 和 BC 模型格式。支持从 PTQ config 自动提取输入预处理参数。工作流：生成配置 -> 默认必须经用户确认 -> 再执行编译与报告。Use when the user mentions 模型编译、compile、导出 hbm、生成上板产物、pyramid 输入、resizer 输入。",
+      "install_type": "workspace",
+      "name": "j6-hbdk-compile",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile",
+      "description": "为量化后的模型生成导出编译流程代码（export QAT BC → convert → remove_io_op → statistics 检查 CPU 算子 → compile HBM）。务必在用户提到导出编译、HBM 编译、模型部署编译、QAT BC 导出、remove_io_op、CPU 算子检查、模型编译部署、HBM 生成时触发此 skill，即使用户只提到其中一个步骤，只要涉及从 QAT BC 到 HBM 的任何环节都应触发。",
+      "install_type": "workspace",
+      "name": "j6-hbdk-export-compile",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/hmct/j6-hmct-cosine-similarity-tuning",
+      "description": "HMCT PTQ 精度调优工作流。自动按 INT8→INT16→dual-int16→FP16 逐级验证上限， 结合节点敏感度分析渐进回退，找到满足 Cosine Similarity 阈值（默认 >=0.99）的 最小混精度 quant_config，产出达标配置与调优报告。 触发关键词：HMCT 精度调优、PTQ 调优、量化精度、cosine similarity 不达标、混合精度。",
+      "install_type": "workspace",
+      "name": "j6-hmct-cosine-similarity-tuning",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp/j6-ucp-hbm-infer",
+      "description": "Generate X86-side Python client code for hbm_infer, the Python SDK that connects to BPU boards via gRPC to deploy and run HBM model inference. Use this skill when the user wants to write Python code using hbm_infer client APIs — including HbmRpcSession (standard/flexible mode), HTensor for transmission optimization, output_config for output filtering, and related utilities like get_input_info, get_output_info, get_profile, compress_option, core_id. Triggers on writing or debugging Python inference scripts, optimizing data transfer between X86 and board, or any question about the hbm_infer Python client API.",
+      "install_type": "workspace",
+      "name": "j6-ucp-hbm-infer",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp/j6-ucp-infer-generating",
+      "description": "提供基于 UCP 的模型推理 C++ 代码生成能力。当用户询问 UCP/DNN 推理接口怎么用、某个 API 的参数含义、如何加载模型、如何分配 tensor 内存、如何提交推理任务、Cache 同步怎么做，或要求只生成推理流程中某个模块的代码时使用。",
+      "install_type": "workspace",
+      "name": "j6-ucp-infer-generating",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp/j6-ucp-model-perf-eval",
+      "description": "自动化 hrt_model_exec perf 板端性能评测。触发条件：模型性能测试、benchmark、性能评估、板端测试、thread_num/core_id 参数扫描、吞吐量/延迟对比、远程部署 hrt_model_exec 运行 perf。",
+      "install_type": "workspace",
+      "name": "j6-ucp-model-perf-eval",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp/j6-ucp-perfetto-trace-analysis",
+      "description": "Use this skill whenever the user wants to quickly locate, diagnose, or analyze likely performance bottlenecks in a UCP model inference Perfetto trace. Trigger on requests about UCP inference traces, `.pftrace` files, inference latency, slow inference, pipeline stalls, CPU/BPU gaps, OpInfer delays, dispatch or response delay, low effective occupancy, critical-path investigation, or trace-based performance triage in the UCP inference path. This skill is specialized for UCP / UCP-like inference-chain performance analysis and fast bottleneck localization, not generic Perfetto profiling unrelated to UCP inference.",
+      "install_type": "workspace",
+      "name": "j6-ucp-perfetto-trace-analysis",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp/j6-ucp-perfetto-trace-catcher",
+      "description": "Capture UCP (Horizon Robotics inference SDK) Perfetto traces from a J6 development board. Use this skill whenever the user wants to grab UCP traces, capture Perfetto traces on a Horizon dev board, debug UCP scheduling issues with trace data, or pull .pftrace files from a remote board. Also trigger when the user mentions UCP performance analysis, UCP trace, hrt_model_exec tracing, or BPU trace capture on J6/S1000 platforms. Do NOT use for DSP trace or Chrome trace.",
+      "install_type": "workspace",
+      "name": "j6-ucp-perfetto-trace-catcher",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon-router/oe-llm-package-detection",
+      "description": "OE-LLM 包环境检测 Skill。当任务涉及 LLM 量化、LLM 压缩、LLM 编译、板端 LLM 推理等 LLM 工具链操作，且 .horizon/.env.oe-llm-package 不存在时触发。自动完成 OE-LLM 包路径定位、版本采集、本地环境匹配检查、GPU Docker 判定，并将结果写入 .env 文件。",
+      "install_type": "workspace",
+      "name": "oe-llm-package-detection",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon-router/oe-llm-package-install",
+      "description": "OE-LLM 包本地安装 Skill。在 oe-llm-package-detection 完成后触发，询问用户是否本地安装。若用户同意，则检测本地 Python / CUDA / PyTorch 版本，匹配 OE-LLM 包内 whl，创建 venv 全量安装，更新 .env 为 EXECUTION_MODE=local。",
+      "install_type": "workspace",
+      "name": "oe-llm-package-install",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon-router/oe-package-detection",
+      "description": "OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .horizon/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、GPU/CPU Docker 判定，并将结果写入 .env 文件。",
+      "install_type": "workspace",
+      "name": "oe-package-detection",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/horizon-router/oe-package-install",
+      "description": "OE 包本地安装 Skill。在 oe-package-detection 完成后触发，询问用户是否本地安装。若用户同意，则检测本地 Python / CUDA / PyTorch 版本，匹配 OE 包内 whl，创建 venv 全量安装，更新 .env 为 EXECUTION_MODE=local。",
+      "install_type": "workspace",
+      "name": "oe-package-install",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/rdk-accessories",
+      "description": "Bring up D-Robotics OFFICIAL finished accessories — GS130W / GS130Wi binocular depth cameras, the RDK IMU Module (Bosch BMI088), and the RDK S100/S600 Camera & MCU-Port expansion boards — selection, wiring/FFC orientation, mounting, and driver/SDK bring-up. Use for these named parts, their launch files, CAN/GMSL/MIPI count, or board support. 触发词:GS130W、GS130Wi、双目相机怎么接、22pin 线序、mipi_cam dual、RDK IMU 模组、BMI088、IMU 读数、IIO 驱动、rdk-imu-module-sdk、S100 相机扩展板、S600 相机扩展板、MCU 扩展板、几路 CAN、几路 GMSL、GMSL 供电、扩展板装在哪块板。Routing — DIY sensor/motor/LED on GPIO/I2C/SPI/PWM → rdk-peripheral-cookbook; board 40PIN/CAN/Ethernet/compute facts → rdk-hardware; unsupported MIPI sensor → rdk-camera-setup; model deploy → rdk-model-deploy; TROS node development has no dedicated Skill: use rdk-docs-reference to search tros_doc.",
+      "install_type": "flat",
+      "name": "rdk-accessories",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-board-delegate",
+      "description": "S-series (S100/S100P/S600) \"big-brain / little-brain\" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc, IPC, UART, CAN) and Acore/Linux-specific hbmem zero-copy, CPU↔MCU/VDSP/BPU IPC, PCIe, EtherCAT, PTP/gPTP, OTA/miniboot, and VDSP. Covers OpenClaw board-task delegation. Use for S-series MCU firmware, real-time joint/motor control, IPC, EtherCAT/PTP, PCIe, upgrades, VDSP, or CPU+BPU+MCU architecture. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — S-series .hbm compile → horizon-router; ready-made models → rdk-model-zoo; ROS/stereo/lidar application development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.",
+      "install_type": "flat",
+      "name": "rdk-board-delegate",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-board-knowledge",
+      "description": "Identify the RDK board, confirm its SoC/OS/TROS baseline (BPU TOPS → rdk-hardware), diagnose camera/model/BPU/TROS/ROS2/APT/GPIO/I2C/serial/power/network errors, correct common misconceptions, and flash S-series (S100/S100P/S600) with xburn DFU/Fastboot. Use for errors/logs, board identity, broken board functions, FAQ-style questions, or S-series flashing. 触发词:报错、排查、诊断、卡死、连不上、识别板型、确认板子、是哪块板、板型基线、系统版本、摄像头没画面、模型跑不了、ros2 command not found、NO_PUBKEY、GPIO 权限、供电不足、under-voltage、xburn、烧录、刷机、进下载模式、DFU、Fastboot、变砖、S100/S600 烧录、官方 FAQ、默认账户密码。Routing — pin/connector/spec facts → rdk-hardware; self-trained conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; peripheral drivers → rdk-peripheral-cookbook; product selection → rdk-ecosystem; exact docs → rdk-docs-reference.",
+      "install_type": "flat",
+      "name": "rdk-board-knowledge",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-camera-setup",
+      "description": "Detect, connect, and verify MIPI/USB cameras on D-Robotics RDK devices using i2cdetect and official pydev_demo samples. Use when the user connects a camera and wants to confirm it works, gets no image or a black screen, or i2cdetect finds no address. Triggers include 摄像头, MIPI, USB 相机, IMX219, OV5647, IMX477, 出图, 黑屏, 扫不到地址, mipi_cam, /dev/video0. Do not use for sensor driver development or ISP tuning — point to official 07_Advanced_development docs.",
+      "install_type": "flat",
+      "name": "rdk-camera-setup",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-command-manual",
+      "description": "Command-manual lookup for RDK-specific commands (hrut_somstatus, hrut_boardid, hrut_socuid, hrut_ps, rdkos_info, rdk-miniboot-update, rdk-backup, srpi-config, devmem) plus the Linux command appendix (apt/dmesg/ip/scp/tar...) as documented by D-Robotics. Use whenever the user asks what a command does, its syntax/options/flags, or which boards it applies to — the command is the anchor, not the symptom. Answer with exact syntax, per-board differences (X3 vs X5 vs Ultra vs S100/S100P/S600), and the official doc source. 触发词:hrut_somstatus 怎么读、hrut_boardid 选项含义、hrut_socuid、hrut_ps、rdkos_info -d 输出什么、rdk-miniboot-update 怎么用、rdk-backup 备份、srpi-config 有哪些菜单、devmem 读写寄存器、这条命令哪块板能用、命令语法/选项/适用板型。Routing — a command threw an error and you need symptom-based triage → rdk-board-knowledge; peripheral (camera/GPIO/I2C/UART/PWM) driver setup → rdk-peripheral-cookbook; locate a GitHub repo/source → rdk-source-map; locate an official doc-site chapter/URL → rdk-docs-reference; pure hardware/pinout facts → rdk-hardware.",
+      "install_type": "flat",
+      "name": "rdk-command-manual",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-diagnostic",
+      "description": "Read-only health snapshot for D-Robotics RDK boards (X3/X5/Ultra/S100/S600). Use when the user asks what board or SoC this is, memory size, temperature, BPU load, what is running, or why the board is slow, hot, or out of memory. Triggers include 板卡型号, 多大内存, 温度, 发烫, 很烫, 特别烫, 很慢, 卡顿, BPU 占用, 设备快照, 跑着什么, hrut_somstatus, rdkos_info. Do not use to change settings, stop services, or free memory — hand off to rdk-system-config, rdk-headless-mode, or rdk-memory-audit.",
+      "install_type": "flat",
+      "name": "rdk-diagnostic",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-docs-reference",
+      "description": "Search and quote official D-Robotics documentation (rdk_x_doc / rdk_s_doc / tros_doc) to answer RDK knowledge questions with sourced citations instead of memory. Use for pin definitions, interface specs, FAQ errors, srpi-config options, config.txt, board differences, release notes, TROS installation and node/application documentation, and as the fallback for any RDK question no workflow skill covers. Triggers include 官方文档, 文档里怎么说, FAQ, 引脚定义在哪查, 接口规格, 支持什么分辨率, S100 和 S600 区别, TROS 节点开发. Do not use as a substitute for live measurement — hand real device state to rdk-diagnostic or rdk-memory-audit.",
+      "install_type": "flat",
+      "name": "rdk-docs-reference",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-ecosystem",
+      "description": "RDK board selection — which board to buy (X3/X5/Ultra/S100/S100P/S600), whether YOLO/LLM/VLM will run, comparison with Jetson/Raspberry Pi/RK3588, LLM/VLM expectations, and official ecosystem entry points. Use when choosing/comparing boards or asking \"can it run X\". 触发词:买哪块板、选型、X3 还是 X5、S100 还是 S600、能不能跑 DeepSeek、能不能跑 Qwen、能不能跑 7B、RDK 和 Jetson/树莓派/RK3588 哪个好、跨平台对比、端侧大模型期待、VLM 能跑吗、Model Zoo、NodeHub 在哪、官方资料入口。Routing — RDK-vs-X stays here; single-platform specs/toolchain → jetson-knowledge / rpi-knowledge / rk-knowledge; hardware facts → rdk-hardware; on-board model deployment → rdk-model-deploy; LLM/VLM runtime → rdk-llm-deployment; GitHub source → rdk-source-map; authoritative docs → rdk-docs-reference; command syntax → rdk-command-manual.",
+      "install_type": "flat",
+      "name": "rdk-ecosystem",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-embodied-lerobot",
+      "description": "Deploy a trained embodied-AI policy onto an RDK board — LeRobot ACT imitation policies and Pi0 VLA (openpi) — by exporting to ONNX, compiling to a BPU `.hbm`, and running the on-board control loop that drives a robot arm. Use whenever the user has an ACT checkpoint or a Pi0 model and wants it on RDK S100/S100P/S600, mentions export_bpu_actpolicy.py / bpu_control_robot.py / build_all.sh / hbm-runtime / openpi_runtime / piper_node, or asks \"怎么把 ACT 部署到板上 / Pi0 怎么跑\". 触发词:具身智能、ACT 部署、模仿学习策略上板、LeRobot 上 RDK、Pi0、openpi、VLA、视觉语言动作、机械臂策略、bpu_control_robot、export_bpu_actpolicy、SO-101 跑到 S100、双臂 mango。Routing — generic non-policy .onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for the board's official toolchain docs; ros2 commands/env → rdk-tros-setup; on-board LLM/VLM chat & voice → rdk-llm-deployment; S100 CPU/BPU/MCU heterogeneous split, firmware burn, board-agent handoff → rdk-board-delegate; raw error-code lookup → rdk-board-knowledge.",
+      "install_type": "flat",
+      "name": "rdk-embodied-lerobot",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-gpio-40pin",
+      "description": "Use the 40PIN interface on D-Robotics RDK devices with the preinstalled Hobot.GPIO Python library, covering GPIO, I2C, SPI, UART, and PWM wiring and first-run samples. Use when the user wants to light an LED, read a sensor, use serial/I2C/SPI/PWM on the 40PIN header, or asks about pin definitions and voltage levels. Triggers include 点亮 LED, 点灯, GPIO, 40PIN, 引脚定义, 串口, UART, I2C 传感器, PWM, Hobot.GPIO, 3.3V. Do not use for MIPI camera hookup (rdk-camera-setup) or kernel driver development.",
+      "install_type": "flat",
+      "name": "rdk-gpio-40pin",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-hardware",
+      "description": "Hardware facts for RDK boards: six-board specs (X3/X5/Ultra/S100/S100P/S600), 40PIN/GPIO and I2C/SPI/UART/PWM, power/LEDs, display, network/IP, CAN, TOPS/RAM, cooling, OS lines, and system paths. Use for board-specific pinouts, interfaces, voltage, credentials, model directories, IP, capacity, or hardware comparisons. 触发词:各板引脚一样吗、40PIN怎么接、IO电平、默认用户名密码、模型目录在哪、CAN口、网口默认IP、算力多少TOPS、BPU算力、TOPS对比、X3算力、X5算力、内存多大、供电几V、HDMI分辨率、TROS路径、板型怎么查。Routing — error-code/boot failure → rdk-board-knowledge; peripheral control → rdk-peripheral-cookbook; on-board inference → rdk-model-deploy; own-model conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; camera bringup → rdk-camera-setup; board selection → rdk-ecosystem.",
+      "install_type": "flat",
+      "name": "rdk-hardware",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-headless-mode",
+      "description": "Safely and reversibly disable or restore the desktop (lightdm) and non-essential services on D-Robotics RDK devices to free memory and CPU. Use when the user wants to run headless, disable the GUI at boot, stop unnecessary services, or restore the desktop later. Triggers include 关桌面, 关闭桌面, 恢复桌面, 图形界面, 不进桌面, 关服务省内存, lightdm, 无头模式. Never touches ssh or network services. Do not use for CPU frequency or thermal settings (rdk-system-config).",
+      "install_type": "flat",
+      "name": "rdk-headless-mode",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-llm-deployment",
+      "description": "Run on-device LLM / VLM chat and the voice stack (ASR→LLM→TTS, plus the xiaozhi 小智 assistant) on D-Robotics RDK boards. Covers hobot_llamacpp GGUF LLM/VLM on X5/S100, the S600 oellm_runtime / D-Robotics_LLM_S600 SDK path, the legacy hobot_llm on X3, and sensevoice_ros2 + hobot_tts. Use whenever the user wants a chatbot / 看图问答 / 语音助手 on the board, asks which LLM/VLM a board can run, or hits a board↔stack mismatch (e.g. trying hobot_llamacpp on S600). 触发词:端侧大模型、在板上跑 LLM、llama.cpp BPU、GGUF、hobot_llamacpp、InternVL、SmolVLM、Qwen3、VLM 看图问答、语音助手、小智、xiaozhi、语音识别、ASR、sensevoice、语音合成、TTS、hobot_tts、hobot_llm、oellm、S600 跑大模型。Routing — robot ACTION policies (VLA / Pi0 / LeRobot) → rdk-embodied-lerobot; ready-made vision detection/classification/segmentation + CLIP perception models → rdk-model-zoo; \"can THIS board even run an LLM\" sizing/expectation only → rdk-ecosystem; ROS2 env setup → rdk-tros-setup.",
+      "install_type": "flat",
+      "name": "rdk-llm-deployment",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-log-forensics",
+      "description": "Read-only crash and log forensics for D-Robotics RDK devices — extract kernel errors from dmesg, list failed systemd units, detect coredumps and abnormal reboots, and summarize evidence for root-cause analysis. Use when a program crashed, the board rebooted or froze unexpectedly, a service will not start, or the user pastes an error asking what the logs say. Triggers include 崩溃, 死机, 自动重启, 突然重启, 段错误, Segmentation fault, coredump, 内核报错, dmesg 报错, journalctl, 服务起不来, 起不来了, 开机失败, oops. Do not use for live performance snapshots (rdk-diagnostic), memory measurement (rdk-memory-audit), or apt/disk maintenance (rdk-system-maintain).",
+      "install_type": "flat",
+      "name": "rdk-log-forensics",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-memory-audit",
+      "description": "Measure DRAM and CMA/ION memory on D-Robotics RDK devices and verify reclamation with before/after data. Use when the user asks how much memory is left, wants to measure or free memory, or mentions drop_caches, CMA, ION, ion alloc failed. Triggers include 内存不够, 内存不足, 还剩多少内存, 实测内存, 腾出内存, 释放内存, 清缓存, 内存够不够. Do not use to stop the desktop or services (rdk-headless-mode) and do not quote doc theory instead of live measurement.",
+      "install_type": "flat",
+      "name": "rdk-memory-audit",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-model-benchmark",
+      "description": "Emit structured latency/FPS benchmark metrics for quantized models on D-Robotics RDK devices using the official hrt_model_exec perf tool, including a baseline mode with preinstalled models. Use when the user wants to measure inference latency, frame rate, peak FPS, find the optimal thread count, locate slow operators via profiling, or check whether the board performs normally. Triggers include 推理延迟, 帧率, 极限帧率, 能跑多少帧, 性能评测, 性能正常吗, 跑分, 基准测试, 最慢的算子, hrt_model_exec, perf. Do not use for deployment path selection (rdk-model-deploy) or model conversion (hb_mapper toolchain docs).",
+      "install_type": "flat",
+      "name": "rdk-model-benchmark",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-model-deploy",
+      "description": "Deploy quantized models on D-Robotics RDK devices (.bin for X series, .hbm for S series) via RDK Model Zoo samples, pydev_demo Python APIs, and hrt_model_exec validation. Use when the user wants to run YOLO, classification, segmentation or any model on RDK, asks where to start, or hits model load failures. Triggers include 部署模型, 跑模型, 模型加载失败, dnn_node 报错, Model Zoo, hobot_dnn, bin 模型, hbm 模型. Do not use for model conversion/quantization (hb_mapper, dev machine) or performance benchmarking (rdk-model-benchmark).",
+      "install_type": "flat",
+      "name": "rdk-model-deploy",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo",
+      "description": "Run a ready-made RDK Model Zoo BPU model — choose its board branch, download the matching .bin/.hbm, run its sample, and read benchmark latency/FPS/accuracy. Use for precompiled YOLO/classification/segmentation/OCR, Model Zoo samples, branches, downloads, and benchmarks. 触发词:Model Zoo、现成模型、预编译模型、官方转好的、有没有现成的 bin/hbm、模型仓、跑示例 sample、哪个分支、archive.d-robotics 下载、benchmark 帧率精度、YOLO11 哪块板能跑、模型性能对比。Routing — own .pt/.onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; TROS/ROS2 node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM chat → rdk-llm-deployment; board/model selection → rdk-ecosystem; ACT/VLA/Pi0 policies → rdk-embodied-lerobot.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-multimedia",
+      "description": "Drive RDK's low-level multimedia hardware pipeline: H.264/H.265/JPEG/MJPEG encode/decode, VIN/ISP capture, VPS/PYM scale-crop-rotate, and HDMI/MIPI display via sp_dev or HB_VIN/HB_VPS/HB_VENC/HB_VDEC/HB_VOT on X3/X5/Ultra, and multimedia_samples/MediaCodec on S100/S100P/S600. Use for raw pixel streams between hardware units without ROS. 触发词:硬件编码、H264/H265/JPEG 编解码、VPU 软编很慢、stride 对齐报错、VPS 缩放、PYM 金字塔、多路缩放、HDMI/VOT 显示、sp_dev、cdev_demo、vio2encoder、decoder2display、rtsp2display、HB_VENC、HB_VPS、MediaCodec、sample_codec、S600 VPU 多核、IDU 显示。Routing — BPU inference → rdk-model-deploy; ROS2 capture/encode node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; camera selection/wiring → rdk-accessories; unsupported MIPI no-MCLK/i2c-NACK → rdk-camera-setup; GPIO/I2C/PWM/motors → rdk-peripheral-cookbook.",
+      "install_type": "flat",
+      "name": "rdk-multimedia",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-network-remote",
+      "description": "Diagnose and fix network connectivity and remote access on D-Robotics RDK devices — SSH, serial console, VNC, wired/wireless network, and static IP defaults. Use when the user cannot reach the board, ssh or ping fails, WiFi needs configuring, or they ask how to log in without a monitor. Triggers include ssh 连不上, 连不上板子, 网络不通, ping 不通, 串口登录, 波特率, VNC 远程桌面, 静态 IP, 192.168.127.10, WiFi 配置, 无线网络, 有线直连, remote login. Do not use for CPU frequency or thermal settings (rdk-system-config), disabling the desktop (rdk-headless-mode), or web sample display issues (rdk-vision-pipeline).",
+      "install_type": "flat",
+      "name": "rdk-network-remote",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-pack-installer",
+      "description": "Install a D-Robotics workspace-integrated Skill Pack (such as OE-Skills-X5 or OE-Skills-S) into a local development project — clone the registered pack repo, run its setup.sh with a confirmed project root, and verify the installed workspace (.drobotics/ or .horizon/). Use when the user asks to install, initialize, or set up a D-Robotics pack/toolchain for a project (\"install D-Robotics OE-Skills-X5\", \"装一下 OE 工具链\", \"setup this repo for RDK X5 tool chain work\"). 触发词:install OE-Skills、装 OE、setup X5 workspace、初始化 .drobotics、安装 D-Robotics pack、OE 工具链环境搭建. Do not use for installing a single flat skill (npx skills add / pack install.sh) or for editing skill content — those follow the flat-pack flow.",
+      "install_type": "flat",
+      "name": "rdk-pack-installer",
+      "pack": "D-Robotics Skills",
+      "repo": "D-Robotics/rdk-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-peripheral-cookbook",
+      "description": "Hands-on peripheral driving on RDK boards — GPIO/I2C/SPI/UART/PWM, servos, DC/stepper/BLDC motors, LED/WS2812, audio (ALSA), and CAN (X5 SocketCAN vs S100/S600 MCU-domain CANHAL) — plus cross-platform pin/bus mapping and zero-driver diagnosis. Use whenever the user wants to actually light an LED, spin a motor, read a sensor, play/record audio, wire a servo, bring up CAN, or when a peripheral plugged into the board is \"not detected / no driver\". 触发词:点灯、GPIO 不工作、libgpiod、i2cdetect、PCA9685、舵机、步进电机、无刷、WS2812 灯带、ALSA 播放录音、aplay、CAN、SocketCAN、cansend、candump、S100 CAN、S600 自锁口、40PIN 接线、拨码开关、设备不识别没驱动. Routing — pure GPIO pin-number facts / per-board pinout tables → rdk-hardware (cite it when wiring); device error-code lookup / \"板子报错\" → rdk-board-knowledge; connector/cable/accessory part numbers → rdk-accessories.",
+      "install_type": "flat",
+      "name": "rdk-peripheral-cookbook",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-skill-finder",
+      "description": "Find the real D-Robotics RDK Skill or workspace pack for a task, board platform, or installation type, then return its deterministic install or handoff action. Use for requests such as \"which skill handles X5 model quantization?\", \"find an RDK skill for diagnostics\", \"what RDK toolchain pack should I use?\", or \"帮我找 X5 模型量化/编译对应的 Skill\". Do not use to install or modify anything directly; use rdk-pack-installer for confirmed workspace-pack installation.",
+      "install_type": "flat",
+      "name": "rdk-skill-finder",
+      "pack": "D-Robotics Skills",
+      "repo": "D-Robotics/rdk-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-source-map",
+      "description": "Map D-Robotics GitHub repositories — identify their layer and target board, choose a repository, or build an RDK OS image/TROS workspace from source. Use when a user cannot classify a D-Robotics repo, distinguish hobot- (hyphen, BSP) from hobot_ (underscore, ROS2 app), asks \"which repo do I clone for X\", or needs repo/manifest/rdk-gen/vcstool source-build flow. 触发词:这个仓库是干嘛的、属于哪一层、对应哪块板、该 clone 哪个仓、hobot- 和 hobot_ 区别、连字符 下划线、rdk-gen、manifest、repo sync、vcstool、ros2.repos、从源码构建镜像、定制内核、编译 TROS、x5-rdk-gen、s100-rdk-gen。Routing — doc-site chapter → rdk-docs-reference; ready-made model → rdk-model-zoo; TROS install, environment, commands, and running existing nodes/examples → rdk-tros-setup; writing or modifying a ROS node/application has no dedicated Skill: use rdk-docs-reference to search tros_doc; embodied/LLM deployment → rdk-embodied-lerobot / rdk-llm-deployment.",
+      "install_type": "flat",
+      "name": "rdk-source-map",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-system-config",
+      "description": "Configure D-Robotics RDK system settings including CPU performance mode (governor), thermal trip points, srpi-config, and boot auto-start services. Use when the user wants max CPU frequency, performance mode, to adjust throttle temperature, or auto-start a program at boot. Triggers include 性能模式, 锁频, 最高频率, 降频温度, 温控, governor, 开机自启动, srpi-config. Do not use to stop desktop or services (rdk-headless-mode), for network/WiFi setup or connectivity issues (rdk-network-remote), or for pure doc questions (rdk-docs-reference).",
+      "install_type": "flat",
+      "name": "rdk-system-config",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-system-maintain",
+      "description": "Keep the D-Robotics RDK OS healthy over time — repair apt sources (sunrise.list / archive.d-robotics.cc), fix apt update failures and lock errors, guide system upgrades against Release Notes, expand the TF-card filesystem, and clean up disk space. Use when apt update fails, the source domain cannot be resolved, disk is full, or the user asks how to upgrade RDK OS. Triggers include apt update 失败, 换源, 软件源, 版本升级, 升级新版本, sunrise.list, Could not resolve, apt 锁, 磁盘满了, 空间不足, 扩容, Expand Filesystem. Do not use for flashing a new image (install_os docs via rdk-docs-reference), memory measurement (rdk-memory-audit), or network-layer failures (rdk-network-remote).",
+      "install_type": "flat",
+      "name": "rdk-system-maintain",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-tros-setup",
+      "description": "Install, verify, troubleshoot, and run TogetheROS.Bot (tros.b) on D-Robotics RDK devices, including sourcing /opt/tros/setup.bash, running hobot package examples and NodeHub apps (e.g. body detection), and WebSocket browser visualization. Use when the user asks how to install tros, confirm it is installed, run a hobot/NodeHub application, view results in the browser, or hits ros2 package-not-found and environment issues. Triggers include tros 安装, tros 装好了吗, ros2 找不到 package, source setup.bash, hobot 节点, 跑 hobot 应用, 人体检测, websocket 可视化, NodeHub, TogetheROS. Do not use for full-source cross-compilation (dev machine, official FAQ) or for model load failures (rdk-model-deploy).",
+      "install_type": "flat",
+      "name": "rdk-tros-setup",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/rdk-vision-pipeline",
+      "description": "Bring up and debug the end-to-end vision inference pipeline on D-Robotics RDK devices — camera capture, BPU model inference, and HDMI/Web display output — and locate which stage is broken. Use when the user wants 摄像头跑模型, real-time video inference, web browser preview of detections, or the pipeline runs but shows no image, no boxes, or heavy lag. Triggers include 实时推理, 视频流, 摄像头跑模型, 摄像头实时检测, 端到端, web 展示, 网页看画面, 推流, 画面卡顿, 有画面没有框, web_display, start_nginx. Do not use for single-camera hookup checks (rdk-camera-setup), model file deployment alone (rdk-model-deploy), or pure latency numbers (rdk-model-benchmark).",
+      "install_type": "flat",
+      "name": "rdk-vision-pipeline",
+      "pack": "RDK Device Skills",
+      "repo": "D-Robotics/rdk-device-skills"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/hbdk/hbdk-manual",
+      "description": "HBDK4模型编译工具的使用指南索引，按任务场景组织",
+      "install_type": "workspace",
+      "name": "skills",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-s/ucp",
+      "description": "地平线 J6 UCP 技能入口，通过路由机制将用户意图分发至对应子 skill，涵盖模型性能评测、HBM 推理部署、推理代码生成、Perfetto Trace 采集与分析等能力。",
+      "install_type": "workspace",
+      "name": "ucp",
+      "pack": "OE Tool Chain (S)",
+      "repo": "D-Robotics/oe-skills-s"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-accuracy-diagnostics",
+      "description": "定位 X5 PTQ 或 Plugin QAT 的首次精度掉点阶段；当有浮点、校准、QAT、定点、编译或板端指标及固定输入时使用。只读比较并设计单变量实验，不自动重训或重编译。",
+      "install_type": "workspace",
+      "name": "x5-accuracy-diagnostics",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-board-monitor",
+      "description": "采集并解析 X5 hrut_somstatus、温度、CPU/BPU/DDR/GPU 频率、BPU ratio 和 dmesg 证据；当需要建立板端资源快照或关联性能异常时使用。默认只读和有界采样，不调频、不清日志、不循环到手工终止。",
+      "install_type": "workspace",
+      "name": "x5-board-monitor",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-bpu-python-api",
+      "description": "在 X5 板端使用 hbm_runtime.HB_HBMRuntime 加载 .bin、读取模型 I/O 并执行本地 Python 推理；当系统 /etc/version 不低于 3.5.0 且已有匹配 X5 libdnn 的本地 wheel/DEB 时使用。禁止安装 PyPI 同名 S 系列包，也不处理 C++ Runtime、.hbm 或 hbm_infer gRPC。",
+      "install_type": "workspace",
+      "name": "x5-bpu-python-api",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-calibration-data-prepare",
+      "description": "为 X5 OE Mapper PTQ 准备和审计校准数据；当用户需要选择代表性样本、复现训练前处理、生成二进制/数组数据与 manifest 时使用。只处理 PTQ 数据，不处理 HAT Dataset/Trainer 或 QAT 训练管线。",
+      "install_type": "workspace",
+      "name": "x5-calibration-data-prepare",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-consistency-diagnostics",
+      "description": "比较 X5 浮点、calibration/QAT、定点、编译和 Runtime 的固定输入输出，定位首个数值或 I/O 不一致阶段；当 Plugin 编译后掉点、仿真与板端不同或 C++/Python 输出不一致时使用。默认只读。",
+      "install_type": "workspace",
+      "name": "x5-consistency-diagnostics",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-environment-install",
+      "description": "按已审阅计划安装或配置 X5 OE Mapper、Plugin、Runtime 或本地离线制品；仅当 environment.json 为 blocked、制品来源与回滚路径已明确且用户已确认副作用时使用。禁止安装 HAT 或把在线下载当作默认方案。",
+      "install_type": "workspace",
+      "name": "x5-environment-install",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-environment-probe",
+      "description": "只读探测 X5 手册、OE Mapper、Plugin、Runtime、Python 和可选板端事实并生成 environment.json；当执行任何 X5 工作流前环境未知、版本不明或需要 ready/degraded/blocked 结论时使用。不得安装、升级或修改设备。",
+      "install_type": "workspace",
+      "name": "x5-environment-probe",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-environment-setup",
+      "description": "编排 X5 工具链环境探测和经确认的安装；当用户希望准备 OE Mapper、Plugin、Runtime 或板端 Python 环境时使用。先只读探测，再生成安装计划，只有明确授权后才交给 x5-environment-install；不安装 HAT。",
+      "install_type": "workspace",
+      "name": "x5-environment-setup",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-model-diagnostics",
+      "description": "只读分诊 X5 环境、checker、PTQ、QAT、Runtime、精度、性能和日志问题；当已有 failure receipt、environment.json、日志或中间产物，需要定位首次失败阶段和下一 Skill 时使用。默认不重跑训练、编译、安装或上传。",
+      "install_type": "workspace",
+      "name": "x5-model-diagnostics",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-model-preflight",
+      "description": "对 X5 PTQ 的 ONNX/Caffe 模型执行格式、输入合同、浮点参考运行和 hb_mapper checker 预检；当尚未生成正式 YAML、需要判断模型能否进入 bayes-e PTQ 时使用。只做预检，不生成部署成功结论。",
+      "install_type": "workspace",
+      "name": "x5-model-preflight",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-performance-diagnostics",
+      "description": "关联 X5 hb_perf 静态估计、Runtime 实测、BPU ratio、温度频率和 CPU/I/O 开销以定位性能瓶颈；当模型太慢、静态与板端差异大或 BPU 利用率异常时使用。默认只读，不自动改 O3、core、频率或系统进程。",
+      "install_type": "workspace",
+      "name": "x5-performance-diagnostics",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-ptq-compile",
+      "description": "执行已验证 X5 YAML 的 hb_mapper checker/makertbin 并验证唯一 .bin 与 BPU march；当配置和环境已就绪、需要生成 bayes-e PTQ 产物时使用。不得处理 QAT .hbm/.hbir，也不得复用非空输出目录而未确认。",
+      "install_type": "workspace",
+      "name": "x5-ptq-compile",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-ptq-config-authoring",
+      "description": "生成并机器校验 X5 OE Mapper PTQ YAML；当模型预检通过、输入和校准合同已明确，需要得到 march=bayes-e 的可审阅配置时使用。拒绝 Plugin load/QAT 混用、HAT 和 S 系列字段。",
+      "install_type": "workspace",
+      "name": "x5-ptq-config-authoring",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-ptq-deploy",
+      "description": "编排 ONNX/Caffe 到 X5 bayes-e .bin 的 OE Mapper PTQ 全流程；当用户要求 checker、校准、YAML、makertbin、模型信息和 Runtime 验证形成闭环时使用。通过原子 Skills 执行，不接受 Plugin QAT .hbm/.hbir、HAT 或 S 系列流程。",
+      "install_type": "workspace",
+      "name": "x5-ptq-deploy",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-qat-adaptation",
+      "description": "将浮点 PyTorch 模型适配为 X5 Plugin QAT 模型；当需要设置 March.BAYES_E、量化边界、可量化算子、prepare 和 fake-quant 状态入口时使用。只处理 horizon_plugin_pytorch，不处理 HAT 或 J5 March.BAYES。",
+      "install_type": "workspace",
+      "name": "x5-qat-adaptation",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-qat-compile",
+      "description": "对 X5 Plugin 定点模型执行 trace、check_model 和 compile_model/export_hbir；当 quantized 指标已达标，需要生成 .hbm 或 .hbir 与编译报告时使用。禁止输出伪装的 .bin 或自动调用 hb_mapper makertbin。",
+      "install_type": "workspace",
+      "name": "x5-qat-compile",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-qat-deploy",
+      "description": "编排 X5 horizon_plugin_pytorch calibration、QAT、定点转换与 Plugin 编译；当用户有可训练 PyTorch 模型、数据和浮点基线，希望得到 March.BAYES_E 的 .hbm/.hbir 及指标闭环时使用。明确排除 HAT，且不把 QAT 自动交给 hb_mapper makertbin。",
+      "install_type": "workspace",
+      "name": "x5-qat-deploy",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-qat-training",
+      "description": "执行 X5 Plugin calibration、量化感知训练、validation 和 convert 后定点评测；当适配模型已可运行，需要生成可比较指标与检查点时使用。要求 March.BAYES_E 和可复现训练，不使用 HAT Trainer。",
+      "install_type": "workspace",
+      "name": "x5-qat-training",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-router",
+      "description": "路由 X5 环境、OE Mapper PTQ、Plugin QAT、Runtime、板端 Python 和诊断请求；当目标芯片明确为 X5 或请求包含 bayes-e、hb_mapper、X5 .bin、March.BAYES_E 时使用。只选择一个主 Skill 并生成 route.json；不执行 HAT、X3 或 S 系列工作流。",
+      "install_type": "workspace",
+      "name": "x5-router",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-runtime-cpp-infer",
+      "description": "生成或审查 X5 BPU SDK C++ 推理工程；当用户有 X5 .bin、I/O 合同和 Runtime SDK，需要实现模型加载、张量内存、hbDNNInfer、输出回读与释放时使用。模板只覆盖单输入已对齐 raw tensor，多输入或图像前处理必须按模型合同扩展。",
+      "install_type": "workspace",
+      "name": "x5-runtime-cpp-infer",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-runtime-deploy",
+      "description": "编排 X5 Runtime 模型门禁、板端上传、命令行/C++ 推理、正确性、性能与资源验证；当用户要上板运行 X5 .bin、使用 hrt_model_exec 或 BPU SDK 时使用。Plugin .hbm/.hbir 只有在实际 Runtime 兼容证据充分时才接收；不使用 S 系列 UCP。",
+      "install_type": "workspace",
+      "name": "x5-runtime-deploy",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    },
+    {
+      "catalog_path": "skills/oe-skills-x5/x5-runtime-perf-eval",
+      "description": "在 X5 板端评测模型延时、吞吐和稳定性；当功能正确性已通过，需要使用 hrt_model_exec 或 ai_benchmark 得到可复现性能报告时使用。先读本地工具参数，不猜命令；不修改频率或停止业务进程而未确认。",
+      "install_type": "workspace",
+      "name": "x5-runtime-perf-eval",
+      "pack": "OE Tool Chain (X5)",
+      "repo": "D-Robotics/oe-skills-x5"
+    }
+  ]
+}
