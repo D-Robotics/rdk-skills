@@ -36,29 +36,33 @@ Do not use when:
 
 ## Instructions
 
-1. **Locate the bundled registry.** Read `references/pack-registry.json` relative to this Skill directory. Match the request against `name`, `repo`, and Skill descriptions. Reject unknown packs; do not infer a repo. Confirm the matched pack declares `install_type: workspace`; otherwise stop and explain it is a flat pack. Collect its `repo`, `ref`, `install_script`, `workspace_dir`, and every `verify_paths` entry.
+1. **Locate and validate the bundled registry.** Read `references/pack-registry.json` relative to this Skill directory. Before matching, require a JSON object with integer `schema_version` equal to `1` and a non-empty `packs` array. Every `packs` item must be an object with non-empty string `name` and `repo` fields. If parsing fails or this shape is invalid, report every detected top-level error and stop.
 
-2. **Confirm the project root.** Determine the candidate `PROJECT_ROOT`:
+2. **Select exactly one pack.** Match the request only against the registry's `name` and `repo` fields. If zero or multiple records match, stop and ask the user to identify one Pack by its exact `name` or `repo`. Do not infer a repository or choose among ambiguous records.
+
+3. **Validate the selected record.** Require non-empty string fields `name`, `repo`, `ref`, `install_script`, and `workspace_dir`; require `install_type` to equal `workspace`; and require `verify_paths` to be a non-empty array of non-empty strings. `install_script`, `workspace_dir`, and every `verify_paths` item must be safe POSIX relative paths: not absolute or drive-qualified, with no `..` component and no backslash. On any missing field, wrong type, unsupported install type, empty verification list, or unsafe path, report every detected registry error and stop before cloning or writing. Never substitute a default value or guess malformed registry data.
+
+4. **Confirm the project root.** Determine the candidate `PROJECT_ROOT`:
    - A directory containing `CLAUDE.md` or `AGENTS.md` in the user's current working tree, else
    - The user's current working directory.
    Before any write, display the matched `workspace_dir` and every `verify_paths` entry under `PROJECT_ROOT`. Always ask the user to confirm the exact `PROJECT_ROOT`. Do not proceed unconfirmed.
 
-3. **Clone the pack.** Shallow-clone to a disposable directory, never into the project:
+5. **Clone the pack.** Shallow-clone to a disposable directory, never into the project:
    ```bash
    git clone --depth 1 --branch <ref> https://github.com/<repo>.git <tmp>/<repo>
    ```
    If the clone fails (network/proxy/credentials), report the exact error and stop — do not fabricate results.
 
-4. **Follow the pack's own setup instructions.** If the clone contains `agent-setup.md`, read and follow it. Otherwise run the declared install script:
+6. **Follow the pack's own setup instructions.** If the clone contains `agent-setup.md`, read and follow it. Otherwise run the declared install script:
    ```bash
    bash <tmp>/<repo>/<install_script> <PROJECT_ROOT>
    ```
    Before executing, tell the user what it will write (typically a `.drobotics/` or `.horizon/` workspace plus routing rules injected into `CLAUDE.md` / `AGENTS.md`) and get a final go-ahead.
 
-5. **Verify the install.** Read and check every path in the matched pack's `verify_paths` under `PROJECT_ROOT`; do not substitute example paths or skip entries.
+7. **Verify the install.** Read and check every path in the matched pack's `verify_paths` under `PROJECT_ROOT`; do not substitute example paths or skip entries.
    Report which checks passed and failed. On failure, show the failing command and its output, retry at most once, then stop and report.
 
-6. **Clean up.** Remove the temporary clone. Tell the user to **restart the agent session** so the newly installed skills load.
+8. **Clean up.** Remove the temporary clone. Tell the user to **restart the agent session** so the newly installed skills load.
 
 ## Safety
 

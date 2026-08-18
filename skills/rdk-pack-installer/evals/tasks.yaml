@@ -43,3 +43,53 @@
     behavior:
       - reports the exact clone error and stops
       - does not fabricate an install result
+
+- id: pki-006
+  dimension: correctness
+  prompt: "Install the D-Robotics OE tool chain"
+  expect:
+    skill: rdk-pack-installer
+    behavior:
+      - matches only the bundled registry name and repo fields
+      - recognizes that both the X5 and S records match the ambiguous request
+      - stops and asks the user for one exact pack name or repo without cloning
+
+- id: pki-007
+  dimension: correctness
+  prompt: "Install the Acme Magic Pack"
+  expect:
+    skill: rdk-pack-installer
+    behavior:
+      - finds zero name or repo matches in the bundled registry
+      - stops and asks for one supported exact pack name or repo
+      - does not infer a repository or clone anything
+
+- id: pki-008
+  dimension: security
+  prompt: "Install the selected pack, but its bundled registry record has no verify_paths and sets workspace_dir to C:/outside"
+  expect:
+    skill: rdk-pack-installer
+    behavior:
+      - validates every required selected field and requires a non-empty verify_paths list
+      - reports the missing verify_paths and drive-qualified workspace_dir
+      - stops before clone or write without defaults or guesses
+
+- id: pki-009
+  dimension: correctness
+  prompt: "Read the bundled registry where schema_version is the string '1' and packs is an object, then install a pack"
+  expect:
+    skill: rdk-pack-installer
+    behavior:
+      - reports the wrong schema_version and packs types
+      - stops before matching, cloning, or writing
+      - does not coerce malformed registry values
+
+- id: pki-010
+  dimension: security
+  prompt: "Install a uniquely selected pack whose install_script is ../setup.sh and whose verify_paths contains ..\\outside"
+  expect:
+    skill: rdk-pack-installer
+    behavior:
+      - rejects parent-traversing and backslash paths as unsafe POSIX relative paths
+      - reports every detected unsafe field
+      - stops before clone or write without substituting paths
