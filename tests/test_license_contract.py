@@ -10,18 +10,39 @@ POLICY_FILES = (
     "components.d/README.md",
 )
 CHINESE_POLICY_FILES = set(POLICY_FILES) - {"README.md"}
+POLICY_LICENSE_MAPPINGS = {
+    "README.md": (
+        "License mapping: code and scripts = Apache-2.0; SKILL.md, "
+        "skill-card.md, references, and other documentation content = CC-BY-4.0."
+    ),
+    "README_cn.md": (
+        "许可证映射：代码和脚本 = Apache-2.0；SKILL.md、skill-card.md、references "
+        "和其他文档内容 = CC-BY-4.0。"
+    ),
+    "CONTRIBUTING.md": (
+        "许可证映射：代码和脚本 = Apache-2.0；SKILL.md、skill-card.md、references "
+        "和其他文档内容 = CC-BY-4.0。"
+    ),
+    "docs/PR-SUBMISSION.md": (
+        "许可证映射：代码和脚本 = Apache-2.0；SKILL.md、skill-card.md、references "
+        "和其他文档内容 = CC-BY-4.0。"
+    ),
+    "components.d/README.md": (
+        "许可证映射：代码和脚本 = Apache-2.0；SKILL.md、skill-card.md、references "
+        "和其他文档内容 = CC-BY-4.0。"
+    ),
+}
 
 
 class LicenseContractTests(unittest.TestCase):
     def setUp(self):
         self.repo = Path(__file__).resolve().parents[1]
 
-    def test_policy_docs_explain_frontmatter_and_content_license(self):
+    def test_policy_docs_bind_file_types_to_licenses(self):
         for relative in POLICY_FILES:
             text = (self.repo / relative).read_text(encoding="utf-8")
 
-            self.assertIn("Apache-2.0", text, relative)
-            self.assertIn("CC-BY-4.0", text, relative)
+            self.assertIn(POLICY_LICENSE_MAPPINGS[relative], text, relative)
             self.assertIn("metadata.content-license", text, relative)
             self.assertIn("license: Apache-2.0", text, relative)
             self.assertIn("SKILL.md", text, relative)

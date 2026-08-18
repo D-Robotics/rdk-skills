@@ -41,7 +41,9 @@ L2 治理要求（`skill-card.md` + `evals/` + 四章节）对新增 skill 强�
 
 ## 许可证规则
 
-ADR 0004 是本仓库许可证规则的权威依据。仓库按文件类型双许可：代码和脚本采用
+ADR 0004 是本仓库许可证规则的权威依据。仓库按文件类型双许可。
+许可证映射：代码和脚本 = Apache-2.0；SKILL.md、skill-card.md、references 和其他文档内容 = CC-BY-4.0。
+代码和脚本采用
 Apache-2.0；`SKILL.md`、`skill-card.md`、`references` 和其他文档内容采用
 CC-BY-4.0。为兼容当前 Skill 生态，顶层 Skill frontmatter 仍填写
 `license: Apache-2.0`；新建或实质修改的 Skill 建议同时声明
