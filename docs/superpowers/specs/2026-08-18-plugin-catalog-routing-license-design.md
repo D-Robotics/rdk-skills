@@ -12,8 +12,8 @@ Make the Hub plugin self-contained and truthful: it must ship the pack data its 
 
 This phase includes four deliverables:
 
-1. A generated workspace-Pack registry bundled with `d-robotics-pack-installer`.
-2. A new Hub-native `d-robotics-skill-finder` with a generated searchable Skill index.
+1. A generated workspace-Pack registry bundled with `rdk-pack-installer`.
+2. A new Hub-native `rdk-skill-finder` with a generated searchable Skill index.
 3. Removal or replacement of known stale D-Robotics Skill routes in `rdk-device-skills`, followed by a mirror refresh in `rdk-skills`.
 4. Consistent license language derived from ADR 0004.
 
@@ -27,8 +27,8 @@ Runtime fetching from GitHub is rejected because discovery and installation must
 
 Instead, build-time tooling generates two small JSON documents:
 
-- `skills/d-robotics-pack-installer/references/pack-registry.json`
-- `skills/d-robotics-skill-finder/references/skill-index.json`
+- `skills/rdk-pack-installer/references/pack-registry.json`
+- `skills/rdk-skill-finder/references/skill-index.json`
 
 Each Hub-native Skill therefore remains independently installable. The generated files are committed so marketplace consumers receive the same reviewed data as the repository.
 
@@ -121,7 +121,7 @@ For this phase:
 
 ### Pack installer
 
-`d-robotics-pack-installer` reads `references/pack-registry.json` relative to its own Skill directory. It no longer requires `components.d` at runtime.
+`rdk-pack-installer` reads `references/pack-registry.json` relative to its own Skill directory. It no longer requires `components.d` at runtime.
 
 Its workflow remains confirmation-gated:
 
@@ -137,7 +137,7 @@ Unknown Pack names and malformed registry data are terminal errors. The installe
 
 ### Skill finder
 
-The new `d-robotics-skill-finder` is a read-only Hub-native Skill. It contains:
+The new `rdk-skill-finder` is a read-only Hub-native Skill. It contains:
 
 - `SKILL.md`
 - `skill-card.md`
@@ -150,7 +150,7 @@ The search script accepts one or more query terms plus optional filters for Pack
 Finder behavior:
 
 - For a flat Skill, return its name, short explanation, and `npx skills add d-robotics/rdk-skills --skill <name>`.
-- For a workspace Skill, return its Pack and hand off installation to `d-robotics-pack-installer`.
+- For a workspace Skill, return its Pack and hand off installation to `rdk-pack-installer`.
 - If no result clears a small deterministic overlap threshold, report no match and suggest `rdk-docs-reference`; do not invent a Skill name.
 
 The plugin includes the finder, installer, and documentation reference Skill. Marketplace and README language describes discovery and installation, not transparent loading of every catalog Skill.
@@ -224,7 +224,7 @@ Required tests:
 ### `rdk-skills`
 
 - Add the generator and tests.
-- Add `d-robotics-skill-finder` and its tests/evals.
+- Add `rdk-skill-finder` and its tests/evals.
 - Add generated registry/index files.
 - Extend workspace component registrations.
 - Update installer instructions and plugin composition.
@@ -242,7 +242,7 @@ Required tests:
 
 - A standalone installed Hub plugin can discover a Skill and identify a workspace Pack without access to the Hub's `components.d` directory.
 - The Pack installer resolves X5 and S installation/verification data from its bundled registry.
-- The plugin contains `d-robotics-skill-finder`, `d-robotics-pack-installer`, and `rdk-docs-reference`.
+- The plugin contains `rdk-skill-finder`, `rdk-pack-installer`, and `rdk-docs-reference`.
 - No known stale D-Robotics route name remains in the RDK Device Skill source or Hub mirror.
 - License documentation agrees with ADR 0004 and does not relicense existing content.
 - All new tests demonstrate red-green behavior and the complete verification suite passes before completion is claimed.
