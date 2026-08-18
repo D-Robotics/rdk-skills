@@ -20,6 +20,7 @@ REQUIRED_RECORD_FIELDS = (
 )
 ASCII_TOKEN = re.compile(r"[A-Za-z0-9]+")
 CJK_TOKEN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
+NORMALIZED_TOKEN = re.compile(r"[A-Za-z0-9]+|[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
 
 
 def tokens(text: str) -> set[str]:
@@ -34,7 +35,7 @@ def tokens(text: str) -> set[str]:
 
 def normalized(text: str) -> str:
     """Create the canonical comparable form used by exact-name scoring."""
-    return " ".join(sorted(tokens(text)))
+    return " ".join(match.group().casefold() for match in NORMALIZED_TOKEN.finditer(text))
 
 
 def validate_index(index: Any) -> dict[str, Any]:
@@ -145,7 +146,9 @@ def load_index(path: Path) -> dict[str, Any]:
 def write_json(payload: dict[str, Any]) -> None:
     """Write CLI JSON as UTF-8 independently of the console code page."""
     sys.stdout.buffer.write(
-        (json.dumps(payload, ensure_ascii=False) + "\n").encode("utf-8")
+        (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode(
+            "utf-8"
+        )
     )
 
 
