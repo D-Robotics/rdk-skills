@@ -218,4 +218,11 @@ D-Robotics/rdk-skills/
 
 ## License
 
-Source code is licensed under [Apache-2.0](LICENSE-APACHE). Documentation and skill content is licensed under [CC-BY-4.0](LICENSE-CC-BY-4.0).
+Per ADR 0004, this repository uses a dual license by file type: code and scripts
+are licensed under [Apache-2.0](LICENSE-APACHE), while `SKILL.md`,
+`skill-card.md`, `references`, and other documentation content are licensed under
+[CC-BY-4.0](LICENSE-CC-BY-4.0). For compatibility with the current Skill
+ecosystem, top-level Skill frontmatter continues to use `license: Apache-2.0`.
+New or substantively modified Skills are recommended to declare
+`metadata.content-license: CC-BY-4.0` as well. This is a clarification of future
+contribution rules; it does not retroactively relicense existing content.

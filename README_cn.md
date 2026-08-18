@@ -205,4 +205,9 @@ D-Robotics/rdk-skills/
 
 ## 许可证
 
-源码采用 [Apache-2.0](LICENSE-APACHE)，文档和 Skill 内容采用 [CC-BY-4.0](LICENSE-CC-BY-4.0)。
+根据 ADR 0004，仓库按文件类型双许可：代码和脚本采用
+[Apache-2.0](LICENSE-APACHE)；`SKILL.md`、`skill-card.md`、`references`
+和其他文档内容采用 [CC-BY-4.0](LICENSE-CC-BY-4.0)。为兼容当前 Skill
+生态，顶层 Skill frontmatter 仍填写 `license: Apache-2.0`；新建或实质修改
+的 Skill 建议同时声明 `metadata.content-license: CC-BY-4.0`。这是对未来
+贡献规则的澄清，不对既有内容追溯性重新授权。

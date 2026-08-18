@@ -50,6 +50,15 @@ skills/<skill-name>/
 | `metadata.languages` | 可选 | 脚本语言（如 `[bash]`、`[bash, python]`） |
 | `metadata.data-classification` | 推荐 | 数据分类，默认 `public` |
 
+## 许可证规则
+
+ADR 0004 是本仓库许可证规则的权威依据。仓库按文件类型双许可：代码和脚本采用
+Apache-2.0；`SKILL.md`、`skill-card.md`、`references` 和其他文档内容采用
+CC-BY-4.0。为兼容当前 Skill 生态，顶层 Skill frontmatter 仍填写
+`license: Apache-2.0`；新建或实质修改的 Skill 建议同时声明
+`metadata.content-license: CC-BY-4.0`。这是对未来贡献规则的澄清，不对既有
+内容追溯性重新授权。
+
 ## SKILL.md 必填 section
 
 SKILL.md body 必须包含以下 4 个 section：
