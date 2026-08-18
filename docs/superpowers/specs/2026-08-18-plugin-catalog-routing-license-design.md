@@ -1,5 +1,7 @@
 # Plugin Catalog, Routing, and License Reconciliation Design
 
+> English | [中文版](2026-08-18-plugin-catalog-routing-license-design.zh-CN.md)
+
 ## Status
 
 Approved in chat on 2026-08-18. This design covers the first remediation phase for the D-Robotics Skills Hub.
