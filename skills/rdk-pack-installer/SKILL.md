@@ -1,6 +1,6 @@
 ---
-name: d-robotics-pack-installer
-description: Install a D-Robotics workspace-integrated Skill Pack (such as OE-Skills-X5 or OE-Skills-S) into a local development project — clone the pack repo, run its setup.sh with a confirmed project root, and verify the installed workspace (.drobotics/ or .horizon/). Use when the user asks to install, initialize, or set up a D-Robotics pack/toolchain for a project ("install D-Robotics OE-Skills-X5", "装一下 OE 工具链", "setup this repo for RDK X5 tool chain work"). 触发词:install OE-Skills、装 OE、setup X5 workspace、初始化 .drobotics、安装 D-Robotics pack、OE 工具链环境搭建. Do not use for installing a single flat skill (npx skills add / pack install.sh) or for editing skill content — those follow the flat-pack flow.
+name: rdk-pack-installer
+description: Install a D-Robotics workspace-integrated Skill Pack (such as OE-Skills-X5 or OE-Skills-S) into a local development project — clone the registered pack repo, run its setup.sh with a confirmed project root, and verify the installed workspace (.drobotics/ or .horizon/). Use when the user asks to install, initialize, or set up a D-Robotics pack/toolchain for a project ("install D-Robotics OE-Skills-X5", "装一下 OE 工具链", "setup this repo for RDK X5 tool chain work"). 触发词:install OE-Skills、装 OE、setup X5 workspace、初始化 .drobotics、安装 D-Robotics pack、OE 工具链环境搭建. Do not use for installing a single flat skill (npx skills add / pack install.sh) or for editing skill content — those follow the flat-pack flow.
 version: 1.0.0
 license: Apache-2.0
 metadata:
@@ -13,7 +13,7 @@ metadata:
   data-classification: public
 ---
 
-# D-Robotics Pack Installer
+# RDK Pack Installer
 
 ## Purpose
 
@@ -21,7 +21,7 @@ The Hub catalog hosts two kinds of packs. Flat packs (e.g. RDK Device Skills) in
 
 ## When to use
 
-Use when the user asks to install / initialize / set up a workspace-integrated D-Robotics pack into a project:
+Use when the user asks to install / initialize / set up a workspace-integrated RDK pack into a project:
 
 - "Install D-Robotics OE-Skills-X5 into this project"
 - "帮我把 OE 工具链装到这个项目"
@@ -31,21 +31,21 @@ Use when the user asks to install / initialize / set up a workspace-integrated D
 Do not use when:
 
 - The request is a single flat skill install (`npx skills add d-robotics/rdk-skills --skill rdk-diagnostic`, pack `install.sh`) — hand off to the flat pack flow.
-- The user only asks what a pack contains or how it works — read `components.d/*.yml` and answer without installing.
-- The target pack has no `install_type: workspace` in its registration — then it is a flat pack.
+- The user only asks what a pack contains or how it works — answer from the bundled registry without installing.
+- The matched pack is not registered with `install_type: workspace` — then it is a flat pack.
 
 ## Instructions
 
-1. **Locate the component.** Read every `components.d/*.yml` in the Hub repo. Match the user's intent against the component `name` and `description`. Confirm the matched component declares `install_type: workspace`; otherwise stop and explain it is a flat pack. Collect: `repo`, `install_script` (default `setup.sh`), and `install_instructions` if present.
+1. **Locate the bundled registry.** Read `references/pack-registry.json` relative to this Skill directory. Match the request against `name`, `repo`, and Skill descriptions. Reject unknown packs; do not infer a repo. Confirm the matched pack declares `install_type: workspace`; otherwise stop and explain it is a flat pack. Collect its `repo`, `ref`, `install_script`, `workspace_dir`, and every `verify_paths` entry.
 
 2. **Confirm the project root.** Determine the candidate `PROJECT_ROOT`:
    - A directory containing `CLAUDE.md` or `AGENTS.md` in the user's current working tree, else
    - The user's current working directory.
-   Always ask the user to confirm the exact `PROJECT_ROOT` before any write. Do not proceed unconfirmed.
+   Before any write, display the matched `workspace_dir` and every `verify_paths` entry under `PROJECT_ROOT`. Always ask the user to confirm the exact `PROJECT_ROOT`. Do not proceed unconfirmed.
 
 3. **Clone the pack.** Shallow-clone to a disposable directory, never into the project:
    ```bash
-   git clone --depth 1 https://github.com/<repo>.git <tmp>/<repo>
+   git clone --depth 1 --branch <ref> https://github.com/<repo>.git <tmp>/<repo>
    ```
    If the clone fails (network/proxy/credentials), report the exact error and stop — do not fabricate results.
 
@@ -55,13 +55,7 @@ Do not use when:
    ```
    Before executing, tell the user what it will write (typically a `.drobotics/` or `.horizon/` workspace plus routing rules injected into `CLAUDE.md` / `AGENTS.md`) and get a final go-ahead.
 
-5. **Verify the install.** Check the pack's declared artifacts exist, e.g. for OE-Skills-X5:
-   ```bash
-   test -f <PROJECT_ROOT>/.drobotics/X5.md
-   test -f <PROJECT_ROOT>/.drobotics/VERSION
-   test -f <PROJECT_ROOT>/.drobotics/skill-index.json
-   test -f <PROJECT_ROOT>/.drobotics/skills/x5-router/SKILL.md
-   ```
+5. **Verify the install.** Read and check every path in the matched pack's `verify_paths` under `PROJECT_ROOT`; do not substitute example paths or skip entries.
    Report which checks passed and failed. On failure, show the failing command and its output, retry at most once, then stop and report.
 
 6. **Clean up.** Remove the temporary clone. Tell the user to **restart the agent session** so the newly installed skills load.
