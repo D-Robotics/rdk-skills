@@ -41,3 +41,6 @@ node_modules/
 # Build artifacts
 dist/
 build/
+
+# Isolated implementation worktrees
+.worktrees/
