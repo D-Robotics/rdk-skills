@@ -6,8 +6,11 @@ description: OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compil
 # OE-Skills-X5 is a workspace-integrated pack, not a flat skill collection.
 # Each skill depends on .drobotics/ resources (scripts, docs, schemas, platforms)
 # laid down by setup.sh. Users install the whole pack, not individual skills.
-# The sync mirrors the whole x5/skills/ tree under catalog_dir "oe-skills-x5"
-# (bulk layout — kept for this existing pack's structure, same as oe-skills-s).
+# The sync mirrors the ENTIRE x5/ resource tree (VERSION, docs/, platforms/,
+# scripts/, skills/) under catalog_dir "oe-skills-x5" (bulk layout), and the
+# sync pipeline overlays the pack's setup.sh (declared install_script) into
+# the same catalog dir, so a Hub checkout is a complete install source:
+#   bash skills/oe-skills-x5/setup.sh <project-root>
 install_type: workspace
 install_script: setup.sh
 workspace_dir: .drobotics
@@ -17,10 +20,11 @@ verify_paths:
   - .drobotics/skill-index.json
   - .drobotics/skills/x5-router/SKILL.md
 install_instructions: |
-  bash setup.sh $PROJECT_ROOT
+  bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT
+  # (from an rdk-skills checkout — the Hub is the install source)
   # or tell your AI: "Install D-Robotics OE-Skills-X5 from the marketplace"
 skills:
-  - path: x5/skills/
+  - path: x5/
     catalog_dir: oe-skills-x5
 links:
   contributing: CONTRIBUTING.md

@@ -75,6 +75,12 @@ skills:
             packs["D-Robotics/oe-skills-s"]["verify_paths"],
         )
 
+    def test_pack_registry_declares_hub_catalog_dir(self):
+        registry = catalog.build_pack_registry(self.repo, catalog.load_components(self.repo))
+        packs = {item["repo"]: item for item in registry["packs"]}
+        self.assertEqual(packs["D-Robotics/oe-skills-x5"]["catalog_dir"], "oe-skills-x5")
+        self.assertEqual(packs["D-Robotics/oe-skills-s"]["catalog_dir"], "oe-skills-s")
+
     def test_pack_registry_defaults_missing_ref_to_main(self):
         registry = catalog.build_pack_registry(self.repo, catalog.load_components(self.repo))
 
@@ -259,6 +265,78 @@ class CatalogValidationTests(unittest.TestCase):
             "verify_paths must be a non-empty list for workspace components",
         ):
             catalog.build_pack_registry(Path("."), [component])
+
+    def test_rejects_workspace_component_without_skills_entry(self):
+        component = {
+            "name": "Missing Skills Entry",
+            "repo": "D-Robotics/missing-skills-entry",
+            "install_type": "workspace",
+            "install_script": "setup.sh",
+            "workspace_dir": ".workspace",
+            "verify_paths": [".workspace/VERSION"],
+        }
+
+        with self.assertRaisesRegex(
+            catalog.CatalogError,
+            "workspace component must declare exactly one skills entry",
+        ):
+            catalog.build_pack_registry(Path("."), [component])
+
+    def test_rejects_workspace_component_with_multiple_skills_entries(self):
+        component = {
+            "name": "Split Workspace",
+            "repo": "D-Robotics/split-workspace",
+            "install_type": "workspace",
+            "install_script": "setup.sh",
+            "workspace_dir": ".workspace",
+            "verify_paths": [".workspace/VERSION"],
+            "skills": [
+                {"catalog_dir": "split-a"},
+                {"catalog_dir": "split-b"},
+            ],
+        }
+
+        with self.assertRaisesRegex(
+            catalog.CatalogError,
+            "workspace component must declare exactly one skills entry",
+        ):
+            catalog.build_pack_registry(Path("."), [component])
+
+    def test_rejects_workspace_component_without_catalog_dir(self):
+        component = {
+            "name": "Missing Catalog Dir",
+            "repo": "D-Robotics/missing-catalog-dir",
+            "install_type": "workspace",
+            "install_script": "setup.sh",
+            "workspace_dir": ".workspace",
+            "verify_paths": [".workspace/VERSION"],
+            "skills": [{"path": "pkg/"}],
+        }
+
+        with self.assertRaisesRegex(
+            catalog.CatalogError,
+            "catalog_dir is required for workspace component",
+        ):
+            catalog.build_pack_registry(Path("."), [component])
+
+    def test_rejects_unsafe_catalog_dir(self):
+        for catalog_dir in ("/absolute", "../parent", "a\\b"):
+            with self.subTest(catalog_dir=catalog_dir):
+                component = {
+                    "name": "Unsafe Catalog Dir",
+                    "repo": "D-Robotics/unsafe-catalog-dir",
+                    "install_type": "workspace",
+                    "install_script": "setup.sh",
+                    "workspace_dir": ".workspace",
+                    "verify_paths": [".workspace/VERSION"],
+                    "skills": [{"catalog_dir": catalog_dir}],
+                }
+
+                with self.assertRaisesRegex(
+                    catalog.CatalogError,
+                    "catalog_dir must be a safe POSIX relative path",
+                ):
+                    catalog.build_pack_registry(Path("."), [component])
 
     def test_rejects_absolute_and_parent_workspace_paths(self):
         for workspace_dir in ("/absolute", "../parent"):

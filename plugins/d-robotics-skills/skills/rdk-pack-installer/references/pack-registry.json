@@ -1,6 +1,7 @@
 {
   "packs": [
     {
+      "catalog_dir": "oe-skills-s",
       "install_script": "setup.sh",
       "install_type": "workspace",
       "name": "OE Tool Chain (S)",
@@ -15,6 +16,7 @@
       "workspace_dir": ".horizon"
     },
     {
+      "catalog_dir": "oe-skills-x5",
       "install_script": "setup.sh",
       "install_type": "workspace",
       "name": "OE Tool Chain (X5)",

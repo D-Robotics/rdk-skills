@@ -68,17 +68,31 @@ def build_pack_registry(repo_root: Path, components: list[dict]) -> dict:
         if not isinstance(verify_paths, list) or not verify_paths:
             raise CatalogError("verify_paths must be a non-empty list for workspace components")
 
+        repo = require_repository_slug(component.get("repo"))
+        safe_workspace_dir = require_safe_relative(workspace_dir, "workspace_dir")
+        safe_verify_paths = [require_safe_relative(path, "verify_paths") for path in verify_paths]
+
+        # Workspace packs are mirrored into exactly one self-installable
+        # catalog dir, so the registry must know where the Hub carries them.
+        skills = component.get("skills")
+        if not isinstance(skills, list) or len(skills) != 1:
+            raise CatalogError(
+                f"workspace component must declare exactly one skills entry: {component.get('name')!r}"
+            )
+        catalog_dir = skills[0].get("catalog_dir")
+        if not isinstance(catalog_dir, str):
+            raise CatalogError(f"catalog_dir is required for workspace component: {component.get('name')!r}")
+
         packs.append(
             {
                 "name": component["name"],
-                "repo": require_repository_slug(component.get("repo")),
+                "repo": repo,
                 "ref": component.get("ref", "main"),
                 "install_type": "workspace",
                 "install_script": component["install_script"],
-                "workspace_dir": require_safe_relative(workspace_dir, "workspace_dir"),
-                "verify_paths": [
-                    require_safe_relative(path, "verify_paths") for path in verify_paths
-                ],
+                "catalog_dir": require_safe_relative(catalog_dir, "catalog_dir"),
+                "workspace_dir": safe_workspace_dir,
+                "verify_paths": safe_verify_paths,
             }
         )
     return {"schema_version": 1, "packs": sorted(packs, key=lambda pack: pack["repo"])}

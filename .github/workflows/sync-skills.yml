@@ -107,7 +107,17 @@ jobs:
               path=$(yq ".components[$i].skills[$j].path" "$CONFIG")
               sparse_paths="$sparse_paths $path"
             done
-            (cd "$tmp_dir" && git sparse-checkout set $sparse_paths 2>/dev/null) || true
+            # Workspace packs are self-installable from the Hub mirror: their
+            # install script sits at the check-out root, so materialize it too
+            # (--no-cone allows file entries at the repo root).
+            if [ "$(yq ".components[$i].install_type" "$CONFIG")" = "workspace" ]; then
+              install_script=$(yq ".components[$i].install_script" "$CONFIG")
+              sparse_paths="$sparse_paths $install_script"
+              sparse_opts="--no-cone"
+            else
+              sparse_opts=""
+            fi
+            (cd "$tmp_dir" && git sparse-checkout set $sparse_opts $sparse_paths 2>/dev/null) || true
 
             # Copy each skill path to its catalog directory
             synced=false
@@ -130,6 +140,21 @@ jobs:
 
             if $synced; then
               echo "$name" >> /tmp/rsynced-components.txt
+
+              # Overlay the pack's install script into the mirrored catalog
+              # dir so a Hub checkout is a complete install source for
+              # workspace packs (rsync --delete cannot see root-level files).
+              if [ "$(yq ".components[$i].install_type" "$CONFIG")" = "workspace" ]; then
+                install_script=$(yq ".components[$i].install_script" "$CONFIG")
+                catalog_dir=$(yq ".components[$i].skills[0].catalog_dir" "$CONFIG")
+                if [ -f "$tmp_dir/$install_script" ]; then
+                  cp "$tmp_dir/$install_script" "skills/$catalog_dir/$install_script"
+                  echo "  [OK] overlay $install_script -> skills/$catalog_dir/"
+                else
+                  echo "  [WARN] $name: $install_script missing in checkout — no overlay"
+                fi
+              fi
+
               for j in $(seq 0 $((n_skills - 1))); do
                 catalog_dir=$(yq ".components[$i].skills[$j].catalog_dir" "$CONFIG")
                 if [ -n "$(git status --porcelain "skills/$catalog_dir" 2>/dev/null)" ]; then

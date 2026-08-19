@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drobotics-x5/receipt.schema.json",
+  "title": "D-Robotics X5 Run Receipt",
+  "type": "object",
+  "required": ["schema_version", "run_id", "skill_id", "status", "risk", "approval", "artifacts", "verification", "limitations", "handoff", "completed_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string"},
+    "skill_id": {"type": "string", "pattern": "^x5-[a-z0-9-]+$"},
+    "status": {"enum": ["succeeded", "failed", "blocked", "cancelled"]},
+    "risk": {"enum": ["low", "medium", "high", "critical"]},
+    "approval": {
+      "type": "object",
+      "required": ["required", "record"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "record": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "type", "sha256"],
+        "properties": {
+          "path": {"type": "string"},
+          "type": {"type": "string"},
+          "sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["passed", "evidence"],
+      "properties": {
+        "passed": {"type": "boolean"},
+        "evidence": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "handoff": {
+      "type": "object",
+      "required": ["next_skill", "required_inputs"],
+      "properties": {
+        "next_skill": {"type": ["string", "null"]},
+        "required_inputs": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "completed_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "succeeded"}}},
+      "then": {
+        "properties": {
+          "verification": {"properties": {"passed": {"const": true}}},
+          "artifacts": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"approval": {"properties": {"required": {"const": true}}}}},
+      "then": {"properties": {"approval": {"properties": {"record": {"type": "string", "minLength": 1}}}}}
+    }
+  ],
+  "additionalProperties": false
+}

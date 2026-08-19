@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drobotics-x5/plan.schema.json",
+  "title": "D-Robotics X5 Execution Plan",
+  "type": "object",
+  "required": ["schema_version", "skill_id", "risk", "approval_required", "steps", "side_effects", "verification"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "skill_id": {"type": "string", "pattern": "^x5-[a-z0-9-]+$"},
+    "risk": {"enum": ["low", "medium", "high", "critical"]},
+    "approval_required": {"type": "boolean"},
+    "steps": {"type": "array", "items": {"type": ["string", "object"]}},
+    "side_effects": {"type": "array", "items": {"type": "string"}},
+    "verification": {"type": "array", "items": {"type": ["string", "object"]}}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drobotics-x5/environment.schema.json",
+  "title": "D-Robotics X5 Environment Snapshot",
+  "type": "object",
+  "required": ["schema_version", "platform", "status", "captured_at", "workflow", "host", "toolchain", "documentation", "missing"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "platform": {"const": "X5"},
+    "status": {"enum": ["ready", "degraded", "blocked"]},
+    "captured_at": {"type": "string", "format": "date-time"},
+    "workflow": {"enum": ["environment", "ptq", "qat", "runtime", "python-api", "diagnose"]},
+    "host": {
+      "type": "object",
+      "required": ["os", "architecture", "python"],
+      "properties": {
+        "os": {"type": "string"},
+        "architecture": {"type": "string"},
+        "python": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "toolchain": {
+      "type": "object",
+      "properties": {
+        "hb_mapper": {"$ref": "#/$defs/tool"},
+        "hb_model_info": {"$ref": "#/$defs/tool"},
+        "hb_perf": {"$ref": "#/$defs/tool"},
+        "docker": {"$ref": "#/$defs/tool"},
+        "torch": {"$ref": "#/$defs/package"},
+        "horizon_plugin_pytorch": {"$ref": "#/$defs/package"}
+      },
+      "additionalProperties": true
+    },
+    "documentation": {
+      "type": "object",
+      "required": ["root", "available", "hat_in_scope"],
+      "properties": {
+        "root": {"type": ["string", "null"]},
+        "available": {"type": "boolean"},
+        "hat_in_scope": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "board": {"type": ["object", "null"]},
+    "missing": {"type": "array", "items": {"type": "string"}},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "tool": {
+      "type": "object",
+      "required": ["available", "path"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "path": {"type": ["string", "null"]},
+        "version": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "package": {
+      "type": "object",
+      "required": ["available", "version"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "version": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

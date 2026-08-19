@@ -41,15 +41,18 @@ cd rdk-device-skills
 
 ### 方式 4：Workspace 集成型 Pack（OE 工具链）
 
-OE-Skills-X5 等需要 workspace 初始化的 Pack，整包安装而非逐个 skill：
+OE-Skills-X5 等需要 workspace 初始化的 Pack，整包安装而非逐个 skill。Hub 镜像目录（`skills/<catalog_dir>/`）携带完整资源树 + `setup.sh`，本身就是完整安装源：
 
 ```bash
-git clone https://github.com/D-Robotics/oe-skills-x5.git
-cd oe-skills-x5
-bash setup.sh $PROJECT_ROOT          # 铺设 .drobotics/ + 注入路由规则
+git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git
+cd rdk-skills
+bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT   # 铺设 .drobotics/ + 注入路由规则
+bash skills/oe-skills-s/setup.sh $PROJECT_ROOT    # 铺设 .horizon/ + 注入路由规则
 ```
 
-**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」——installer 会读随包注册表、clone 仓库、在用户确认项目根目录后执行 `setup.sh` 并做安装后检查。
+Pack 仓库保持为权威上游与降级来源（直接 clone Pack 仓库后在其根目录执行 `bash setup.sh $PROJECT_ROOT`）。
+
+**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」——installer 会读随包注册表、clone Hub 目录、在用户确认项目根目录后执行镜像里的 `setup.sh` 并做安装后检查（Hub 镜像落后时才降级到 Pack 仓库）。
 
 安装完成后**重启 Agent 会话**使新技能生效。
 
@@ -91,8 +94,8 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 目录当前包含 **89 个 skill**：
 
 - **26 个设备侧 skill**（`rdk-device-skills` Pack，扁平布局）
-- **22 个 OE 工具链 X5 skill**（`oe-skills-x5` Pack，workspace 集成型，批量布局镜像为 `skills/oe-skills-x5/`）
-- **33 个 OE 工具链 S 系列 skill**（`oe-skills-s` Pack，workspace 集成型，批量布局镜像为 `skills/oe-skills-s/`）
+- **22 个 OE 工具链 X5 skill**（`oe-skills-x5` Pack，workspace 集成型，完整 `x5/` 资源树 + `setup.sh` 镜像为 `skills/oe-skills-x5/`，可自安装）
+- **33 个 OE 工具链 S 系列 skill**（`oe-skills-s` Pack，workspace 集成型，完整 `horizon/` 资源树 + `setup.sh` 镜像为 `skills/oe-skills-s/`，可自安装）
 - **8 个 BSP 开发 skill**（`bsp-skills` Pack，扁平布局）
 
 ### 设备侧 26 个
@@ -112,11 +115,11 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 
 环境准备 `x5-environment-setup` / `x5-environment-probe` / `x5-environment-install`；PTQ 链路 `x5-ptq-deploy` / `x5-model-preflight` / `x5-calibration-data-prepare` / `x5-ptq-config-authoring` / `x5-ptq-compile`；QAT 链路 `x5-qat-deploy` / `x5-qat-adaptation` / `x5-qat-training` / `x5-qat-compile`；Runtime 链路 `x5-runtime-deploy` / `x5-runtime-cpp-infer` / `x5-runtime-perf-eval`；观测与诊断 `x5-board-monitor` / `x5-bpu-python-api` / `x5-model-diagnostics` / `x5-accuracy-diagnostics` / `x5-consistency-diagnostics` / `x5-performance-diagnostics`；入口 `x5-router`。
 
-该 Pack 是 **workspace 集成型**：整包安装（`git clone https://github.com/D-Robotics/oe-skills-x5.git` + `bash setup.sh $PROJECT_ROOT`），不逐 skill 安装。
+该 Pack 是 **workspace 集成型**：整包安装（Hub 镜像 `bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT`，或降级 `git clone https://github.com/D-Robotics/oe-skills-x5.git` + `bash setup.sh $PROJECT_ROOT`），不逐 skill 安装。
 
 ### OE 工具链 S（33 个）
 
-镜像自 `oe-skills-s` 的 `horizon/skills/` 整树（批量布局），模块：`hbdk` / `hmct` / `horizon_tc_ui` / `horizon-router` / `plugin` / `ucp`，含模块级路由与嵌套子 skill。安装方式同 X5：`git clone https://github.com/D-Robotics/oe-skills-s.git` + `bash setup.sh $PROJECT_ROOT`。
+镜像自 `oe-skills-s` 的完整 `horizon/` 资源树（批量布局，含 `docs/`、`skill-index.json`、`VERSION` 与 `setup.sh` 覆盖层），模块：`hbdk` / `hmct` / `horizon_tc_ui` / `horizon-router` / `plugin` / `ucp`，含模块级路由与嵌套子 skill。安装方式同 X5：Hub 镜像 `bash skills/oe-skills-s/setup.sh $PROJECT_ROOT`，或降级 `git clone https://github.com/D-Robotics/oe-skills-s.git` + `bash setup.sh $PROJECT_ROOT`。
 
 支持的板卡：RDK X3 / X5 / Ultra / S100 / S100P / S600（X 系列模型格式 `.bin`，S 系列 `.hbm`）。
 

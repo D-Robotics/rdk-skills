@@ -38,6 +38,23 @@ class PluginContractTests(unittest.TestCase):
         self.assertIn("bash <tmp>/pack/<install_script> <PROJECT_ROOT>", text)
         self.assertNotIn("<tmp>/<repo>", text)
 
+    def test_installer_installs_workspace_packs_from_the_hub_mirror_first(self):
+        text = self.skill_md.read_text(encoding="utf-8")
+
+        # Primary source: the Hub itself, not the pack repo.
+        self.assertIn(
+            "git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git <tmp>/rdk-skills",
+            text,
+        )
+        self.assertIn(
+            "bash <tmp>/rdk-skills/skills/<catalog_dir>/<install_script> <PROJECT_ROOT>",
+            text,
+        )
+        # The self-installable mirror contract (mirrored resource tree plus
+        # the overlaid setup.sh) must be described.
+        self.assertIn("self-installable catalog dir", text)
+        self.assertIn("setup entry is `<tmp>/rdk-skills/skills/<catalog_dir>/<install_script>`", text)
+
     def test_installer_treats_agent_setup_as_read_only_context(self):
         text = self.skill_md.read_text(encoding="utf-8")
 
