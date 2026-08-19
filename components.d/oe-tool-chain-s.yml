@@ -2,6 +2,9 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 name: OE Tool Chain (S)
 repo: D-Robotics/oe-skills-s
+ref: v0.2.0
+# ^ Pinned release tag (immutable). Release flow: pack repo tags a new
+# version -> this ref moves -> merge triggers sync at that tag.
 description: Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization.
 # oe-skills-s is a workspace-integrated pack, not a flat skill collection.
 # Skills live under horizon/skills/<module>/<skill>/ with module-level

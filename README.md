@@ -197,7 +197,7 @@ D-Robotics/rdk-skills/
 ├── components.d/                # Pack registry (one YAML per product)
 │   ├── README.md                 # registration schema
 │   ├── rdk-device.yml
-│   ├── oe-tool-chain.yml
+│   ├── oe-tool-chain-x5.yml
 │   └── oe-tool-chain-s.yml
 ├── plugins.d/                   # plugin build configuration
 │   ├── README.md

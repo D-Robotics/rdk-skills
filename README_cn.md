@@ -185,7 +185,7 @@ D-Robotics/rdk-skills/
 ├── components.d/                # Pack 注册表（每个产品一个 YAML）
 │   ├── README.md                 # 注册规范
 │   ├── rdk-device.yml
-│   ├── oe-tool-chain.yml
+│   ├── oe-tool-chain-x5.yml
 │   └── oe-tool-chain-s.yml
 ├── plugins.d/                   # 插件构建配置
 │   ├── README.md

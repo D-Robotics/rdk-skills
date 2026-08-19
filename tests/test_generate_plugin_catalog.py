@@ -23,10 +23,11 @@ class PackRegistryTests(unittest.TestCase):
         self.repo = Path(self.temp_dir.name)
         components_dir = self.repo / "components.d"
         components_dir.mkdir()
-        (components_dir / "oe-tool-chain.yml").write_text(
+        (components_dir / "oe-tool-chain-x5.yml").write_text(
             """\
 name: OE Tool Chain (X5)
 repo: D-Robotics/oe-skills-x5
+ref: v2.0.0
 install_type: workspace
 install_script: setup.sh
 workspace_dir: .drobotics
@@ -44,6 +45,7 @@ skills:
             """\
 name: OE Tool Chain (S)
 repo: D-Robotics/oe-skills-s
+ref: v0.2.0
 install_type: workspace
 install_script: setup.sh
 workspace_dir: .horizon
@@ -81,16 +83,30 @@ skills:
         self.assertEqual(packs["D-Robotics/oe-skills-x5"]["catalog_dir"], "oe-skills-x5")
         self.assertEqual(packs["D-Robotics/oe-skills-s"]["catalog_dir"], "oe-skills-s")
 
-    def test_pack_registry_defaults_missing_ref_to_main(self):
+    def test_pack_registry_preserves_pinned_refs(self):
         registry = catalog.build_pack_registry(self.repo, catalog.load_components(self.repo))
 
         self.assertEqual(
             {pack["repo"]: pack["ref"] for pack in registry["packs"]},
             {
-                "D-Robotics/oe-skills-s": "main",
-                "D-Robotics/oe-skills-x5": "main",
+                "D-Robotics/oe-skills-s": "v0.2.0",
+                "D-Robotics/oe-skills-x5": "v2.0.0",
             },
         )
+
+    def test_pack_registry_defaults_missing_ref_to_main(self):
+        component = {
+            "name": "Unpinned Workspace",
+            "repo": "D-Robotics/unpinned-workspace",
+            "install_type": "workspace",
+            "install_script": "setup.sh",
+            "workspace_dir": ".workspace",
+            "verify_paths": [".workspace/VERSION"],
+            "skills": [{"catalog_dir": "unpinned"}],
+        }
+        registry = catalog.build_pack_registry(Path("."), [component])
+
+        self.assertEqual(registry["packs"][0]["ref"], "main")
 
 
 class SkillIndexTests(unittest.TestCase):
