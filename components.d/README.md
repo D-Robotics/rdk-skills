@@ -31,7 +31,7 @@
 
 | 字段 | 默认值 | 说明 |
 |------|--------|------|
-| `ref` | `main` | 同步分支或发布 tag；**workspace 集成型 Pack 必须显式 pin 到不可变 tag**（如 `v2.0.0`），发新版时打新 tag 并移动 ref |
+| `ref` | `main` | 同步分支或发布 tag；**workspace 集成型 Pack 必须显式 pin 到不可变 tag**（如 `v2.1.0`），发新版时打新 tag 并移动 ref |
 | `links.contributing` | `CONTRIBUTING.md` | 源头仓库的贡献指南路径，设为 `false` 表示无 |
 | `links.discussions` | `true` | 设为 `false` 表示仓库无 Discussions |
 
@@ -56,6 +56,8 @@ workspace Pack 的 `skills` 必须有且只有一个 entry，其 `path` 指向�
 此外 workspace Pack 必须把 `ref` 显式 pin 到不可变 tag：Pack 仓库打 tag → 本条目 `ref` 移至新 tag → 合并触发同步在该 tag 处快照。tag 只增不改、不 force-move，回滚即把 `ref` 改回旧 tag。
 
 因此只需 clone 一次 Hub 目录，`bash skills/<catalog_dir>/setup.sh <project-root>` 即可完整安装该 Pack；Pack 自有的 `setup.sh` 需要同时兼容两种资源位置（仓库根布局 `./x5/` 与 Hub 平铺布局），Hub 镜像检测不到 `<资源根>/*` 子目录时自行平铺。Pack 仓库仍保留为权威上游与降级安装源。
+
+**升级契约（P1）**：`setup.sh` 支持 `--update`（先比已装 `VERSION` 与资源 `VERSION`，相同则直接跳过，不同则删除重建 workspace 目录，不残留旧文件）、`--force`（忽略版本比较强制重建）与 `--ref <tag>`（把安装来源 tag 记录进 `<workspace_dir>/INSTALLED_REF`，省略时回退为 VERSION 值）。三个能力是注册表 `ref` 锚点的下游：installer 把项目侧 `INSTALLED_REF`（缺失时回退 `VERSION`）与注册表 `ref` 归一化比对（去掉前导 `v`，`v2.1.0` 与 `2.1.0` 等价），相同报告已是最新，不同才执行 `setup.sh --update --ref <ref>`。发布新版时 Pack 必须同步 bump 资源 `VERSION` 并打新 tag（VERSION 与 tag 一一对应，二者同时移动，Hub `ref` 跟进）——否则 `--update` 无法感知新内容。
 
 `skills` entry 的 `catalog_dir`、`install_script`、`workspace_dir` 与每条 `verify_paths` 必须是非空 POSIX 相对路径：不能是绝对路径、不能包含 `..`，也不能使用反斜杠 `\\`。例如 X5 Pack 使用 `.drobotics`，并验证 `.drobotics/skills/x5-router/SKILL.md`。
 

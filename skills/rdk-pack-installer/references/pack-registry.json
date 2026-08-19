@@ -5,7 +5,7 @@
       "install_script": "setup.sh",
       "install_type": "workspace",
       "name": "OE Tool Chain (S)",
-      "ref": "v0.2.0",
+      "ref": "v0.3.0",
       "repo": "D-Robotics/oe-skills-s",
       "verify_paths": [
         ".horizon/HORIZON.md",
@@ -20,7 +20,7 @@
       "install_script": "setup.sh",
       "install_type": "workspace",
       "name": "OE Tool Chain (X5)",
-      "ref": "v2.0.0",
+      "ref": "v2.1.0",
       "repo": "D-Robotics/oe-skills-x5",
       "verify_paths": [
         ".drobotics/X5.md",

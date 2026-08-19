@@ -48,11 +48,15 @@ git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git
 cd rdk-skills
 bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT   # 铺设 .drobotics/ + 注入路由规则
 bash skills/oe-skills-s/setup.sh $PROJECT_ROOT    # 铺设 .horizon/ + 注入路由规则
+
+# 升级已装 workspace：先比 VERSION，已是最新则跳过；不同则删除重建（无旧文件残留）
+bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
+# bash skills/oe-skills-s/setup.sh --update --ref v0.3.0 $PROJECT_ROOT
 ```
 
-Pack 仓库保持为权威上游与降级来源（直接 clone Pack 仓库后在其根目录执行 `bash setup.sh $PROJECT_ROOT`）。
+Pack 仓库保持为权威上游与降级来源（直接 clone Pack 仓库后在其根目录执行 `bash setup.sh $PROJECT_ROOT`，升级用 `bash setup.sh --update $PROJECT_ROOT`）。
 
-**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」——installer 会读随包注册表、clone Hub 目录、在用户确认项目根目录后执行镜像里的 `setup.sh` 并做安装后检查（Hub 镜像落后时才降级到 Pack 仓库）。
+**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」（升级则说「升级一下项目的 OE 工具链」）——installer 会读随包注册表、clone Hub 目录、比对项目侧 `INSTALLED_REF`（回退 `VERSION`）与注册表 `ref`，已是最新则跳过、否则执行镜像里的 `setup.sh --update --ref <ref>` 并做安装后检查（Hub 镜像落后时才降级到 Pack 仓库）。升级会重建 `.drobotics/`/`.horizon/`，其中的本地修改会丢失，需用户显式确认。
 
 安装完成后**重启 Agent 会话**使新技能生效。
 

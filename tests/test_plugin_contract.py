@@ -63,6 +63,33 @@ class PluginContractTests(unittest.TestCase):
         self.assertIn("separate explicit confirmation", text)
         self.assertIn("within the confirmed `PROJECT_ROOT`", text)
 
+    def test_installer_upgrade_flow_compares_installed_anchor_with_registry_ref(self):
+        text = self.skill_md.read_text(encoding="utf-8")
+
+        # Installed-state anchor: INSTALLED_REF first, VERSION as fallback,
+        # compared against the registry ref after normalizing a leading "v".
+        self.assertIn("INSTALLED_REF", text)
+        self.assertIn("stripping a leading `v`", text)
+        self.assertIn("already up to date", text)
+
+        # Upgrade runs the mirrored setup.sh with --update --ref; forced
+        # reinstall at the same version appends --force.
+        self.assertIn(
+            "bash <tmp>/rdk-skills/skills/<catalog_dir>/<install_script> --update --ref <ref> <PROJECT_ROOT>",
+            text,
+        )
+        self.assertIn("append `--force`", text)
+        self.assertIn(
+            "bash <tmp>/pack/<install_script> --update --ref <ref> <PROJECT_ROOT>",
+            text,
+        )
+        self.assertIn("pre-upgrade `setup.sh`", text)
+
+        # Upgrade rebuilds the workspace dir — local edits are lost, so it
+        # needs its own confirmation gate.
+        self.assertIn("local edits inside `.drobotics/` / `.horizon/` are lost", text)
+        self.assertIn("Never run an upgrade without the explicit confirmation", text)
+
     def test_hub_device_mirror_has_no_retired_routes(self):
         retired = (
             "rdk-device",

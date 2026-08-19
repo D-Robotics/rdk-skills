@@ -4,7 +4,13 @@
 #
 # X5 Workspace 初始化脚本
 #
-# 用法: bash setup.sh <project-root>
+# 用法: bash setup.sh [--update] [--force] [--ref <tag>] <project-root>
+#
+# --update  升级模式：已安装且 VERSION 与源一致（未加 --force）时直接跳过；
+#           版本不同则以重建方式升级（先删目标目录再铺设，不残留旧文件）。
+# --force   配合 --update 忽略版本比较，强制重建。
+# --ref     安装来源标签（如 v2.1.0），记录到 .drobotics/INSTALLED_REF；
+#           省略时回退为资源 VERSION。installer 以它作升级比对锚点。
 #
 # 将资源铺设到 <project-root>/.drobotics/，并向 CLAUDE.md / AGENTS.md
 # 注入路由规则。资源位置自适应两种布局：
@@ -15,9 +21,29 @@ set -euo pipefail
 
 RESOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-if [ -z "${1:-}" ]; then
+UPDATE=0
+FORCE=0
+PROVIDED_REF=""
+while [ "$#" -gt 1 ]; do
+  case "$1" in
+    --update) UPDATE=1; shift ;;
+    --force)  FORCE=1; shift ;;
+    --ref)
+      if [ -z "${2:-}" ]; then
+        echo "ERROR: --ref 需要一个参数（如 v2.1.0）" >&2
+        exit 2
+      fi
+      PROVIDED_REF="$2"; shift 2 ;;
+    *)
+      echo "ERROR: 未知参数: $1" >&2
+      echo "用法: bash setup.sh [--update] [--force] [--ref <tag>] <project-root>" >&2
+      exit 2 ;;
+  esac
+done
+
+if [ -z "${1:-}" ] || [ "${1:-}" = "--update" ] || [ "${1:-}" = "--force" ] || [ "${1:-}" = "--ref" ]; then
   echo "ERROR: 缺少参数" >&2
-  echo "用法: bash setup.sh <project-root>" >&2
+  echo "用法: bash setup.sh [--update] [--force] [--ref <tag>] <project-root>" >&2
   exit 1
 fi
 
@@ -40,6 +66,25 @@ fi
 echo "==> Resource:  $RESOURCE_DIR"
 echo "==> Project:   $PROJECT_ROOT"
 echo "==> Target:    $DROBOTICS_DST"
+
+SRC_VERSION=$(cat "$DROBOTICS_SRC/VERSION" 2>/dev/null || true)
+INSTALLED_VERSION=$(cat "$DROBOTICS_DST/VERSION" 2>/dev/null || true)
+
+# ── 0. 升级判定（--update）────────────────────────────────────────
+if [ "$UPDATE" -eq 1 ]; then
+  if [ -n "$INSTALLED_VERSION" ] && [ "$INSTALLED_VERSION" = "$SRC_VERSION" ] && [ "$FORCE" -eq 0 ]; then
+    echo "==> Already up to date ($INSTALLED_VERSION). Use --force to rebuild."
+    exit 0
+  fi
+  if [ -n "$INSTALLED_VERSION" ]; then
+    echo "==> Upgrade: $INSTALLED_VERSION -> $SRC_VERSION (rebuild, no stale files)"
+  elif [ -e "$DROBOTICS_DST" ]; then
+    echo "==> Existing workspace without VERSION record; --update rebuilds it"
+  else
+    echo "==> Fresh install (--update behaves like a normal install)"
+  fi
+  rm -rf "$DROBOTICS_DST"
+fi
 
 # ── 1. 铺设 .drobotics/ ───────────────────────────────────────────────────
 mkdir -p "$DROBOTICS_DST"
@@ -111,6 +156,11 @@ if [ -f "$DROBOTICS_SRC/VERSION" ]; then
 else
   echo "  [WARN] VERSION 不存在，跳过" >&2
 fi
+
+# INSTALLED_REF — 安装来源锚点（installer 升级比对用；--ref 缺失时回退 VERSION）
+RESOLVED_REF="${PROVIDED_REF:-${SRC_VERSION:-unknown}}"
+printf '%s\n' "$RESOLVED_REF" > "$DROBOTICS_DST/INSTALLED_REF"
+echo "  [ok] INSTALLED_REF ($RESOLVED_REF)"
 
 # ── 2. 注入路由规则到 CLAUDE.md / AGENTS.md ────────────────────────
 MARKER='# X5 Workspace Rules'

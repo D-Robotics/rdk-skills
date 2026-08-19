@@ -95,6 +95,12 @@ bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT
 
 # S-series tool chain (Horizon OE)
 bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
+
+# Upgrade an existing workspace: compares the installed VERSION, skips when
+# current, otherwise rebuilds .drobotics/ (no stale files). --ref records the
+# source tag into the workspace's INSTALLED_REF; omit it for a manual update.
+bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
+# bash skills/oe-skills-s/setup.sh --update --ref v0.3.0 $PROJECT_ROOT
 ```
 
 The pack repos remain the authoritative upstreams and the documented fallback source:
@@ -112,14 +118,14 @@ Or tell your AI (works with the Hub plugin from Option 3, which ships `rdk-pack-
 Install D-Robotics OE-Skills-X5 into this project.
 ```
 
-`rdk-pack-installer` reads its bundled pack registry, clones the Hub catalog, runs the pack's mirrored `setup.sh` (from `skills/<catalog_dir>/`) with your confirmed project root, and verifies the installed workspace — falling back to the pack repo only when the Hub mirror lags behind the registry. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S).
+`rdk-pack-installer` reads its bundled pack registry, clones the Hub catalog, runs the pack's mirrored `setup.sh` (from `skills/<catalog_dir>/`) with your confirmed project root, and verifies the installed workspace — falling back to the pack repo only when the Hub mirror lags behind the registry. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S). For upgrade requests it compares the workspace's installed anchor (`INSTALLED_REF`, falling back to `VERSION`) with the registry's pinned `ref` (normalizing a leading `v`), reports "already up to date" when they match, and otherwise re-runs `setup.sh --update --ref <ref>` — which rebuilds the workspace from scratch, so local edits inside `.drobotics/`/`.horizon/` are lost; that rebuild requires an explicit confirmation.
 
 ### Updating skills
 
 - Flat skills: `npx skills update` (or re-run `npx skills add d-robotics/rdk-skills` and select again).
 - Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder and installer skills.
 - DSH bundle: `dsh plugin --profile <name> update dsh-plugin-rdk` (skill content refreshes with each bundle release).
-- The catalog itself refreshes automatically every hour (sync pipeline) — Hub-clone installs update with `git pull` in the Hub checkout, then re-run `bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT`; pack-repo installs use `git pull` + `bash setup.sh $PROJECT_ROOT` inside the repo.
+- The catalog itself refreshes automatically every hour (sync pipeline) — Hub-clone installs update with `git pull` in the Hub checkout, then `bash skills/oe-skills-x5/setup.sh --update $PROJECT_ROOT` (it exits cleanly when already current); pack-repo installs use `git pull` + `bash setup.sh --update $PROJECT_ROOT` inside the repo.
 
 ---
 

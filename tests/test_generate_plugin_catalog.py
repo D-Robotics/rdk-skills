@@ -27,7 +27,7 @@ class PackRegistryTests(unittest.TestCase):
             """\
 name: OE Tool Chain (X5)
 repo: D-Robotics/oe-skills-x5
-ref: v2.0.0
+ref: v2.1.0
 install_type: workspace
 install_script: setup.sh
 workspace_dir: .drobotics
@@ -45,7 +45,7 @@ skills:
             """\
 name: OE Tool Chain (S)
 repo: D-Robotics/oe-skills-s
-ref: v0.2.0
+ref: v0.3.0
 install_type: workspace
 install_script: setup.sh
 workspace_dir: .horizon
@@ -89,8 +89,8 @@ skills:
         self.assertEqual(
             {pack["repo"]: pack["ref"] for pack in registry["packs"]},
             {
-                "D-Robotics/oe-skills-s": "v0.2.0",
-                "D-Robotics/oe-skills-x5": "v2.0.0",
+                "D-Robotics/oe-skills-s": "v0.3.0",
+                "D-Robotics/oe-skills-x5": "v2.1.0",
             },
         )
 

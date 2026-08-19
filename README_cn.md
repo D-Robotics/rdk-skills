@@ -84,6 +84,12 @@ bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT
 
 # S 系列工具链（Horizon OE）
 bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
+
+# 升级已装 workspace：先比 VERSION，已是最新则直接跳过；不同则重建
+# .drobotics/（不残留旧文件）。--ref 把来源 tag 记录进 INSTALLED_REF；
+# 手动更新可省略。
+bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
+# bash skills/oe-skills-s/setup.sh --update --ref v0.3.0 $PROJECT_ROOT
 ```
 
 Pack 仓库仍是权威上游与文档化的降级来源：
@@ -101,13 +107,13 @@ bash setup.sh $PROJECT_ROOT
 Install D-Robotics OE-Skills-X5 into this project.
 ```
 
-`rdk-pack-installer` 会读取随包注册表、克隆 Hub 目录、在你确认项目根目录后执行 Pack 的镜像 `setup.sh`（位于 `skills/<catalog_dir>/`）并校验安装结果；仅当 Hub 镜像落后于注册表时才降级到 Pack 仓库。支持所有 `install_type: workspace` 的 Pack（OE 工具链 X5 和 S）。
+`rdk-pack-installer` 会读取随包注册表、克隆 Hub 目录、在你确认项目根目录后执行 Pack 的镜像 `setup.sh`（位于 `skills/<catalog_dir>/`）并校验安装结果；仅当 Hub 镜像落后于注册表时才降级到 Pack 仓库。支持所有 `install_type: workspace` 的 Pack（OE 工具链 X5 和 S）。升级请求会先把项目侧安装锚点（`INSTALLED_REF`，缺失时回退 `VERSION`）与注册表 pin 的 `ref` 归一化比对（去掉前导 `v`）：相同则报告「已是最新」并停下，不同才重跑 `setup.sh --update --ref <ref>` —— 该命令会整目录重建 workspace，`.drobotics/`/`.horizon/` 里的本地修改会丢失，因此升级必须另行经过用户确认。
 
 ### 更新 Skill
 
 - 扁平 Skill：`npx skills update`（或重新 `npx skills add d-robotics/rdk-skills` 选择）
 - Hub 插件：`/plugin` 中管理 `d-robotics-skills` 插件即可更新 finder/installer
-- 目录本身每小时自动同步一次；Hub clone 安装的在 Hub 目录 `git pull` 后重新执行 `bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT`，Pack 仓库安装的在仓库内 `git pull` + `bash setup.sh $PROJECT_ROOT`
+- 目录本身每小时自动同步一次；Hub clone 安装的在 Hub 目录 `git pull` 后执行 `bash skills/oe-skills-x5/setup.sh --update $PROJECT_ROOT`（已是最新时直接跳过），Pack 仓库安装的在仓库内 `git pull` + `bash setup.sh --update $PROJECT_ROOT`
 
 ---
 
