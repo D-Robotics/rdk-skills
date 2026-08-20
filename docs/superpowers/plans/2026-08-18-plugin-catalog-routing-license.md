@@ -765,7 +765,7 @@ Expected: 测试全部通过；新 Hub Skill 为 `OK`；源头 Pack 显示 `RESU
 
 ## 实施状态（2026-08-20 记录）
 
-Task 1–8 已全部实施并验证，代码落地在内部 worktree 分支 `fix/plugin-catalog-remediation`（相对 main 共 20 个 commit，全部本地未推送）：
+Task 1–8 已全部实施并验证，代码落地在内部 worktree 分支 `fix/plugin-catalog-remediation`（相对 main 共 20 个 commit；2026-08-20 已合并进 main）：
 
 - 确定性目录生成器 `.github/scripts/generate_plugin_catalog.py`（pack-registry.json / skill-index.json 构建期生成 + 提交入库）
 - `rdk-pack-installer`（自包含注册表）+ `rdk-skill-finder`（`search_catalog.py` + 五维 evals）
@@ -785,5 +785,5 @@ Task 1–8 已全部实施并验证，代码落地在内部 worktree 分支 `fix
 
 - **P2-#5 L2 治理**：S Pack 的 33 个 skill 目前零 skill-card.md 覆盖；X5 缺失 skill 级 evals（setup.sh 的 eval 剔除逻辑暗示曾存在）。均须在 Pack 源头仓库补齐（ADR 0001 过渡期内），经同步镜像到 Hub。
 - **P2-#6 插件产物漂移门禁**：`--check-plugin-includes` 接口已实现，剩余工作是把产物漂移检测接进 CI（build-plugins.sh 产物与 plugins.d 声明不一致即阻断提交）。
-- **P3-#7 发布收尾**：推送顺序必须是 Pack 仓库（commit + tag `v0.3.0`/`v2.1.0`）先、Hub 后（main 未推送 commit + 本分支）；合并 `fix/plugin-catalog-remediation` → main；CHANGELOG 的 Unreleased 切正式版本；打 tag `v1.1.0`（ADR 0006 首发版本，锁定 v2.1.0/v0.3.0）。当前全部改动保持本地未推送，等待发布指令。
+- **P3-#7 发布收尾**：分支 `fix/plugin-catalog-remediation` 已合并进 main、CHANGELOG 已切正式版 `[0.1.0]` 并打本地 annotated tag `v0.1.0`（2026-08-20）。版本序列重启：旧 0.1.0~0.3.0 编号从未打 tag，已降级为「0.x 历史（未打 tag）」小节；ADR 0006 原计划的首发版本 v1.1.0 作废。剩余：按顺序推送——Pack 仓库（commit + tag `v0.3.0`/`v2.1.0`）先、Hub 后（main 未推送 commit + tag `v0.1.0`）。当前全部改动保持本地未推送，等待发布指令。
 
