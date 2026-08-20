@@ -67,7 +67,7 @@
 并使用 POSIX 分隔符。Pack 注册表只收录 `install_type: workspace` 的组件；
 组件未声明 `ref` 时输出 `main`。
 
-- [ ] **Step 1: 添加 workspace 安装契约的失败测试**
+- [x] **Step 1: 添加 workspace 安装契约的失败测试**
 
 在 `tests/test_generate_plugin_catalog.py` 创建临时 Hub fixture，写入 X5/S 两个组件，断言输出字段完整：
 
@@ -83,13 +83,13 @@ def test_pack_registry_contains_declared_workspace_contracts(self):
                   packs["D-Robotics/oe-skills-s"]["verify_paths"])
 ```
 
-- [ ] **Step 2: 运行测试并确认因生成模块不存在而失败**
+- [x] **Step 2: 运行测试并确认因生成模块不存在而失败**
 
 Run: `python -m unittest tests.test_generate_plugin_catalog -v`
 
 Expected: `ModuleNotFoundError` 或找不到 `.github/scripts/generate_plugin_catalog.py`。
 
-- [ ] **Step 3: 添加组件字段和最小 Pack 注册表实现**
+- [x] **Step 3: 添加组件字段和最小 Pack 注册表实现**
 
 在 X5 注册条目加入：
 
@@ -130,13 +130,13 @@ def require_safe_relative(value: str, field: str) -> str:
   run: python3 -m pip install -r .github/requirements.txt
 ```
 
-- [ ] **Step 4: 运行单测确认 Pack 注册表测试通过**
+- [x] **Step 4: 运行单测确认 Pack 注册表测试通过**
 
 Run: `python -m unittest tests.test_generate_plugin_catalog -v`
 
 Expected: workspace contract 测试 PASS。
 
-- [ ] **Step 5: 添加 Skill 索引和确定性失败测试**
+- [x] **Step 5: 添加 Skill 索引和确定性失败测试**
 
 测试 fixture 同时包含一个 flat Skill、一个 bulk workspace Skill 和一个 Hub exception，断言：
 
@@ -155,13 +155,13 @@ def test_generated_json_is_byte_for_byte_deterministic(self):
     self.assertTrue(first.endswith("\n"))
 ```
 
-- [ ] **Step 6: 运行测试并确认 Skill 索引行为尚未实现**
+- [x] **Step 6: 运行测试并确认 Skill 索引行为尚未实现**
 
 Run: `python -m unittest tests.test_generate_plugin_catalog -v`
 
 Expected: `build_skill_index` 或 `render_json` 相关断言 FAIL。
 
-- [ ] **Step 7: 实现索引生成、重复检查和错误路径检查**
+- [x] **Step 7: 实现索引生成、重复检查和错误路径检查**
 
 实现以下失败条件：
 
@@ -174,13 +174,13 @@ if catalog_path in seen_paths:
 
 补充测试覆盖无效 frontmatter、重复名称、重复 catalog 路径、缺失 `workspace_dir`、空 `verify_paths`、绝对路径和 `..` 路径。再建立一个缺失 `include_skills` 目录的 fixture，断言 `validate_plugin_includes()` 抛出 `CatalogError("missing include_skills path: skills/not-present/")`。
 
-- [ ] **Step 8: 运行目录生成测试并确认通过**
+- [x] **Step 8: 运行目录生成测试并确认通过**
 
 Run: `python -m unittest tests.test_generate_plugin_catalog -v`
 
 Expected: 全部 PASS。
 
-- [ ] **Step 9: 更新组件字段文档并提交**
+- [x] **Step 9: 更新组件字段文档并提交**
 
 在 `components.d/README.md` 说明 `workspace_dir`、`verify_paths` 的必填条件和安全路径约束。
 
@@ -205,7 +205,7 @@ git commit -s -m "feat: generate bundled plugin catalog data"
 - Consumes: `skills/rdk-pack-installer/references/pack-registry.json`
 - Produces: self-contained Skill contract with no runtime dependency on `components.d`
 
-- [ ] **Step 1: 写安装器自包含和命名失败测试**
+- [x] **Step 1: 写安装器自包含和命名失败测试**
 
 ```python
 def test_installer_is_named_rdk_pack_installer(self):
@@ -220,13 +220,13 @@ def test_installer_reads_bundled_registry_not_components_directory(self):
     self.assertTrue((self.skill_dir / "references/pack-registry.json").is_file())
 ```
 
-- [ ] **Step 2: 运行测试并确认旧目录和旧说明导致失败**
+- [x] **Step 2: 运行测试并确认旧目录和旧说明导致失败**
 
 Run: `python -m unittest tests.test_plugin_contract.PluginContractTests -v`
 
 Expected: 目录名、frontmatter 名称和 `components.d` 依赖断言 FAIL。
 
-- [ ] **Step 3: 重命名目录并更新 Skill 契约**
+- [x] **Step 3: 重命名目录并更新 Skill 契约**
 
 执行 `git mv skills/d-robotics-pack-installer skills/rdk-pack-installer`。将安装器第一步改为：
 
@@ -238,7 +238,7 @@ Expected: 目录名、frontmatter 名称和 `components.d` 依赖断言 FAIL。
 
 验证步骤逐项读取 `verify_paths`，并在写操作前展示 `workspace_dir`。同步修改 skill-card、evals、`catalog-exceptions.yml` 中的名称和路径。
 
-- [ ] **Step 4: 生成安装器注册表并运行契约测试与单 Skill 校验**
+- [x] **Step 4: 生成安装器注册表并运行契约测试与单 Skill 校验**
 
 Run: `python .github/scripts/generate_plugin_catalog.py --repo-root . --target pack`
 
@@ -252,7 +252,7 @@ Run: `python .github/scripts/validate.py --skill rdk-pack-installer --mode enfor
 
 Expected: `OK rdk-pack-installer`，退出码 0。
 
-- [ ] **Step 5: 提交安装器重命名**
+- [x] **Step 5: 提交安装器重命名**
 
 ```bash
 git add skills/rdk-pack-installer catalog-exceptions.yml tests/test_plugin_contract.py
@@ -282,7 +282,7 @@ git commit -s -m "feat: make pack installer self-contained"
 - Errors: 索引缺失、JSON 无效或 schema 不受支持时输出
   `{"error": str, "matches": [], "fallback": null}` 并返回非零退出码。
 
-- [ ] **Step 1: 写精确名称、过滤和无匹配失败测试**
+- [x] **Step 1: 写精确名称、过滤和无匹配失败测试**
 
 ```python
 def test_exact_skill_name_ranks_first(self):
@@ -307,13 +307,13 @@ def test_invalid_index_returns_structured_cli_error(self):
     self.assertIsNone(payload["fallback"])
 ```
 
-- [ ] **Step 2: 运行测试并确认搜索模块不存在**
+- [x] **Step 2: 运行测试并确认搜索模块不存在**
 
 Run: `python -m unittest tests.test_search_catalog -v`
 
 Expected: 导入 `search_catalog.py` 失败。
 
-- [ ] **Step 3: 实现最小确定性搜索**
+- [x] **Step 3: 实现最小确定性搜索**
 
 分词规则固定为：ASCII 字母数字序列先 `casefold()`；连续汉字片段保留完整片段，
 并生成相邻双字词，以支持“模型量化”等中文查询且避免单字造成大量误命中。
@@ -335,17 +335,17 @@ f"npx skills add d-robotics/rdk-skills --skill {record['name']}"
 
 workspace action 固定为 `use rdk-pack-installer`。
 
-- [ ] **Step 4: 运行搜索单测并确认通过**
+- [x] **Step 4: 运行搜索单测并确认通过**
 
 Run: `python -m unittest tests.test_search_catalog -v`
 
 Expected: 全部 PASS。
 
-- [ ] **Step 5: 编写 Finder Skill、治理卡和五维 evals**
+- [x] **Step 5: 编写 Finder Skill、治理卡和五维 evals**
 
 `SKILL.md` 必须包含 Purpose、When to use、Instructions、Safety，并规定先运行搜索脚本再推荐安装命令。`evals/tasks.yaml` 至少覆盖：精确名称、中文任务发现、workspace handoff、无关请求拒绝、只读安全。
 
-- [ ] **Step 6: 生成真实索引并校验 Finder**
+- [x] **Step 6: 生成真实索引并校验 Finder**
 
 Run: `python .github/scripts/generate_plugin_catalog.py --repo-root . --target all`
 
@@ -357,7 +357,7 @@ Run: `python .github/scripts/validate.py --skill rdk-skill-finder --mode enforci
 
 Expected: 退出码 0。
 
-- [ ] **Step 7: 提交 Finder**
+- [x] **Step 7: 提交 Finder**
 
 ```bash
 git add skills/rdk-skill-finder catalog-exceptions.yml tests/test_search_catalog.py
@@ -386,7 +386,7 @@ git commit -s -m "feat: add RDK skill finder"
 - Consumes: generated registry/index and `plugins.d/d-robotics-skills.yml`
 - Produces: plugin tree containing exactly the three declared Hub Skill directories
 
-- [ ] **Step 1: 扩展插件契约失败测试**
+- [x] **Step 1: 扩展插件契约失败测试**
 
 ```python
 def test_plugin_definition_includes_three_hub_skills(self):
@@ -404,13 +404,13 @@ def test_generated_plugin_contains_three_hub_skills(self):
     self.assertTrue((self.repo / "plugins/d-robotics-skills/skills/rdk-skill-finder/references/skill-index.json").is_file())
 ```
 
-- [ ] **Step 2: 运行测试并确认旧插件组成导致失败**
+- [x] **Step 2: 运行测试并确认旧插件组成导致失败**
 
 Run: `python -m unittest tests.test_plugin_contract -v`
 
 Expected: include 列表和生成插件目录断言 FAIL。
 
-- [ ] **Step 3: 更新插件定义与构建前置检查**
+- [x] **Step 3: 更新插件定义与构建前置检查**
 
 将 `include_skills` 设置为测试中的固定顺序。`build-plugins.sh` 在任何删除操作前执行：
 
@@ -425,7 +425,7 @@ python3 .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-
 并在构建前运行 `python3 -m unittest discover -s tests -v`。这样缺失 include、
 生成器错误或契约回归都能阻断同步提交。
 
-- [ ] **Step 4: 重建插件并运行契约测试**
+- [x] **Step 4: 重建插件并运行契约测试**
 
 Run: `bash .github/scripts/build-plugins.sh`
 
@@ -435,11 +435,11 @@ Run: `python -m unittest tests.test_plugin_contract -v`
 
 Expected: PASS。
 
-- [ ] **Step 5: 修正文档中的插件能力描述**
+- [x] **Step 5: 修正文档中的插件能力描述**
 
 README 中统一说明：插件通过 finder 搜索目录；flat Skill 返回安装命令；workspace Skill 交给 `rdk-pack-installer`。删除“完整目录可直接按需加载”以及旧安装器名称。
 
-- [ ] **Step 6: 提交插件分发变更**
+- [x] **Step 6: 提交插件分发变更**
 
 ```bash
 git add plugins.d/d-robotics-skills.yml .github/scripts/build-plugins.sh .github/workflows/sync-skills.yml plugins/d-robotics-skills .claude-plugin .agents/plugins .cursor-plugin .dsh-plugin README.md README_cn.md docs/SKILL-USAGE.md tests/test_plugin_contract.py
@@ -470,7 +470,7 @@ git commit -s -m "feat: package finder and registry-backed installer"
 - Produces: `retired_route_problems(skills: dict) -> list[str]`
 - Retired exact tokens: `rdk-device`, `rdk-doc-finder`, `rdk-ros`, `rdk-mipi-camera-bringup`, `rdk-perf-investigator`
 
-- [ ] **Step 1: 添加废弃路由失败检查**
+- [x] **Step 1: 添加废弃路由失败检查**
 
 在 `tools/sandbox.py` 中加入：
 
@@ -495,7 +495,7 @@ def retired_route_problems(skills):
 
 把结果加入现有 `validate()` 返回的问题列表。
 
-- [ ] **Step 2: 运行源头校验并确认发现已知失效路由**
+- [x] **Step 2: 运行源头校验并确认发现已知失效路由**
 
 Workdir: `rdk-device-skills`
 
@@ -503,7 +503,7 @@ Run: `python tools/sandbox.py validate`
 
 Expected: FAIL，并列出五个 retired route 中实际存在的引用。
 
-- [ ] **Step 3: 按已批准映射修改所有源头 SKILL.md**
+- [x] **Step 3: 按已批准映射修改所有源头 SKILL.md**
 
 使用以下固定规则：
 
@@ -518,7 +518,7 @@ rdk-ros（节点或应用开发） -> 当前无专用 Skill；使用 rdk-docs-re
 rdk-perf-investigator -> 删除 Skill 名称，改为“上层诊断编排”
 ```
 
-- [ ] **Step 4: 运行源头完整测试并确认通过**
+- [x] **Step 4: 运行源头完整测试并确认通过**
 
 Run: `python tools/sandbox.py validate`
 
@@ -528,7 +528,7 @@ Run: `python tools/sandbox.py test`
 
 Expected: `RESULT: PASS`。
 
-- [ ] **Step 5: 提交源头路由修复**
+- [x] **Step 5: 提交源头路由修复**
 
 ```bash
 git add tools/sandbox.py skills/*/SKILL.md
@@ -547,7 +547,7 @@ git commit -s -m "fix: replace retired skill routes"
 - Consumes: committed `rdk-device-skills` Skill files
 - Produces: byte-identical Hub mirrors for every changed `SKILL.md`
 
-- [ ] **Step 1: 添加 Hub 镜像路由完整性失败测试**
+- [x] **Step 1: 添加 Hub 镜像路由完整性失败测试**
 
 ```python
 def test_hub_device_mirror_has_no_retired_routes(self):
@@ -560,13 +560,13 @@ def test_hub_device_mirror_has_no_retired_routes(self):
             self.assertIsNone(re.search(pattern, text, re.I), f"{path}: {route}")
 ```
 
-- [ ] **Step 2: 运行 Hub 测试并确认镜像仍包含旧路由**
+- [x] **Step 2: 运行 Hub 测试并确认镜像仍包含旧路由**
 
 Run: `python -m unittest tests.test_plugin_contract -v`
 
 Expected: retired route 断言 FAIL。
 
-- [ ] **Step 3: 从源头机械复制变更的 SKILL.md**
+- [x] **Step 3: 从源头机械复制变更的 SKILL.md**
 
 在 PowerShell 中对 Task 5 的十二个 Skill 名执行：
 
@@ -582,7 +582,7 @@ foreach ($name in $skillNames) {
 }
 ```
 
-- [ ] **Step 4: 验证源头和镜像逐字节相同**
+- [x] **Step 4: 验证源头和镜像逐字节相同**
 
 ```powershell
 foreach ($name in $skillNames) {
@@ -596,7 +596,7 @@ Run: `python -m unittest tests.test_plugin_contract -v`
 
 Expected: PASS。
 
-- [ ] **Step 5: 提交 Hub 镜像更新**
+- [x] **Step 5: 提交 Hub 镜像更新**
 
 ```bash
 git add skills/rdk-*/SKILL.md tests/test_plugin_contract.py
@@ -619,7 +619,7 @@ git commit -s -m "chore: sync repaired RDK device routes"
 - Consumes: workspace ADR `docs/adr/0004-license-apache-cc-by.md`
 - Produces: identical policy meaning across all public Hub governance documents
 
-- [ ] **Step 1: 写许可证契约失败测试**
+- [x] **Step 1: 写许可证契约失败测试**
 
 ```python
 POLICY_FILES = (
@@ -635,13 +635,13 @@ def test_policy_docs_explain_frontmatter_and_content_license(self):
         self.assertIn("metadata.content-license", text, relative)
 ```
 
-- [ ] **Step 2: 运行测试并确认现有文档表述不完整**
+- [x] **Step 2: 运行测试并确认现有文档表述不完整**
 
 Run: `python -m unittest tests.test_license_contract -v`
 
 Expected: 至少 `PR-SUBMISSION.md` 或 `components.d/README.md` 缺少许可范围说明而 FAIL。
 
-- [ ] **Step 3: 按 ADR 0004 更新中英文文本**
+- [x] **Step 3: 按 ADR 0004 更新中英文文本**
 
 中文标准表述：
 
@@ -654,7 +654,7 @@ metadata.content-license: CC-BY-4.0。该元数据不改变文件已有授权。
 
 英文文档表达同一含义，不引入第三种许可证或声称重新授权。
 
-- [ ] **Step 4: 运行许可证测试并校验文档链接**
+- [x] **Step 4: 运行许可证测试并校验文档链接**
 
 Run: `python -m unittest tests.test_license_contract -v`
 
@@ -664,7 +664,7 @@ Run: `git diff --check`
 
 Expected: 退出码 0。
 
-- [ ] **Step 5: 提交许可证文档修复**
+- [x] **Step 5: 提交许可证文档修复**
 
 ```bash
 git add README.md README_cn.md CONTRIBUTING.md docs/PR-SUBMISSION.md components.d/README.md tests/test_license_contract.py
@@ -684,13 +684,13 @@ git commit -s -m "docs: reconcile dual-license guidance"
 **Interfaces:**
 - Verifies every acceptance criterion from the approved design
 
-- [ ] **Step 1: 运行 Hub 单元测试全集**
+- [x] **Step 1: 运行 Hub 单元测试全集**
 
 Run: `python -m unittest discover -s tests -v`
 
 Expected: 所有测试 PASS，0 failures，0 errors。
 
-- [ ] **Step 2: 重新生成目录两次并验证确定性**
+- [x] **Step 2: 重新生成目录两次并验证确定性**
 
 Run: `python .github/scripts/generate_plugin_catalog.py --repo-root .`
 
@@ -700,7 +700,7 @@ Run: `git diff --check`
 
 Expected: 第二次生成不产生额外差异，diff check 退出码 0。
 
-- [ ] **Step 3: 重建插件并验证 JSON**
+- [x] **Step 3: 重建插件并验证 JSON**
 
 Run: `bash .github/scripts/build-plugins.sh`
 
@@ -714,13 +714,13 @@ Get-ChildItem -Recurse -Filter *.json | ForEach-Object {
 
 Expected: 插件构建退出码 0，全部 JSON 可解析。
 
-- [ ] **Step 4: 运行 Hub 合规校验并比较已知基线**
+- [x] **Step 4: 运行 Hub 合规校验并比较已知基线**
 
 Run: `python .github/scripts/validate.py --mode advisory`
 
 Expected: 新增的 `rdk-pack-installer`、`rdk-skill-finder` 和既有 `rdk-docs-reference` 均显示 `OK`；总计不超过已记录基线 L1=139、L2=367，且新增或修改的 Skill 不产生新错误。
 
-- [ ] **Step 5: 运行源头 Pack 完整验证**
+- [x] **Step 5: 运行源头 Pack 完整验证**
 
 Workdir: `rdk-device-skills`
 
@@ -728,7 +728,7 @@ Run: `python tools/sandbox.py test`
 
 Expected: `RESULT: PASS`。
 
-- [ ] **Step 6: 检查两个仓库的目标差异和无关改动**
+- [x] **Step 6: 检查两个仓库的目标差异和无关改动**
 
 Run in each repository:
 
@@ -740,7 +740,7 @@ git log --oneline -8
 
 Expected: 只有本计划声明的文件发生变化；没有临时文件、缓存或无关用户改动。
 
-- [ ] **Step 7: 更新 CHANGELOG 并提交最终生成差异**
+- [x] **Step 7: 更新 CHANGELOG 并提交最终生成差异**
 
 在 `CHANGELOG.md` 增加本阶段条目：自包含 Pack 注册表、`rdk-skill-finder`、安装器重命名、路由修复和许可证说明统一。
 
@@ -749,7 +749,7 @@ git add CHANGELOG.md skills/rdk-pack-installer/references/pack-registry.json ski
 git commit -s -m "chore: finalize plugin catalog remediation"
 ```
 
-- [ ] **Step 8: 最终验证提交后的干净状态**
+- [x] **Step 8: 最终验证提交后的干净状态**
 
 Run: `python -m unittest discover -s tests -v`
 
@@ -760,3 +760,30 @@ Run in `rdk-device-skills`: `python tools/sandbox.py test`
 Run in both repositories: `git status --short`
 
 Expected: 测试全部通过；新 Hub Skill 为 `OK`；源头 Pack 显示 `RESULT: PASS`；两个工作区均无未提交改动。
+
+---
+
+## 实施状态（2026-08-20 记录）
+
+Task 1–8 已全部实施并验证，代码落地在内部 worktree 分支 `fix/plugin-catalog-remediation`（相对 main 共 20 个 commit，全部本地未推送）：
+
+- 确定性目录生成器 `.github/scripts/generate_plugin_catalog.py`（pack-registry.json / skill-index.json 构建期生成 + 提交入库）
+- `rdk-pack-installer`（自包含注册表）+ `rdk-skill-finder`（`search_catalog.py` + 五维 evals）
+- 插件重组为三个 Hub 原生 Skill；失效路由在 `rdk-device-skills` 源头修复并机械同步到 Hub 镜像
+- 许可证文档按 ADR 0004 统一（`tests/test_license_contract.py`）
+
+在此之上追加完成（2026-08-19）：
+
+- **P0#1（commit 11c9b1d）**：workspace Pack 在 Hub 镜像为完整资源树 + `setup.sh` 覆盖层，克隆 Hub 目录即可整包安装；安装器主路径改为 Hub 镜像，Pack 仓库保留为降级源。
+- **P0#2（commit 6c25230）**：`components.d/oe-tool-chain.yml` 更名 `oe-tool-chain-x5.yml`；ref 锁定不可变 tag `v2.1.0` / `v0.3.0`（与 Pack 内 VERSION 一一对应，Pack 仓库本地 tag 已打）。
+- **P1（commit 73782e6）**：`setup.sh --update/--force/--ref` + `<workspace_dir>/INSTALLED_REF` 锚点；安装器升级语义（项目侧 INSTALLED_REF 回退 VERSION，与注册表 ref 去前导 `v` 比对）；`tests/test_pack_upgrade.py` bash 门控端到端测试。Pack 侧：oe-skills-x5 `407689e`（VERSION 2.1.0 + tag v2.1.0）、oe-skills-s `9b87c1e`（VERSION 0.3.0 + tag v0.3.0）。
+- CHANGELOG.md 的 Unreleased 已补记上述全部条目（commit 52d68ac）。
+
+验证基线：59 个 Hub 单测通过（1 skip：本地无 yq）；`validate.py` advisory 91 skills / 137 L1 / 367 L2 与改动前一致；两个 Pack 镜像 setup.sh 全流程实测通过。
+
+### 剩余待办
+
+- **P2-#5 L2 治理**：S Pack 的 33 个 skill 目前零 skill-card.md 覆盖；X5 缺失 skill 级 evals（setup.sh 的 eval 剔除逻辑暗示曾存在）。均须在 Pack 源头仓库补齐（ADR 0001 过渡期内），经同步镜像到 Hub。
+- **P2-#6 插件产物漂移门禁**：`--check-plugin-includes` 接口已实现，剩余工作是把产物漂移检测接进 CI（build-plugins.sh 产物与 plugins.d 声明不一致即阻断提交）。
+- **P3-#7 发布收尾**：推送顺序必须是 Pack 仓库（commit + tag `v0.3.0`/`v2.1.0`）先、Hub 后（main 未推送 commit + 本分支）；合并 `fix/plugin-catalog-remediation` → main；CHANGELOG 的 Unreleased 切正式版本；打 tag `v1.1.0`（ADR 0006 首发版本，锁定 v2.1.0/v0.3.0）。当前全部改动保持本地未推送，等待发布指令。
+
