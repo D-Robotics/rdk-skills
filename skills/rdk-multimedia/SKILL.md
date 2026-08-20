@@ -1,13 +1,13 @@
 ---
 name: rdk-multimedia
-description: Drive the RDK board's LOW-LEVEL multimedia hardware pipeline — hardware H.264/H.265/JPEG/MJPEG encode/decode, camera VIN/ISP capture, VPS/PYM scale-crop-rotate, HDMI/MIPI display — via sp_dev (/app/cdev_demo C/Python API) and HB_VIN/HB_VPS/HB_VENC/HB_VDEC/HB_VOT on X3/X5/Ultra, or the /app/multimedia_samples + MediaCodec stack on S100/S100P/S600. Use whenever the user moves raw pixel streams between hardware units (capture/encode/decode/scale/display) WITHOUT a ROS layer. 触发词:硬件编码、H264/H265/JPEG 编解码、VPU 软编很慢、stride 对齐报错、VPS 缩放、PYM 金字塔、多路缩放、HDMI/VOT 显示、sp_dev、cdev_demo、vio2encoder、decoder2display、rtsp2display、HB_VENC、HB_VPS、MediaCodec、sample_codec、S600 VPU 多核、IDU 显示。Routing — model inference / .bin/.hbm BPU deploy → rdk-device; capture-encode as a ROS2 node (hobot_codec, image topic, usb_cam/mipi_cam launch) → rdk-ros; which camera to buy / CAM wiring → rdk-accessories; UNSUPPORTED MIPI sensor that won't start (no MCLK / i2c NACK) → rdk-mipi-camera-bringup; GPIO/I2C/PWM/motors → rdk-peripheral-cookbook.
+description: 'Drive RDK''s low-level multimedia hardware pipeline: H.264/H.265/JPEG/MJPEG encode/decode, VIN/ISP capture, VPS/PYM scale-crop-rotate, and HDMI/MIPI display via sp_dev or HB_VIN/HB_VPS/HB_VENC/HB_VDEC/HB_VOT on X3/X5/Ultra, and multimedia_samples/MediaCodec on S100/S100P/S600. Use for raw pixel streams between hardware units without ROS. 触发词:硬件编码、H264/H265/JPEG 编解码、VPU 软编很慢、stride 对齐报错、VPS 缩放、PYM 金字塔、多路缩放、HDMI/VOT 显示、sp_dev、cdev_demo、vio2encoder、decoder2display、rtsp2display、HB_VENC、HB_VPS、MediaCodec、sample_codec、S600 VPU 多核、IDU 显示。Routing — BPU inference → rdk-model-deploy; ROS2 capture/encode node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; camera selection/wiring → rdk-accessories; unsupported MIPI no-MCLK/i2c-NACK → rdk-camera-setup; GPIO/I2C/PWM/motors → rdk-peripheral-cookbook.'
 version: 1.0.0
 license: Apache-2.0
 ---
 
 # RDK Multimedia Hardware Pipeline (codec / capture / scale / display)
 
-This skill moves **raw pixel streams between on-board hardware units**: sensor in → ISP tuned → scaled → VPU/JPU encoded/decoded → pushed out to HDMI/MIPI. It does **not** cover model inference (→ rdk-device) or wrapping any of this into a ROS node (→ rdk-ros).
+This skill moves **raw pixel streams between on-board hardware units**: sensor in → ISP tuned → scaled → VPU/JPU encoded/decoded → pushed out to HDMI/MIPI. It does **not** cover model inference (→ rdk-model-deploy) or wrapping any of this into a ROS node (no dedicated Skill; use rdk-docs-reference to search tros_doc).
 
 > Sources: official D-Robotics docs. X-series (`rdk_doc`): `docs/07_Advanced_development/03_multimedia_development/*` and `docs/03_Basic_Application/06_multi_media_sp_dev_api/RDK_X5/*`. S-series (`rdk_s_doc`): `docs/07_Advanced_development/03_multimedia_development/{01_S100,02_multimedia_application,03_S600_multimedia_application}/*`. Every spec below was re-verified against these files; numbers nobody could confirm are flagged in the reference's "Unverified" section.
 
@@ -96,7 +96,7 @@ H.264/H.265 require width & height **8-byte aligned** and stride **32-byte align
 | Expect upscale on any VPS channel | Only chn5 upscales (≤1.5×); chn0–4 are downscale |
 | Assume `-u` multi-core works on S100 | `-u` (VPU core 0/1/2) is S600-only |
 | Treat the two `sample_codec` programs as identical | Config-file (`-f -e/-d`) vs MediaCodec API (`--samplemode -u`) are different |
-| Debug a sensor that won't start here | No-MCLK / i2c-NACK bringup → rdk-mipi-camera-bringup |
+| Debug a sensor that won't start here | No-MCLK / i2c-NACK bringup → rdk-camera-setup |
 
 ## Anti-hallucination guardrails
 

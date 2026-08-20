@@ -5,7 +5,7 @@
         "url": "https://github.com/D-Robotics/rdk-skills"
     },
     "metadata": {
-        "description": "D-Robotics DeepSeek Harness (DSH) plugin marketplace — npm/git-installable dsh bundles for the RDK ecosystem.",
+        "description": "D-Robotics DeepSeek Harness (DSH) plugin marketplace \u2014 npm/git-installable dsh bundles for the RDK ecosystem.",
         "version": "1.0.0"
     },
     "plugins": [

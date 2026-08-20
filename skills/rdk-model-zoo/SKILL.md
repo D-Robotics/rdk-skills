@@ -1,6 +1,6 @@
 ---
 name: rdk-model-zoo
-description: Run a ready-made, officially pre-compiled BPU model from the RDK Model Zoo on a board — pick the right branch (branch = board), download the matching .bin/.hbm, run the sample, read the per-board benchmark (latency/FPS/accuracy). Use whenever the user wants a precompiled model instead of quantizing their own, asks "does RDK have a converted YOLO/classification/segmentation/OCR .bin/.hbm", "how do I run a Model Zoo sample", "which branch for my board", or "where do I download the precompiled model". 触发词:Model Zoo、现成模型、预编译模型、官方转好的、有没有现成的 bin/hbm、模型仓、跑示例 sample、哪个分支、archive.d-robotics 下载、benchmark 帧率精度、YOLO11 哪块板能跑、模型性能对比。Routing — quantizing your OWN .pt/.onnx through the toolchain → rdk-device; wrapping a model as a TROS/ROS2 node → rdk-ros; conversational LLM/VLM (InternVL/SmolVLM chat) → rdk-llm-deployment; "can my board run model X" / model selection → rdk-ecosystem; embodied ACT/VLA/Pi0 policies → rdk-embodied-lerobot.
+description: 'Run a ready-made RDK Model Zoo BPU model — choose its board branch, download the matching .bin/.hbm, run its sample, and read benchmark latency/FPS/accuracy. Use for precompiled YOLO/classification/segmentation/OCR, Model Zoo samples, branches, downloads, and benchmarks. 触发词:Model Zoo、现成模型、预编译模型、官方转好的、有没有现成的 bin/hbm、模型仓、跑示例 sample、哪个分支、archive.d-robotics 下载、benchmark 帧率精度、YOLO11 哪块板能跑、模型性能对比。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); own .pt/.onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; TROS/ROS2 node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM chat → rdk-llm-deployment; board/model selection → rdk-ecosystem; ACT/VLA/Pi0 policies → rdk-embodied-lerobot.'
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -10,6 +10,10 @@ license: Apache-2.0
 The Model Zoo is the official collection of **out-of-the-box, pre-compiled BPU models** plus full-link conversion tutorials. The single most important fact: **the branch you clone IS your board.** Cloning the wrong branch is the #1 failure — the model artifact or the runtime API will not match your hardware.
 
 > Sources: official D-Robotics repos verified for this skill — [rdk_model_zoo](https://github.com/D-Robotics/rdk_model_zoo) (`rdk_x5` / `rdk_x3` / `rdk_s` branches), [rdk_model_zoo_s](https://github.com/D-Robotics/rdk_model_zoo_s) (`s100` archive), and [model_zoo_doc](https://github.com/D-Robotics/model_zoo_doc) appendix benchmarks. Facts carry provenance; nothing is invented.
+
+## Workspace router availability gate
+
+Before an X5 conversion handoff, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` into the confirmed project root. Before an S-series conversion handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)`. After installation, restart the agent session and retry the original handoff.
 
 ## The one rule that matters most
 
@@ -27,7 +31,7 @@ The Model Zoo is the official collection of **out-of-the-box, pre-compiled BPU m
 
 Verified against the live `rdk_x5` and `rdk_s` branch READMEs. The `rdk_s` branch is now the **single current delivery branch for S100, S100P, AND S600** (its README: *"Current branch. Primary delivery branch for RDK S100, S100P, and S600"*). `rdk_model_zoo_s/s100` is the **historical archive** — still complete and runnable, but `rdk_s` is the one to use for new work. A deterministic branch lookup is in `scripts/branch_selector.py`.
 
-> RDK Ultra is **not** a Model Zoo sample branch — there is no `rdk_ultra` branch and no Ultra appendix. Ultra users convert via the toolchain (`march bayes`, see rdk-device) rather than pulling Model Zoo precompiled artifacts.
+> RDK Ultra is **not** a Model Zoo sample branch — there is no `rdk_ultra` branch and no Ultra appendix. Ultra users must use `rdk-docs-reference` to find the board's official toolchain documentation for conversion (`march bayes`) rather than pulling Model Zoo precompiled artifacts.
 
 ## Model format & runtime (not portable across families)
 
@@ -62,7 +66,7 @@ Verified against the live `rdk_x5` and `rdk_s` branch READMEs. The `rdk_s` branc
      --img-save-path ../../test_data/inference_yolo11.jpg
    ```
    `main.py` with no args runs the default (yolo11n + bus.jpg). Success = the output image is written.
-5. **If slow / low FPS**, confirm you are actually running the BPU `.bin`/`.hbm` and not a raw `.pt`/`.onnx` (the latter runs CPU-only → 1–2 FPS; see rdk-device).
+5. **If slow / low FPS**, confirm you are actually running the BPU `.bin`/`.hbm` and not a raw `.pt`/`.onnx` (the latter runs CPU-only → 1–2 FPS; use the board-appropriate conversion route above).
 
 **验证:** `ls test_data/inference_*.jpg` shows the output image was written; `python3 main.py --task detect` completes without error; BPU is active (`hrut_bpuprofile -b 0` shows non-zero utilization during inference).
 
@@ -85,7 +89,7 @@ Verified against the live `rdk_x5` and `rdk_s` branch READMEs. The `rdk_s` branc
 **Use when:** the user is unsure whether to pull a precompiled model or run the toolchain.
 
 - The Model Zoo ships **both** precompiled artifacts (download and run) **and** full conversion tutorials (`conversion/` in each sample). Prefer the precompiled artifact when one exists.
-- For a **private/custom** `.pt`/`.onnx` with no Model Zoo match, the general quantization flow (`hb_mapper` for X-series / `hb_compile` for S-series, calibration images, `march`) lives in **rdk-device**. Use the sample's `conversion/` dir as a worked template.
+- For a **private/custom** `.pt`/`.onnx` with no Model Zoo match, use `x5-router` for X5, `horizon-router` for S-series, or `rdk-docs-reference` for X3/Ultra official toolchain documentation. Use the sample's `conversion/` dir as a worked template.
 
 ## Worked examples
 
@@ -93,7 +97,7 @@ Verified against the live `rdk_x5` and `rdk_s` branch READMEs. The `rdk_s` branc
 Yes. Clone the **`rdk_s`** branch of `rdk_model_zoo` (it is the current delivery branch for S100/S100P/S600), get the `.hbm` from `samples/vision/yolo11/model/`, and run with `hbm_runtime`. The README lists YOLO11 as S100/S600-supported. Note: the model_zoo_doc appendix only has an **LLM** benchmark for S600, so for vision perf numbers read the S100 tables as a proxy and confirm on-board.
 
 **Example 2 — "我有一个在 X5 上转好的 .bin,能拷到 S100 上跑吗?"**
-No. X5 `.bin` is Bayes-e; S100 is Nash and needs a `.hbm`. They are cross-architecture incompatible. Pull the S-series precompiled model from the `rdk_s` branch (or rebuild via `hb_compile --march nash-e`, see rdk-device).
+No. X5 `.bin` is Bayes-e; S100 is Nash and needs a `.hbm`. They are cross-architecture incompatible. Pull the S-series precompiled model from the `rdk_s` branch (or rebuild via `hb_compile --march nash-e`, see `horizon-router`).
 
 **Example 3 — "Model Zoo 示例怎么跑?我下了一堆 .py 不知道跑哪个"**
 Run **`main.py`**, never `python3 *.py`. From the sample, `cd runtime/python`, then `python3 main.py --task detect --model-path ../../model/<file>.bin`. The other `.py` files in that dir are per-task helpers; the glob would hit the wrong one. The default (`main.py` with no args) runs yolo11n on bus.jpg as a smoke test.
@@ -110,7 +114,7 @@ Read the X5 detection appendix (`per-board-model-catalog.md` → RDK X5 → dete
 | Copy a `.bin` onto an S-board (or `.hbm` onto X) | Pull the artifact for the matching branch (`.bin` ≠ `.hbm`) |
 | `python3 *.py` in the runtime dir | Run `main.py` with `--task`/`--model-path` |
 | Assume "no appendix entry" = "can't run" | Check the sample README on the board's branch |
-| Expect an `rdk_ultra` Model Zoo branch | Ultra has none — convert via toolchain (rdk-device) |
+| Expect an `rdk_ultra` Model Zoo branch | Ultra has none — use `rdk-docs-reference` to find its official conversion-toolchain docs |
 | Recite sample/model names from memory | `ls samples/` on the actual checked-out branch |
 
 ## Anti-hallucination guardrails

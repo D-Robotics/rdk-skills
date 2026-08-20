@@ -5,14 +5,14 @@
         "url": "https://github.com/D-Robotics/rdk-skills"
     },
     "metadata": {
-        "description": "D-Robotics plugin marketplace — install the curated D-Robotics plugins and skills from this catalog repo.",
+        "description": "D-Robotics plugin marketplace \u2014 install the curated D-Robotics plugins and skills from this catalog repo.",
         "version": "1.0.0"
     },
     "plugins": [
         {
             "name": "d-robotics-skills",
             "source": "./plugins/d-robotics-skills",
-            "description": "Skills for D-Robotics RDK ecosystem spans board diagnostics, OE tool chain, BSP, ISP tuning, Model Zoo, and TogetheROS.Bot. This plugin helps you find the right skills to help in building D-Robotics-powered workflows."
+            "description": "Skills for D-Robotics RDK ecosystem spans board diagnostics, OE tool chain (quantization, compilation, inference, evaluation), BSP, ISP tuning, Model Zoo, and TogetheROS.Bot. This plugin helps you find the right skills to help in building D-Robotics-powered workflows."
         }
     ]
 }

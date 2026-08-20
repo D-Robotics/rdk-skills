@@ -25,7 +25,7 @@ metadata:
 
 把散落在 dmesg / journalctl / /var/crash 里的异常信号收敛成一份结构化清单
 （错误计数、失败单元、最近异常原文摘录），让 Agent 基于证据归因，
-并为 rdk-perf-investigator 等编排 Agent 提供第四类证据源（前三类：快照、
+并为上层诊断编排提供第四类证据源（前三类：快照、
 内存审计、模型基准）。
 
 ## When to use

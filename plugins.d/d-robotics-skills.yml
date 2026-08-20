@@ -29,27 +29,28 @@ default_prompts:
   - "Help me diagnose my RDK X5 board"
   - "How do I deploy a model on RDK S100"
 
-# This plugin ships two hub-native skills: the skill-finder/router and
-# the pack installer.
+# This plugin ships three hub-native skills: the skill-finder/router,
+# the pack installer, and the documentation reference skill.
 #
 # The discovery-first approach: instead of bundling a curated subset
 # of skills into the plugin (which loads every SKILL.md into the harness
 # context on install and crowds the limited skill context space), the
-# plugin ships only the finder. The finder routes users to any skill
-# in the canonical ./skills/ catalog on demand, so the full catalog is
-# reachable without paying the context cost of pre-loading it.
+# plugin ships only the hub skills. The finder routes users to any skill
+# in the canonical catalog on demand, so the full catalog is reachable
+# without paying the context cost of pre-loading it.
 #
 # The pack installer handles the workspace-integrated packs (OE Tool
 # Chain X5 / S), whose skills depend on shared .drobotics/ resources:
-# it reads components.d/*.yml and runs the pack's documented
-# clone + setup.sh flow for the user's project.
+# it reads its bundled registry and runs the pack's documented clone +
+# setup.sh flow for the user's project.
 #
 # It also decouples versioning: individual skills are version-managed in
 # the catalog independently of this plugin's version, so a skill update
 # no longer forces a plugin re-release (and vice versa).
 include_skills:
+  - skills/rdk-skill-finder/
+  - skills/rdk-pack-installer/
   - skills/rdk-docs-reference/
-  - skills/d-robotics-pack-installer/
 
 # Inherits from plugins.d/_defaults.yml:
 #   version, author, homepage, repository, license,
@@ -64,7 +65,7 @@ dsh_plugins:
   - name: dsh-plugin-rdk
     npm: dsh-plugin-rdk
     repository: https://github.com/D-Robotics/dsh-plugin-rdk
-    description: Native RDK skill catalog for DeepSeek Harness (77 skills across 5 packs: rdk-device-skills, bsp-skills, oe-skills-x5, oe-skills-s, and the rdk-skills hub). Includes the rdk_skills catalog tool, rdk_board_detect device detector, and rdk_oe_setup workspace installer (runs the official OE pack setup.sh).
+    description: "Native RDK skill catalog for DeepSeek Harness (77 skills across 5 packs: rdk-device-skills, bsp-skills, oe-skills-x5, oe-skills-s, and the rdk-skills hub). Includes the rdk_skills catalog tool, rdk_board_detect device detector, and rdk_oe_setup workspace installer (runs the official OE pack setup.sh)."
     install: "dsh plugin --profile <name> add dsh-plugin-rdk"
 
 # By default this plugin is added (true) in all self-hosted marketplace.json files. Uncomment to opt out.

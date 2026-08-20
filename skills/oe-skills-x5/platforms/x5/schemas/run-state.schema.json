@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drobotics-x5/run-state.schema.json",
+  "title": "D-Robotics X5 Run State",
+  "type": "object",
+  "required": ["schema_version", "run_id", "skill_id", "status", "stage", "risk", "retry_count", "approval", "artifacts", "logs", "next_step", "updated_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "skill_id": {"type": "string", "pattern": "^x5-[a-z0-9-]+$"},
+    "status": {"enum": ["created", "preflight", "planned", "awaiting_approval", "running", "verifying", "succeeded", "failed", "blocked", "cancelled"]},
+    "stage": {"type": "string"},
+    "risk": {"enum": ["low", "medium", "high", "critical"]},
+    "retry_count": {"type": "integer", "minimum": 0, "maximum": 2},
+    "approval": {
+      "type": "object",
+      "required": ["required", "record"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "record": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {"type": "array", "items": {"type": "string"}},
+    "logs": {"type": "array", "items": {"type": "string"}},
+    "next_step": {"type": ["string", "null"]},
+    "updated_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": false
+}

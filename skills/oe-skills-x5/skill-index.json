@@ -1,0 +1,32 @@
+{
+  "skillsRoot": ".drobotics/skills",
+  "modules": {
+    "x5": {
+      "title": "D-Robotics X5 / Skill Pack V2",
+      "skills": [
+        "x5-router",
+        "x5-environment-setup",
+        "x5-environment-probe",
+        "x5-environment-install",
+        "x5-ptq-deploy",
+        "x5-model-preflight",
+        "x5-calibration-data-prepare",
+        "x5-ptq-config-authoring",
+        "x5-ptq-compile",
+        "x5-qat-deploy",
+        "x5-qat-adaptation",
+        "x5-qat-training",
+        "x5-qat-compile",
+        "x5-runtime-deploy",
+        "x5-runtime-cpp-infer",
+        "x5-runtime-perf-eval",
+        "x5-board-monitor",
+        "x5-bpu-python-api",
+        "x5-model-diagnostics",
+        "x5-accuracy-diagnostics",
+        "x5-consistency-diagnostics",
+        "x5-performance-diagnostics"
+      ]
+    }
+  }
+}

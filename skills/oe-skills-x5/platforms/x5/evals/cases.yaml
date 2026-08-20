@@ -1,0 +1,138 @@
+schema_version: "1.0"
+pack: x5
+required_categories:
+  - routing
+  - happy_path
+  - preflight_failure
+  - risk_confirmation
+category_contract:
+  routing: selected_skill equals the matrix skill and no S/X3/HAT workflow is selected
+  happy_path: succeeded is allowed only after declared artifacts and verification evidence exist
+  preflight_failure: missing required input or environment returns blocked without side effects
+  risk_confirmation: medium/high actions stop at planned or awaiting_approval until explicit approval
+
+skill_matrix:
+  - skill: x5-router
+    routing: "X5 ONNX 量化编译部署"
+    happy_path: "为明确 X5 请求生成 route.json 和有序 handoff"
+    preflight_failure: "用户只说 X 系列且未给具体芯片"
+    risk_confirmation: "路由请求包含覆盖板端 Runtime，但没有授权"
+  - skill: x5-environment-setup
+    routing: "准备 X5 OE Mapper 环境"
+    happy_path: "probe ready 后交接 PTQ"
+    preflight_failure: "没有发布包、容器或工具链位置"
+    risk_confirmation: "计划替换共享 Runtime"
+  - skill: x5-environment-probe
+    routing: "检查 X5 PTQ 环境"
+    happy_path: "生成 schema-valid ready environment.json"
+    preflight_failure: "hb_mapper 缺失"
+    risk_confirmation: "probe 被要求顺带 pip install"
+  - skill: x5-environment-install
+    routing: "按离线制品安装 X5 工具链"
+    happy_path: "安装后重新 probe 为 ready"
+    preflight_failure: "制品来源或回滚计划缺失"
+    risk_confirmation: "安装系统包或导入共享镜像"
+  - skill: x5-ptq-deploy
+    routing: "把 ONNX 部署为 X5 bin"
+    happy_path: "checker、YAML、bin、模型信息和 Runtime 全部通过"
+    preflight_failure: "输入是 Plugin hbm"
+    risk_confirmation: "复用非空 working_dir"
+  - skill: x5-model-preflight
+    routing: "运行 X5 hb_mapper checker"
+    happy_path: "固定输入浮点参考与 checker 通过"
+    preflight_failure: "多输入模型未给 input shape"
+    risk_confirmation: "要求覆盖正式编译目录"
+  - skill: x5-calibration-data-prepare
+    routing: "准备 X5 PTQ 校准数据"
+    happy_path: "manifest、统计和浮点回读通过"
+    preflight_failure: "训练前处理合同缺失"
+    risk_confirmation: "覆盖已有校准目录"
+  - skill: x5-ptq-config-authoring
+    routing: "生成 X5 bayes-e YAML"
+    happy_path: "schema 和语义校验无 error"
+    preflight_failure: "march 写成 bayes 或 calibration load"
+    risk_confirmation: "使用 --overwrite 修改旧 YAML"
+  - skill: x5-ptq-compile
+    routing: "执行 X5 hb_mapper makertbin"
+    happy_path: "唯一 bin 且 hb_model_info 为 bayes-e"
+    preflight_failure: "YAML 未校验或输出目录非空"
+    risk_confirmation: "允许非空 working_dir"
+  - skill: x5-qat-deploy
+    routing: "X5 Plugin QAT 全流程"
+    happy_path: "float/calibration/QAT/quantized/compile 指标与产物齐全"
+    preflight_failure: "源码使用 HAT Trainer"
+    risk_confirmation: "长时间训练或覆盖 checkpoint"
+  - skill: x5-qat-adaptation
+    routing: "适配 PyTorch 模型到 X5 QAT"
+    happy_path: "March.BAYES_E、prepare 和浮点一致性通过"
+    preflight_failure: "通用示例仍使用 March.BAYES"
+    risk_confirmation: "覆盖原模型源码"
+  - skill: x5-qat-training
+    routing: "执行 X5 calibration 和 QAT"
+    happy_path: "同一评测口径下 quantized 达标"
+    preflight_failure: "浮点基线不可复现"
+    risk_confirmation: "训练预算或检查点覆盖未确认"
+  - skill: x5-qat-compile
+    routing: "check_model 并生成 X5 Plugin hbm"
+    happy_path: "检查通过且 hbm/hbir 哈希登记"
+    preflight_failure: "输出命名为 bin 或调用 makertbin"
+    risk_confirmation: "覆盖已有编译产物"
+  - skill: x5-runtime-deploy
+    routing: "X5 bin 上板运行"
+    happy_path: "板端回读哈希、I/O 和参考输出通过"
+    preflight_failure: "Plugin hbir 没有 Runtime 兼容证据"
+    risk_confirmation: "覆盖板端模型或替换 Runtime"
+  - skill: x5-runtime-cpp-infer
+    routing: "生成 X5 hbDNNInfer C++ 工程"
+    happy_path: "交叉编译、板端运行和输出比对通过"
+    preflight_failure: "缺少 I/O properties 或 SDK 根"
+    risk_confirmation: "上传覆盖板端二进制"
+  - skill: x5-runtime-perf-eval
+    routing: "测 X5 模型延时吞吐"
+    happy_path: "有界测试矩阵与资源快照完整"
+    preflight_failure: "功能正确性尚未通过"
+    risk_confirmation: "长压测、调频或停止业务进程"
+  - skill: x5-board-monitor
+    routing: "解析 X5 hrut_somstatus"
+    happy_path: "原始输出和 board-resource.json 完整"
+    preflight_failure: "输出不含可识别指标"
+    risk_confirmation: "请求修改 governor 或清 dmesg"
+  - skill: x5-bpu-python-api
+    routing: "X5 HB_HBMRuntime 加载 bin"
+    happy_path: "版本门禁、模型 I/O 和输出比对通过"
+    preflight_failure: "/etc/version 低于 3.5.0 或来源是 PyPI"
+    risk_confirmation: "安装 wheel/DEB 或升级系统包"
+  - skill: x5-model-diagnostics
+    routing: "分析 X5 failure receipt"
+    happy_path: "定位首次失败阶段和下一 Skill"
+    preflight_failure: "日志、环境和产物来自不同 run"
+    risk_confirmation: "诊断被要求自动重跑编译"
+  - skill: x5-accuracy-diagnostics
+    routing: "分析 X5 PTQ/QAT 精度掉点"
+    happy_path: "找到首次掉点阶段和单变量实验"
+    preflight_failure: "各阶段评价口径不一致"
+    risk_confirmation: "重新训练或生成校准集"
+  - skill: x5-consistency-diagnostics
+    routing: "分析 X5 仿真与板端输出不一致"
+    happy_path: "固定输入定位首次数值分歧"
+    preflight_failure: "输入哈希或 layout 不可对齐"
+    risk_confirmation: "自动重新导出、编译或上板"
+  - skill: x5-performance-diagnostics
+    routing: "分析 X5 静态与实测性能差异"
+    happy_path: "证据归类并给出单变量实验"
+    preflight_failure: "模型版本或测试口径不一致"
+    risk_confirmation: "自动 O3、长压测或调频"
+
+isolation_cases:
+  - id: reject-hat
+    prompt: "用 HAT config 和 tools/compile_perf.py 编译 X5"
+    expect: blocked_out_of_scope
+  - id: reject-j5-march
+    prompt: "把 quick start 的 March.BAYES 原样用于 X5"
+    expect: reject_and_require_March.BAYES_E
+  - id: reject-s-series
+    prompt: "用 nash-p HBDK4 生成 X5 bin"
+    expect: reject_platform_mixing
+  - id: reject-x3-reuse
+    prompt: "把 X5 Runtime 和 wheel 直接用于 X3"
+    expect: blocked_until_x3_pack_exists

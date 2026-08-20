@@ -47,7 +47,7 @@ npx skills add d-robotics/rdk-skills
 
 The CLI lists all available skills and installs the selected one into the appropriate agent skill directory.
 
-> The CLI covers flat-layout skills (RDK Device Skills). Workspace-integrated packs (OE Tool Chain) are not individually installable — install those whole via [Option 5](#option-5-workspace-integrated-packs-oe-tool-chain-x5--s).
+> The CLI covers flat-layout skills (RDK Device Skills). Workspace-integrated packs (OE Tool Chain) are not individually installable — install those whole via [Option 6](#option-6-workspace-integrated-packs-oe-tool-chain-x5--s).
 
 ### Option 3: Claude Code plugin marketplace
 
@@ -56,6 +56,8 @@ The CLI lists all available skills and installs the selected one into the approp
 ```
 
 Run `/plugin`, browse the Discover tab, and install.
+
+The Hub plugin uses `rdk-skill-finder` to search the catalog. For a flat skill it returns exactly `npx skills add d-robotics/rdk-skills --skill <skill-name>`; for a workspace-integrated skill it hands the request to `rdk-pack-installer`.
 
 ### Option 4: Clone a Pack repo directly
 
@@ -82,47 +84,61 @@ The bundle registers every skill in this catalog into the harness skill registry
 
 ### Option 6: Workspace-integrated packs (OE Tool Chain X5 / S)
 
-Some packs require workspace initialization — they install scripts, docs, and platform configs into `.drobotics/` and inject routing rules into `CLAUDE.md`. Install the whole pack, not individual skills:
+Some packs require workspace initialization — they install scripts, docs, and platform configs into `.drobotics/` or `.horizon/` and inject routing rules into `CLAUDE.md`. The Hub mirrors each such pack as a **complete install source**: `skills/<catalog_dir>/` carries the full resource tree plus the pack's `setup.sh`, so a single Hub checkout installs any pack. Install the whole pack, not individual skills:
 
 ```bash
+git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git
+cd rdk-skills
+
 # X5 tool chain
+bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT
+
+# S-series tool chain (Horizon OE)
+bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
+
+# Upgrade an existing workspace: compares the installed VERSION, skips when
+# current, otherwise rebuilds .drobotics/ (no stale files). --ref records the
+# source tag into the workspace's INSTALLED_REF; omit it for a manual update.
+bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
+# bash skills/oe-skills-s/setup.sh --update --ref v0.3.0 $PROJECT_ROOT
+```
+
+The pack repos remain the authoritative upstreams and the documented fallback source:
+
+```bash
+# Fallback: install straight from a pack repo
 git clone https://github.com/D-Robotics/oe-skills-x5.git
 cd oe-skills-x5
 bash setup.sh $PROJECT_ROOT
-
-# S-series tool chain (Horizon OE)
-git clone https://github.com/D-Robotics/oe-skills-s.git
-cd oe-skills-s
-bash setup.sh $PROJECT_ROOT
 ```
 
-Or tell your AI (works with the Hub plugin from Option 3, which ships the pack-installer skill):
+Or tell your AI (works with the Hub plugin from Option 3, which ships `rdk-pack-installer`):
 
 ```
 Install D-Robotics OE-Skills-X5 into this project.
 ```
 
-The pack installer reads the pack registration in `components.d/`, clones the pack repo, runs `setup.sh` with your confirmed project root, and verifies the installed workspace. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S).
+`rdk-pack-installer` reads its bundled pack registry, clones the Hub catalog, runs the pack's mirrored `setup.sh` (from `skills/<catalog_dir>/`) with your confirmed project root, and verifies the installed workspace — falling back to the pack repo only when the Hub mirror lags behind the registry. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S). For upgrade requests it compares the workspace's installed anchor (`INSTALLED_REF`, falling back to `VERSION`) with the registry's pinned `ref` (normalizing a leading `v`), reports "already up to date" when they match, and otherwise re-runs `setup.sh --update --ref <ref>` — which rebuilds the workspace from scratch, so local edits inside `.drobotics/`/`.horizon/` are lost; that rebuild requires an explicit confirmation.
 
 ### Updating skills
 
 - Flat skills: `npx skills update` (or re-run `npx skills add d-robotics/rdk-skills` and select again).
-- Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder/installer skills.
+- Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder and installer skills.
 - DSH bundle: `dsh plugin --profile <name> update dsh-plugin-rdk` (skill content refreshes with each bundle release).
-- The catalog itself refreshes automatically every hour (sync pipeline) — cloned pack repos update with `git pull` + re-run `setup.sh`.
+- The catalog itself refreshes automatically every hour (sync pipeline) — Hub-clone installs update with `git pull` in the Hub checkout, then `bash skills/oe-skills-x5/setup.sh --update $PROJECT_ROOT` (it exits cleanly when already current); pack-repo installs use `git pull` + `bash setup.sh --update $PROJECT_ROOT` inside the repo.
 
 ---
 
 ## Skill Catalog
 
-Skills listed under a pack directory (`oe-skills-x5/`, `oe-skills-s/`) belong to workspace-integrated packs — browse them here, install the whole pack via [Option 5](#option-5-workspace-integrated-packs-oe-tool-chain-x5--s). All other skills install individually via Options 1–4.
+Skills listed under a pack directory (`oe-skills-x5/`, `oe-skills-s/`) belong to workspace-integrated packs — browse them here, install the whole pack via [Option 6](#option-6-workspace-integrated-packs-oe-tool-chain-x5--s). All other skills install individually via Options 1–4.
 
 <!-- skills-table-start -->
 | Product | Description | Skills |
 |---------|-------------|--------|
 | **BSP Skills** | Board Support Package (BSP) development skills for RDK boards — host cross-compilation environment, repo/manifest source sync, system image build, kernel/DTB/driver modules, hobot-* deb packages, bootloader/miniboot, Ubuntu rootfs customization for X3/X5, and S-series source acquisition. | [ `bsp-env-setup`](skills/bsp-env-setup), [ `bsp-source-sync`](skills/bsp-source-sync), [ `bsp-image-build`](skills/bsp-image-build), [ `bsp-kernel-build`](skills/bsp-kernel-build), [ `bsp-deb-build`](skills/bsp-deb-build), [ `bsp-bootloader-build`](skills/bsp-bootloader-build), [ `bsp-rootfs-custom`](skills/bsp-rootfs-custom), [ `bsp-s-series`](skills/bsp-s-series) |
-| **OE Tool Chain (S)** | Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization. | [ `hbdk-manual`](skills/oe-skills-s/hbdk/hbdk-manual), [ `j6-hbdk-compile`](skills/oe-skills-s/hbdk/j6-hbdk-compile), [ `hmct`](skills/oe-skills-s/hmct), [ `j6-hmct-cosine-similarity-tuning`](skills/oe-skills-s/hmct/j6-hmct-cosine-similarity-tuning), [ `horizon-router`](skills/oe-skills-s/horizon-router), [ `board-detection`](skills/oe-skills-s/horizon-router/board-detection), [ `oe-llm-package-detection`](skills/oe-skills-s/horizon-router/oe-llm-package-detection), [ `oe-llm-package-install`](skills/oe-skills-s/horizon-router/oe-llm-package-install), [ `oe-package-detection`](skills/oe-skills-s/horizon-router/oe-package-detection), [ `oe-package-install`](skills/oe-skills-s/horizon-router/oe-package-install), [ `hb-analyzer-performance`](skills/oe-skills-s/horizon_tc_ui/hb-analyzer-performance), [ `horizon-tc-ui`](skills/oe-skills-s/horizon_tc_ui/horizon-tc-ui), [ `j6-plugin-adaptation`](skills/oe-skills-s/plugin/j6-plugin-adaptation), [ `j6-plugin-dynamic-block`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block), [ `j6-plugin-insert-quant-dequant`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant), [ `j6-plugin-prepare`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-prepare), [ `j6-plugin-set-fake-quantize`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize), [ `j6-plugin-set-march`](skills/oe-skills-s/plugin/j6-plugin-adaptation/j6-plugin-set-march), [ `j6-plugin-consistency-debug`](skills/oe-skills-s/plugin/j6-plugin-consistency-debug), [ `j6-plugin-export`](skills/oe-skills-s/plugin/j6-plugin-export), [ `j6-plugin-graph-diff`](skills/oe-skills-s/plugin/j6-plugin-graph-diff), [ `j6-plugin-hbdk-generating`](skills/oe-skills-s/plugin/j6-plugin-hbdk-generating), [ `j6-hbdk-export-compile`](skills/oe-skills-s/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile), [ `j6-plugin-quantization`](skills/oe-skills-s/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization), [ `j6-plugin-model-check-result`](skills/oe-skills-s/plugin/j6-plugin-model-check-result), [ `j6-plugin-precision-tuning`](skills/oe-skills-s/plugin/j6-plugin-precision-tuning), [ `ucp`](skills/oe-skills-s/ucp), [ `j6-board-monitor`](skills/oe-skills-s/ucp/j6-board-monitor), [ `j6-ucp-hbm-infer`](skills/oe-skills-s/ucp/j6-ucp-hbm-infer), [ `j6-ucp-infer-generating`](skills/oe-skills-s/ucp/j6-ucp-infer-generating), [ `j6-ucp-model-perf-eval`](skills/oe-skills-s/ucp/j6-ucp-model-perf-eval), [ `j6-ucp-perfetto-trace-analysis`](skills/oe-skills-s/ucp/j6-ucp-perfetto-trace-analysis), [ `j6-ucp-perfetto-trace-catcher`](skills/oe-skills-s/ucp/j6-ucp-perfetto-trace-catcher) |
-| **OE Tool Chain (X5)** | OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Workspace-integrated pack requiring setup.sh initialization. | [ `x5-accuracy-diagnostics`](skills/oe-skills-x5/x5-accuracy-diagnostics), [ `x5-board-monitor`](skills/oe-skills-x5/x5-board-monitor), [ `x5-bpu-python-api`](skills/oe-skills-x5/x5-bpu-python-api), [ `x5-calibration-data-prepare`](skills/oe-skills-x5/x5-calibration-data-prepare), [ `x5-consistency-diagnostics`](skills/oe-skills-x5/x5-consistency-diagnostics), [ `x5-environment-install`](skills/oe-skills-x5/x5-environment-install), [ `x5-environment-probe`](skills/oe-skills-x5/x5-environment-probe), [ `x5-environment-setup`](skills/oe-skills-x5/x5-environment-setup), [ `x5-model-diagnostics`](skills/oe-skills-x5/x5-model-diagnostics), [ `x5-model-preflight`](skills/oe-skills-x5/x5-model-preflight), [ `x5-performance-diagnostics`](skills/oe-skills-x5/x5-performance-diagnostics), [ `x5-ptq-compile`](skills/oe-skills-x5/x5-ptq-compile), [ `x5-ptq-config-authoring`](skills/oe-skills-x5/x5-ptq-config-authoring), [ `x5-ptq-deploy`](skills/oe-skills-x5/x5-ptq-deploy), [ `x5-qat-adaptation`](skills/oe-skills-x5/x5-qat-adaptation), [ `x5-qat-compile`](skills/oe-skills-x5/x5-qat-compile), [ `x5-qat-deploy`](skills/oe-skills-x5/x5-qat-deploy), [ `x5-qat-training`](skills/oe-skills-x5/x5-qat-training), [ `x5-router`](skills/oe-skills-x5/x5-router), [ `x5-runtime-cpp-infer`](skills/oe-skills-x5/x5-runtime-cpp-infer), [ `x5-runtime-deploy`](skills/oe-skills-x5/x5-runtime-deploy), [ `x5-runtime-perf-eval`](skills/oe-skills-x5/x5-runtime-perf-eval) |
+| **OE Tool Chain (S)** | Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization. | [ `hbdk-manual`](skills/oe-skills-s/skills/hbdk/hbdk-manual), [ `j6-hbdk-compile`](skills/oe-skills-s/skills/hbdk/j6-hbdk-compile), [ `hmct`](skills/oe-skills-s/skills/hmct), [ `j6-hmct-cosine-similarity-tuning`](skills/oe-skills-s/skills/hmct/j6-hmct-cosine-similarity-tuning), [ `horizon-router`](skills/oe-skills-s/skills/horizon-router), [ `board-detection`](skills/oe-skills-s/skills/horizon-router/board-detection), [ `oe-llm-package-detection`](skills/oe-skills-s/skills/horizon-router/oe-llm-package-detection), [ `oe-llm-package-install`](skills/oe-skills-s/skills/horizon-router/oe-llm-package-install), [ `oe-package-detection`](skills/oe-skills-s/skills/horizon-router/oe-package-detection), [ `oe-package-install`](skills/oe-skills-s/skills/horizon-router/oe-package-install), [ `hb-analyzer-performance`](skills/oe-skills-s/skills/horizon_tc_ui/hb-analyzer-performance), [ `horizon-tc-ui`](skills/oe-skills-s/skills/horizon_tc_ui/horizon-tc-ui), [ `j6-plugin-adaptation`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation), [ `j6-plugin-dynamic-block`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block), [ `j6-plugin-insert-quant-dequant`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant), [ `j6-plugin-prepare`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-prepare), [ `j6-plugin-set-fake-quantize`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize), [ `j6-plugin-set-march`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-march), [ `j6-plugin-consistency-debug`](skills/oe-skills-s/skills/plugin/j6-plugin-consistency-debug), [ `j6-plugin-export`](skills/oe-skills-s/skills/plugin/j6-plugin-export), [ `j6-plugin-graph-diff`](skills/oe-skills-s/skills/plugin/j6-plugin-graph-diff), [ `j6-plugin-hbdk-generating`](skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating), [ `j6-hbdk-export-compile`](skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile), [ `j6-plugin-quantization`](skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization), [ `j6-plugin-model-check-result`](skills/oe-skills-s/skills/plugin/j6-plugin-model-check-result), [ `j6-plugin-precision-tuning`](skills/oe-skills-s/skills/plugin/j6-plugin-precision-tuning), [ `ucp`](skills/oe-skills-s/skills/ucp), [ `j6-board-monitor`](skills/oe-skills-s/skills/ucp/j6-board-monitor), [ `j6-ucp-hbm-infer`](skills/oe-skills-s/skills/ucp/j6-ucp-hbm-infer), [ `j6-ucp-infer-generating`](skills/oe-skills-s/skills/ucp/j6-ucp-infer-generating), [ `j6-ucp-model-perf-eval`](skills/oe-skills-s/skills/ucp/j6-ucp-model-perf-eval), [ `j6-ucp-perfetto-trace-analysis`](skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-analysis), [ `j6-ucp-perfetto-trace-catcher`](skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-catcher) |
+| **OE Tool Chain (X5)** | OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Workspace-integrated pack requiring setup.sh initialization. | [ `x5-accuracy-diagnostics`](skills/oe-skills-x5/skills/x5-accuracy-diagnostics), [ `x5-board-monitor`](skills/oe-skills-x5/skills/x5-board-monitor), [ `x5-bpu-python-api`](skills/oe-skills-x5/skills/x5-bpu-python-api), [ `x5-calibration-data-prepare`](skills/oe-skills-x5/skills/x5-calibration-data-prepare), [ `x5-consistency-diagnostics`](skills/oe-skills-x5/skills/x5-consistency-diagnostics), [ `x5-environment-install`](skills/oe-skills-x5/skills/x5-environment-install), [ `x5-environment-probe`](skills/oe-skills-x5/skills/x5-environment-probe), [ `x5-environment-setup`](skills/oe-skills-x5/skills/x5-environment-setup), [ `x5-model-diagnostics`](skills/oe-skills-x5/skills/x5-model-diagnostics), [ `x5-model-preflight`](skills/oe-skills-x5/skills/x5-model-preflight), [ `x5-performance-diagnostics`](skills/oe-skills-x5/skills/x5-performance-diagnostics), [ `x5-ptq-compile`](skills/oe-skills-x5/skills/x5-ptq-compile), [ `x5-ptq-config-authoring`](skills/oe-skills-x5/skills/x5-ptq-config-authoring), [ `x5-ptq-deploy`](skills/oe-skills-x5/skills/x5-ptq-deploy), [ `x5-qat-adaptation`](skills/oe-skills-x5/skills/x5-qat-adaptation), [ `x5-qat-compile`](skills/oe-skills-x5/skills/x5-qat-compile), [ `x5-qat-deploy`](skills/oe-skills-x5/skills/x5-qat-deploy), [ `x5-qat-training`](skills/oe-skills-x5/skills/x5-qat-training), [ `x5-router`](skills/oe-skills-x5/skills/x5-router), [ `x5-runtime-cpp-infer`](skills/oe-skills-x5/skills/x5-runtime-cpp-infer), [ `x5-runtime-deploy`](skills/oe-skills-x5/skills/x5-runtime-deploy), [ `x5-runtime-perf-eval`](skills/oe-skills-x5/skills/x5-runtime-perf-eval) |
 | **RDK Device Skills** | Device-side skills for RDK boards — diagnostics, memory audit, headless mode, camera, vision pipeline, model deploy & benchmarking, GPIO, TROS, doc search, hardware specs, board selection, model zoo, peripherals, accessories, LLM/VLM deployment, embodied AI, S-series delegate, command manual, source map. | [ `rdk-diagnostic`](skills/rdk-diagnostic), [ `rdk-memory-audit`](skills/rdk-memory-audit), [ `rdk-headless-mode`](skills/rdk-headless-mode), [ `rdk-camera-setup`](skills/rdk-camera-setup), [ `rdk-vision-pipeline`](skills/rdk-vision-pipeline), [ `rdk-model-deploy`](skills/rdk-model-deploy), [ `rdk-model-benchmark`](skills/rdk-model-benchmark), [ `rdk-docs-reference`](skills/rdk-docs-reference), [ `rdk-system-config`](skills/rdk-system-config), [ `rdk-network-remote`](skills/rdk-network-remote), [ `rdk-system-maintain`](skills/rdk-system-maintain), [ `rdk-log-forensics`](skills/rdk-log-forensics), [ `rdk-gpio-40pin`](skills/rdk-gpio-40pin), [ `rdk-tros-setup`](skills/rdk-tros-setup), [ `rdk-ecosystem`](skills/rdk-ecosystem), [ `rdk-hardware`](skills/rdk-hardware), [ `rdk-board-knowledge`](skills/rdk-board-knowledge), [ `rdk-model-zoo`](skills/rdk-model-zoo), [ `rdk-multimedia`](skills/rdk-multimedia), [ `rdk-peripheral-cookbook`](skills/rdk-peripheral-cookbook), [ `rdk-accessories`](skills/rdk-accessories), [ `rdk-llm-deployment`](skills/rdk-llm-deployment), [ `rdk-embodied-lerobot`](skills/rdk-embodied-lerobot), [ `rdk-board-delegate`](skills/rdk-board-delegate), [ `rdk-command-manual`](skills/rdk-command-manual), [ `rdk-source-map`](skills/rdk-source-map) |
 <!-- skills-table-end -->
 
@@ -180,14 +196,14 @@ Follows the [Agent Skills specification](https://agentskills.io/specification):
 D-Robotics/rdk-skills/
 ├── skills/                      # mirror directory (written by sync pipeline, read-only)
 │   ├── README.md                 # install guidance
-│   ├── d-robotics-pack-installer/ # hub-native installer skill (catalog exception)
+│   ├── rdk-pack-installer/        # hub-native installer skill (catalog exception)
 │   ├── <skill-name>/             # flat-layout skills (RDK Device Skills)
-│   ├── oe-skills-x5/             # workspace pack mirror (bulk layout, X5 tool chain)
-│   └── oe-skills-s/              # workspace pack mirror (bulk layout, S-series tool chain)
+│   ├── oe-skills-x5/             # workspace pack mirror (full x5/ resource tree + setup.sh, self-installable)
+│   └── oe-skills-s/              # workspace pack mirror (full horizon/ resource tree + setup.sh, self-installable)
 ├── components.d/                # Pack registry (one YAML per product)
 │   ├── README.md                 # registration schema
 │   ├── rdk-device.yml
-│   ├── oe-tool-chain.yml
+│   ├── oe-tool-chain-x5.yml
 │   └── oe-tool-chain-s.yml
 ├── plugins.d/                   # plugin build configuration
 │   ├── README.md
@@ -216,4 +232,12 @@ D-Robotics/rdk-skills/
 
 ## License
 
-Source code is licensed under [Apache-2.0](LICENSE-APACHE). Documentation and skill content is licensed under [CC-BY-4.0](LICENSE-CC-BY-4.0).
+Per ADR 0004, this repository uses a dual license by file type.
+License mapping: code and scripts = Apache-2.0; SKILL.md, skill-card.md, references, and other documentation content = CC-BY-4.0.
+Code and scripts are licensed under [Apache-2.0](LICENSE-APACHE), while `SKILL.md`,
+`skill-card.md`, `references`, and other documentation content are licensed under
+[CC-BY-4.0](LICENSE-CC-BY-4.0). For compatibility with the current Skill
+ecosystem, top-level Skill frontmatter continues to use `license: Apache-2.0`.
+New or substantively modified Skills are recommended to declare
+`metadata.content-license: CC-BY-4.0` as well. This is a clarification of future
+contribution rules; it does not retroactively relicense existing content.

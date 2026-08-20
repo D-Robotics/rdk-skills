@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drobotics-x5/ptq-config.schema.json",
+  "title": "D-Robotics X5 OE Mapper PTQ YAML",
+  "type": "object",
+  "required": ["model_parameters", "input_parameters", "calibration_parameters", "compiler_parameters"],
+  "properties": {
+    "model_parameters": {
+      "type": "object",
+      "required": ["march", "output_model_file_prefix", "working_dir"],
+      "properties": {
+        "march": {"const": "bayes-e"},
+        "onnx_model": {"type": "string", "minLength": 1},
+        "caffe_model": {"type": "string", "minLength": 1},
+        "prototxt": {"type": "string", "minLength": 1},
+        "output_model_file_prefix": {"type": "string", "minLength": 1},
+        "working_dir": {"type": "string", "minLength": 1},
+        "layer_out_dump": {"type": "boolean"},
+        "node_info": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "object", "minProperties": 1}
+          ]
+        },
+        "output_nodes": {"type": "string"},
+        "remove_node_type": {"type": "string"},
+        "remove_node_name": {"type": "string"}
+      },
+      "oneOf": [
+        {"required": ["onnx_model"], "not": {"anyOf": [{"required": ["caffe_model"]}, {"required": ["prototxt"]}]}},
+        {"required": ["caffe_model", "prototxt"], "not": {"required": ["onnx_model"]}}
+      ],
+      "additionalProperties": true
+    },
+    "input_parameters": {
+      "type": "object",
+      "required": ["input_name", "input_type_train", "input_layout_train", "input_shape", "input_type_rt"],
+      "properties": {
+        "input_name": {"type": "string", "minLength": 1},
+        "input_type_train": {"type": "string", "minLength": 1},
+        "input_layout_train": {"type": "string", "minLength": 1},
+        "input_shape": {"type": "string", "pattern": "^[0-9]+(x[0-9]+)+(\\s*;\\s*[0-9]+(x[0-9]+)+)*$"},
+        "input_type_rt": {"type": "string", "minLength": 1},
+        "input_layout_rt": {"type": "string"},
+        "input_space_and_range": {"type": "string"},
+        "input_batch": {"type": "integer", "minimum": 1},
+        "norm_type": {"type": "string"},
+        "mean_value": {"type": "string"},
+        "scale_value": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "calibration_parameters": {
+      "type": "object",
+      "required": ["calibration_type"],
+      "properties": {
+        "calibration_type": {"enum": ["default", "mix", "kl", "max", "skip"]},
+        "cal_data_dir": {"type": "string"},
+        "cal_data_type": {"type": "string"},
+        "preprocess_on": {"type": "boolean"},
+        "run_on_cpu": {"type": "string"},
+        "run_on_bpu": {"type": "string"},
+        "per_channel": {"type": "boolean"},
+        "max_percentile": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+      },
+      "additionalProperties": true
+    },
+    "compiler_parameters": {
+      "type": "object",
+      "required": ["compile_mode", "core_num", "optimize_level", "input_source"],
+      "properties": {
+        "compile_mode": {"enum": ["latency", "bandwidth"]},
+        "debug": {"type": "boolean"},
+        "core_num": {"type": "integer", "minimum": 1},
+        "optimize_level": {"enum": ["O0", "O1", "O2", "O3"]},
+        "input_source": {"type": "object", "additionalProperties": {"type": "string"}},
+        "max_time_per_fc": {"type": "integer", "minimum": 1},
+        "jobs": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    },
+    "custom_op": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"calibration_parameters": {"properties": {"calibration_type": {"const": "skip"}}}}},
+      "then": {},
+      "else": {"properties": {"calibration_parameters": {"required": ["cal_data_dir", "cal_data_type"]}}}
+    }
+  ],
+  "additionalProperties": false
+}

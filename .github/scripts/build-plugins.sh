@@ -24,6 +24,13 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
+# Validate catalog inputs before any plugin distribution is removed. A dry run
+# checks includes without regenerating tracked catalog data.
+if [ "$DRY_RUN" -eq 0 ]; then
+  python3 .github/scripts/generate_plugin_catalog.py --repo-root .
+fi
+python3 .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-includes
+
 # Load defaults
 DEFAULTS_FILE="plugins.d/_defaults.yml"
 default_version=$(yq '.version // "1.0.0"' "$DEFAULTS_FILE" 2>/dev/null || echo "1.0.0")
@@ -83,9 +90,7 @@ for pname in $plugin_files; do
       if [ "$skill_files_mode" = "symlink" ]; then
         ln -sf "../../../skills/$skill_basename" "$dest"
       else
-        if [ -d "$skill_path" ]; then
-          rsync -a "$skill_path/" "$dest/"
-        fi
+        rsync -a "$skill_path/" "$dest/"
       fi
     done < <(yq -r '.include_skills[]?' "$yml_file")
 

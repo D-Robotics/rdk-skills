@@ -1,6 +1,6 @@
 ---
 name: rdk-docs-reference
-description: Search and quote the official D-Robotics documentation (rdk_x_doc / rdk_s_doc) to answer any RDK knowledge question with sourced citations instead of memory. Use for pin definitions, interface specs, FAQ errors, srpi-config options, config.txt, board differences, release notes, and as the fallback for any RDK question no workflow skill covers. Triggers include 官方文档, 文档里怎么说, FAQ, 引脚定义在哪查, 接口规格, 支持什么分辨率, S100 和 S600 区别. Do not use as a substitute for live measurement — hand real device state to rdk-diagnostic or rdk-memory-audit.
+description: Search and quote official D-Robotics documentation (rdk_x_doc / rdk_s_doc / tros_doc) to answer RDK knowledge questions with sourced citations instead of memory. Use for pin definitions, interface specs, FAQ errors, srpi-config options, config.txt, board differences, release notes, TROS installation and node/application documentation, and as the fallback for any RDK question no workflow skill covers. Triggers include 官方文档, 文档里怎么说, FAQ, 引脚定义在哪查, 接口规格, 支持什么分辨率, S100 和 S600 区别, TROS 节点开发. Do not use as a substitute for live measurement — hand real device state to rdk-diagnostic or rdk-memory-audit.
 version: 0.1.0
 license: Apache-2.0
 metadata:
@@ -23,7 +23,7 @@ FAQ 报错、版本说明、文档原文出处），都先检索官方文档仓�
 ## Purpose
 
 把"Agent 凭记忆回答 RDK 问题"降级为"Agent 查官方文档后带出处回答"，保证一切结论
-可追溯到 rdk_x_doc / rdk_s_doc 的具体文件。
+可追溯到 rdk_x_doc / rdk_s_doc / tros_doc 的具体文件。
 
 ## When to use
 
@@ -40,16 +40,17 @@ rdk-memory-audit 实测，而不是引用文档理论值）。
 
 ## Prerequisites
 
-- 本地存在官方文档克隆。默认路径为仓库根的 `.refs/rdk_x_doc` 与 `.refs/rdk_s_doc`，
+- 本地存在官方文档克隆。默认路径为仓库根的 `.refs/rdk_x_doc`、`.refs/rdk_s_doc` 与
+  `.refs/tros_doc`，
   可用环境变量 `RDK_DOCS_ROOT` 指向其他位置。
 - 缺失时先获取：`git clone --depth 1 https://github.com/D-Robotics/rdk_x_doc.git`
-  （rdk_s_doc 同理）。
+  （rdk_s_doc、tros_doc 同理）。
 
 ## Available Scripts
 
 | Script | Purpose | Arguments |
 | --- | --- | --- |
-| `scripts/search_docs.sh` | 在官方文档仓库中全文检索关键词，输出 `文件路径:行号:命中行`。 | `--query <kw>`（可多次）、`--repo x\|s\|all`、`--limit N`、`--summary`（按章节分组统计）、`--toc [--query <kw>]`（按关键词过滤目录） |
+| `scripts/search_docs.sh` | 在官方文档仓库中全文检索关键词，输出 `文件路径:行号:命中行`。 | `--query <kw>`（可多次）、`--repo x\|s\|tros\|all`、`--limit N`、`--summary`（按章节分组统计）、`--toc [--query <kw>]`（按关键词过滤目录） |
 
 ## Instructions
 
@@ -66,8 +67,8 @@ rdk-memory-audit 实测，而不是引用文档理论值）。
 
 以下是检索方法协议（与具体板卡无关，适用于任何主题）：
 
-1. **板卡限定优先**：问题涉及具体板卡时，先用 `--repo x` 或 `--repo s` 限定仓库，
-   再看 DocScope；禁止用 A 板的命中回答 B 板的问题。
+1. **仓库限定优先**：问题涉及具体板卡时，先用 `--repo x` 或 `--repo s` 限定仓库，
+   再看 DocScope；TROS 节点/应用文档用 `--repo tros`。禁止用 A 板的命中回答 B 板的问题。
 2. **章节即适用性信号**：命中路径的章节段（如 `05_mcu_development` vs
    `02_linux_development`）决定该命中属于哪个子系统。用 `--summary` 看命中的章节
    分布；若某术语只出现在另一个子系统的章节里，不要把它当作 Linux 用户态可用的证据。
@@ -94,7 +95,7 @@ rdk-memory-audit 实测，而不是引用文档理论值）。
 
 ## Error handling
 
-- 文档目录不存在：输出获取指引（git clone 命令），不要在无文档时凭记忆回答。
+- 文档目录不存在：输出 rdk_x_doc、rdk_s_doc、tros_doc 的获取指引（git clone 命令），不要在无文档时凭记忆回答。
 - 关键词过泛导致命中过多：取前 N 条并提示用户缩小范围。
 
 ## Output contract for search_docs.sh
@@ -114,4 +115,5 @@ rdk_x_doc/docs/03_Basic_Application/01_40pin_user_sample/gpio.md:16:>>> import H
 | --- | --- | --- |
 | rdk_x_doc | X3 / X3 Module / X5 / X5 Module / Ultra | `x` |
 | rdk_s_doc | S100 / S100P / S600 | `s` |
-| 两者 | 全系 | `all`（默认） |
+| tros_doc | TROS 安装、环境、节点与应用文档 | `tros` |
+| 三者 | 全系与 TROS 文档 | `all`（默认） |

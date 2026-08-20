@@ -39,6 +39,17 @@
 
 L2 治理要求（`skill-card.md` + `evals/` + 四章节）对新增 skill 强制、对存量 skill 有过渡期。完整分级规则见仓库根 `CONTRIBUTING.md` 与《组织规范》。
 
+## 许可证规则
+
+ADR 0004 是本仓库许可证规则的权威依据。仓库按文件类型双许可。
+许可证映射：代码和脚本 = Apache-2.0；SKILL.md、skill-card.md、references 和其他文档内容 = CC-BY-4.0。
+代码和脚本采用
+Apache-2.0；`SKILL.md`、`skill-card.md`、`references` 和其他文档内容采用
+CC-BY-4.0。为兼容当前 Skill 生态，顶层 Skill frontmatter 仍填写
+`license: Apache-2.0`；新建或实质修改的 Skill 建议同时声明
+`metadata.content-license: CC-BY-4.0`。这是对未来贡献规则的澄清，不对既有
+内容追溯性重新授权。
+
 ---
 
 ## 三、注册一个新 Pack
