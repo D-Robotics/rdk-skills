@@ -5,7 +5,9 @@
 
 本文件记录本项目的所有重要变更。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
-## [Unreleased]
+## [0.1.0] - 2026-08-20
+
+> 首个发布 tag。此前 CHANGELOG 中的 0.1.0~0.3.0 编号从未打过 git tag，仅作文档编号；版本序列自本版起正式重启，历史条目见文末「0.x 历史（未打 tag）」。
 
 ### 新增
 
@@ -22,9 +24,13 @@
 - 统一公开许可证说明：代码与脚本采用 Apache-2.0，文档内容采用 CC-BY-4.0；Skill 顶层 frontmatter 继续遵循 ADR 0004 使用 `license: Apache-2.0`。
 - 同步工作流从每日 2:00 UTC 改为每小时运行（仍保留手动 dispatch 与 components.d 变更触发）。
 
-## [0.3.0] - 2026-08-04
+## 0.x 历史（未打 tag，编号已作废）
 
-### 变更
+以下版本号仅存在于旧 CHANGELOG 条目中，从未打过 git tag，仅作历史存档。
+
+### [0.3.0] - 2026-08-04
+
+#### 变更
 
 - `components.d/rdk-device.yml` 的 `repo` 从 `D-Robotics/rdk-device-skills` 修正为 `D-Robotics/device-knowledge`
 - `validate.py` 与 device-knowledge 的 `sandbox.py` 约定对齐：
@@ -40,9 +46,9 @@
   - 新增设计原则（官方文档为真相源、观察/行动分离、不编造、自包含、description 为路由信号）
   - 新增 Pack 级推荐基础设施（Makefile / install.sh / sandbox.py），参考 device-knowledge
 
-## [0.2.0] - 2026-07-28
+### [0.2.0] - 2026-07-28
 
-### 新增
+#### 新增
 
 - 中央目录仓库架构升级，补齐完整的 Pack 注册与同步体系：
   - `components.d/README.md` — Pack 注册规范文档
@@ -65,13 +71,13 @@
   - `components.d/oe-tool-chain.yml` — 60+ 个 OE 工具链 Skill（量化、编译、推理、评测、诊断）
 - 中英双语 README（`README.md` 英文、`README_cn.md` 中文，顶部互相跳转）
 
-### 变更
+#### 变更
 
 - `README.md` 重写：硬件优先，中文为主，调整章节顺序为「板卡 → 安装 → 目录 → 反馈 → 结构 → 仓库结构 → 路线图 → 许可证」
 - `components.d/` 字段格式统一为 `name`/`repo`/`description`/`skills[]`（`path` + `catalog_dir`），替代原先的非标准字段
 - `CONTRIBUTING.md` 重写，改为 D-Robotics 实际流程导向
 
-### 移除
+#### 移除
 
 - `sync.py`（Python）— 由 bash + yq 同步流水线替代
 - 旧版 `validate.py` — 由增强版替代
@@ -80,9 +86,9 @@
 - 单一 `LICENSE` — 由双许可（`LICENSE-APACHE` + `LICENSE-CC-BY-4.0`）替代
 - 旧版 `components.d/oe-skills.yml`（非标准字段）— 由标准格式替代
 
-## [0.1.0] - 2026-07-27
+### [0.1.0] - 2026-07-27
 
-### 新增
+#### 新增
 
 - 初始中央目录仓库骨架
 - `components.d/oe-skills.yml` — 首个 Pack 注册（OE 工具链）
