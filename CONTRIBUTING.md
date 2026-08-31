@@ -22,6 +22,10 @@
 3. 在本仓库 `components.d/` 下创建 YAML 文件（规范见 [`components.d/README.md`](components.d/README.md)）
 4. 提交 PR——同步流水线自动拉取
 
+## 发布维护
+
+正式版本、Git tag 与 GitHub Release 的维护流程见 [docs/RELEASING.md](docs/RELEASING.md)。发布说明使用英文模板 [`.github/RELEASE_TEMPLATE.md`](.github/RELEASE_TEMPLATE.md)；已公开的 tag 不得重写，修复必须发布新的补丁版本。
+
 ## Skill 目录规范
 
 源头仓库的 Skill 放在 `skills/` 目录下，每个 Skill 一个子目录。不要用 `.claude/skills/`、`.codex/skills/` 这类 Agent 专属路径——那些是安装时的目标路径，不是源头的存放路径。安装工具会从 `skills/` 复制或 symlink 到各 Agent 的发现路径。
