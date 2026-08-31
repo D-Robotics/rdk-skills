@@ -83,12 +83,15 @@ class SelectiveSyncTests(unittest.TestCase):
             ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
         )
 
+    def bash_command(self, args):
+        return [BASH, "-lc", 'cd "$1" && shift && exec "$@"', "--", bash_path(self.hub_root), *args]
+
     def run_sync(self, component: str, work_root=None, fail_after=None, fail_compare=None):
         summary_file = self.root / "sync-summary.json"
         work_root = work_root or self.hub_root / ".tmp" / "component-sync-test"
         return subprocess.run(
-            [
-                BASH, bash_path(SCRIPT),
+            self.bash_command([
+                bash_path(SCRIPT),
                 "--components-dir", bash_path(self.components_dir),
                 "--component", component,
                 "--repo-base-url", bash_path(self.repo_base),
@@ -96,7 +99,6 @@ class SelectiveSyncTests(unittest.TestCase):
                 "--summary-file", bash_path(summary_file),
             ] + (["--fail-after-replace", str(fail_after)] if fail_after else [])
               + (["--fail-compare", fail_compare] if fail_compare else []),
-            cwd=self.hub_root,
             env={**os.environ, "PYTHONPATH": str(ROOT / ".github")},
             capture_output=True,
             text=True,
@@ -157,13 +159,13 @@ class SelectiveSyncTests(unittest.TestCase):
     def test_rejects_summary_directory_before_catalog_changes(self):
         target = self.hub_root / "skills" / "bsp-env-setup"
         before = hash_tree(target)
-        command = [
-            BASH, bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
+        command = self.bash_command([
+            bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
             "--component", "bsp-skills", "--repo-base-url", bash_path(self.repo_base),
             "--work-root", bash_path(self.hub_root / ".tmp" / "component-sync-summary"),
             "--summary-file", bash_path(self.root),
-        ]
-        result = subprocess.run(command, cwd=self.hub_root, capture_output=True, text=True)
+        ])
+        result = subprocess.run(command, capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("invalid summary destination", result.stderr)
         self.assertEqual(hash_tree(target), before)
@@ -208,23 +210,23 @@ class SelectiveSyncTests(unittest.TestCase):
     def test_term_during_backup_move_window_restores_original_tree(self):
         target = self.hub_root / "skills" / "bsp-env-setup"
         before = hash_tree(target)
-        command = [
-            BASH, bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
+        command = self.bash_command([
+            bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
             "--component", "bsp-skills", "--repo-base-url", bash_path(self.repo_base),
             "--work-root", bash_path(self.hub_root / ".tmp" / "component-sync-signal"),
             "--summary-file", bash_path(self.root / "signal-summary.json"),
             "--pause-after-backup", "10",
-        ]
+        ])
         ready = self.root / "backup-ready"
         command.extend(["--ready-file", bash_path(ready)])
-        process = subprocess.Popen(command, cwd=self.hub_root)
+        process = subprocess.Popen(command, start_new_session=True)
         deadline = time.monotonic() + 15
         while not ready.exists() and time.monotonic() < deadline:
             if process.poll() is not None:
                 self.fail(f"sync exited before ready marker: {process.returncode}")
             time.sleep(0.05)
         self.assertTrue(ready.exists(), "sync did not reach backup-ready transition")
-        os.kill(process.pid, signal.SIGTERM)
+        os.killpg(process.pid, signal.SIGTERM)
         self.assertEqual(process.wait(timeout=10), 143)
         self.assertEqual(hash_tree(target), before)
 
