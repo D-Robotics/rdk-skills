@@ -83,7 +83,11 @@ if [ ! -d "$DROBOTICS_SRC" ]; then
 fi
 
 SRC_VERSION="$(tr -d '\r' < "$DROBOTICS_SRC/VERSION" 2>/dev/null || true)"
-INSTALLED_VERSION="$(tr -d '\r' < "$DROBOTICS_DST/VERSION" 2>/dev/null || true)"
+if [ -f "$DROBOTICS_DST/VERSION" ]; then
+  INSTALLED_VERSION="$(tr -d '\r' < "$DROBOTICS_DST/VERSION")"
+else
+  INSTALLED_VERSION=""
+fi
 
 echo "==> Resource:  $RESOURCE_DIR"
 echo "==> Project:   $PROJECT_ROOT"
