@@ -16,6 +16,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / ".github" / "scripts" / "sync-components.sh"
+BASH = os.environ.get("SYNC_TEST_BASH", "bash")
+BASH_UNAME = subprocess.check_output([BASH, "-lc", "uname -s"], text=True).strip()
 
 
 def hash_tree(root: Path) -> str:
@@ -29,11 +31,12 @@ def hash_tree(root: Path) -> str:
 
 
 def bash_path(path: Path) -> str:
-    """Use native POSIX paths, or Git Bash's Windows mount spelling."""
-    if os.name != "nt":
+    """Translate paths for the actual shell executing the integration test."""
+    if not (len(str(path.resolve())) >= 2 and str(path.resolve())[1] == ":"):
         return str(path.resolve())
     value = str(path.resolve())
-    return f"/mnt/{value[0].lower()}{value[2:]}".replace("\\", "/")
+    mount = "/" if BASH_UNAME.startswith(("MINGW", "MSYS")) else "/mnt/"
+    return f"{mount}{value[0].lower()}{value[2:]}".replace("\\", "/")
 
 
 class SelectiveSyncTests(unittest.TestCase):
@@ -85,7 +88,7 @@ class SelectiveSyncTests(unittest.TestCase):
         work_root = work_root or self.hub_root / ".tmp" / "component-sync-test"
         return subprocess.run(
             [
-                "bash", bash_path(SCRIPT),
+                BASH, bash_path(SCRIPT),
                 "--components-dir", bash_path(self.components_dir),
                 "--component", component,
                 "--repo-base-url", bash_path(self.repo_base),
@@ -155,7 +158,7 @@ class SelectiveSyncTests(unittest.TestCase):
         target = self.hub_root / "skills" / "bsp-env-setup"
         before = hash_tree(target)
         command = [
-            "bash", bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
+            BASH, bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
             "--component", "bsp-skills", "--repo-base-url", bash_path(self.repo_base),
             "--work-root", bash_path(self.hub_root / ".tmp" / "component-sync-summary"),
             "--summary-file", bash_path(self.root),
@@ -197,6 +200,7 @@ class SelectiveSyncTests(unittest.TestCase):
         first_before, second_before = hash_tree(self.hub_root / "skills" / "bsp-env-setup"), hash_tree(second)
         result = self.run_sync("bsp-skills", fail_compare="bsp-env-second")
         self.assertNotEqual(result.returncode, 0)
+        self.assertIn("could not compare catalog directory: bsp-env-second", result.stderr)
         self.assertEqual(hash_tree(self.hub_root / "skills" / "bsp-env-setup"), first_before)
         self.assertEqual(hash_tree(second), second_before)
 
@@ -205,7 +209,7 @@ class SelectiveSyncTests(unittest.TestCase):
         target = self.hub_root / "skills" / "bsp-env-setup"
         before = hash_tree(target)
         command = [
-            "bash", bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
+            BASH, bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
             "--component", "bsp-skills", "--repo-base-url", bash_path(self.repo_base),
             "--work-root", bash_path(self.hub_root / ".tmp" / "component-sync-signal"),
             "--summary-file", bash_path(self.root / "signal-summary.json"),
