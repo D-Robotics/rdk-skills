@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -27,6 +28,15 @@ spec.loader.exec_module(catalog)
 
 
 class ReleaseContractTests(unittest.TestCase):
+    def test_plugin_builder_is_executable_for_the_sync_workflow(self):
+        """The workflow invokes this script directly, so its Git mode must be executable."""
+        output = subprocess.check_output(
+            ["git", "ls-files", "-s", ".github/scripts/build-plugins.sh"],
+            cwd=ROOT,
+            text=True,
+        )
+        self.assertEqual(output.split(maxsplit=1)[0], "100755")
+
     def test_components_pin_every_release_source_to_v1(self):
         for filename, expected_ref in EXPECTED_REFS.items():
             with self.subTest(filename=filename):
