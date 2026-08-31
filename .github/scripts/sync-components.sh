@@ -19,6 +19,7 @@ fail_after_replace=${SYNC_COMPONENTS_FAIL_AFTER_REPLACE:-}
 pause_after_replace=${SYNC_COMPONENTS_PAUSE_AFTER_REPLACE:-}
 pause_after_backup=${SYNC_COMPONENTS_PAUSE_AFTER_BACKUP:-}
 fail_backup=${SYNC_COMPONENTS_FAIL_BACKUP:-}
+ready_file=${SYNC_COMPONENTS_READY_FILE:-}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --components-dir) components_dir=${2:-}; shift 2 ;;
@@ -30,6 +31,7 @@ while [[ $# -gt 0 ]]; do
     --pause-after-replace) pause_after_replace=${2:-}; shift 2 ;;
     --pause-after-backup) pause_after_backup=${2:-}; shift 2 ;;
     --fail-backup) fail_backup=true; shift ;;
+    --ready-file) ready_file=${2:-}; shift 2 ;;
     *) usage ;;
   esac
 done
@@ -206,6 +208,8 @@ fi
 
 replacement_count=0
 declare -a replacement_dirs=()
+declare -A target_existed_before=()
+declare -A staged_moved=()
 rollback() {
   local catalog_dir target backup
   local status=0
@@ -215,6 +219,8 @@ rollback() {
     if [[ -e "$backup" ]]; then
       rm -rf "$target" || status=1
       mv "$backup" "$target" || status=1
+    elif [[ "${target_existed_before[$catalog_dir]:-true}" == false && "${staged_moved[$catalog_dir]:-false}" == true ]]; then
+      rm -rf "$target" || status=1
     fi
   done
   return "$status"
@@ -231,8 +237,13 @@ for catalog_dir in "${catalog_dir_list[@]}"; do
     # Pre-register before moving: rollback only acts if the backup exists, so
     # this is safe both before a failed move and after a successful one.
     replacement_dirs+=("$catalog_dir")
+    if [[ -e "$target" ]]; then target_existed_before[$catalog_dir]=true; else target_existed_before[$catalog_dir]=false; fi
     if [[ -e "$target" ]] && ! mv "$target" "$backup"; then fail "could not backup catalog directory: $catalog_dir"; fi
+    [[ -n "$ready_file" ]] && : > "$ready_file"
     [[ -n "$pause_after_backup" ]] && sleep "$pause_after_backup"
+    # Mark intent before the move so a signal in the post-move/pre-assignment
+    # window removes a newly-created target or restores its backup.
+    staged_moved[$catalog_dir]=true
     if ! mv "$staged" "$target"; then
       rollback
       fail "could not replace catalog directory: $catalog_dir"
@@ -246,9 +257,11 @@ for catalog_dir in "${catalog_dir_list[@]}"; do
   fi
 done
 
+# Commit before disposing backups: signals after this point keep the complete
+# new state, while signals before it always invoke rollback.
+transaction_active=false
 for catalog_dir in "${replacement_dirs[@]}"; do
   rm -rf "$stage_root/.previous-$catalog_dir"
 done
-transaction_active=false
 
 write_summary
