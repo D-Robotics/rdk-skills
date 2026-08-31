@@ -1,6 +1,8 @@
 ---
 name: x5-qat-deploy
 description: 编排 X5 horizon_plugin_pytorch calibration、QAT、定点转换与 Plugin 编译；当用户有可训练 PyTorch 模型、数据和浮点基线，希望得到 March.BAYES_E 的 .hbm/.hbir 及指标闭环时使用。明确排除 HAT，且不把 QAT 自动交给 hb_mapper makertbin。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 Plugin QAT 工作流

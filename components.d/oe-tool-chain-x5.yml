@@ -2,7 +2,7 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 name: OE Tool Chain (X5)
 repo: D-Robotics/oe-skills-x5
-ref: v2.1.0
+ref: v1.0.0
 # ^ Pinned release tag (immutable). Release flow: pack repo tags a new
 # version -> this ref moves -> merge triggers sync at that tag.
 description: OpenExplorer X5 tool chain — model quantization (PTQ/QAT), compilation, inference, performance evaluation, and diagnostics. Workspace-integrated pack requiring setup.sh initialization.

@@ -88,8 +88,8 @@ bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
 # 升级已装 workspace：先比 VERSION，已是最新则直接跳过；不同则重建
 # .drobotics/（不残留旧文件）。--ref 把来源 tag 记录进 INSTALLED_REF；
 # 手动更新可省略。
-bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
-# bash skills/oe-skills-s/setup.sh --update --ref v0.3.0 $PROJECT_ROOT
+bash skills/oe-skills-x5/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
+# bash skills/oe-skills-s/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
 ```
 
 Pack 仓库仍是权威上游与文档化的降级来源：

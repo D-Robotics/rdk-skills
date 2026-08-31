@@ -1,6 +1,8 @@
 ---
 name: x5-performance-diagnostics
 description: 关联 X5 hb_perf 静态估计、Runtime 实测、BPU ratio、温度频率和 CPU/I/O 开销以定位性能瓶颈；当模型太慢、静态与板端差异大或 BPU 利用率异常时使用。默认只读，不自动改 O3、core、频率或系统进程。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 性能诊断

@@ -1,6 +1,8 @@
 ---
 name: j6-ucp-model-perf-eval
 description: 自动化 hrt_model_exec perf 板端性能评测。触发条件：模型性能测试、benchmark、性能评估、板端测试、thread_num/core_id 参数扫描、吞吐量/延迟对比、远程部署 hrt_model_exec 运行 perf。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Model Perf Eval

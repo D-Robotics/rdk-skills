@@ -1,6 +1,8 @@
 ---
 name: j6-ucp-perfetto-trace-catcher
 description: Capture UCP (Horizon Robotics inference SDK) Perfetto traces from a J6 development board. Use this skill whenever the user wants to grab UCP traces, capture Perfetto traces on a Horizon dev board, debug UCP scheduling issues with trace data, or pull .pftrace files from a remote board. Also trigger when the user mentions UCP performance analysis, UCP trace, hrt_model_exec tracing, or BPU trace capture on J6/S1000 platforms. Do NOT use for DSP trace or Chrome trace.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # UCP Trace Catcher

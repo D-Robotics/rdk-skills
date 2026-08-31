@@ -22,3 +22,12 @@
     skill: bsp-image-build
     behavior:
       - explains pack_image.sh -l local build mode and its limitation
+
+- id: bsp-img-004
+  dimension: routing
+  prompt: "我只改了 hobot-multimedia，帮我重新打包这个 deb。"
+  expect:
+    skill: bsp-deb-build
+    behavior:
+      - routes the package-only request to bsp-deb-build
+      - does not recommend or run pack_image.sh

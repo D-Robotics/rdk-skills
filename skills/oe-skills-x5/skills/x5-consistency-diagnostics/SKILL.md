@@ -1,6 +1,8 @@
 ---
 name: x5-consistency-diagnostics
 description: 比较 X5 浮点、calibration/QAT、定点、编译和 Runtime 的固定输入输出，定位首个数值或 I/O 不一致阶段；当 Plugin 编译后掉点、仿真与板端不同或 C++/Python 输出不一致时使用。默认只读。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 一致性诊断

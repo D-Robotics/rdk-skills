@@ -7,7 +7,7 @@
 # --update  升级模式：已安装且 VERSION 与源一致（未加 --force）时直接跳过；
 #           版本不同则以重建方式升级（先删目标目录再铺设，不残留旧文件）。
 # --force   配合 --update 忽略版本比较，强制重建。
-# --ref     安装来源标签（如 v0.3.0），记录到 .horizon/INSTALLED_REF；
+# --ref     安装来源标签（如 v1.0.0），记录到 .horizon/INSTALLED_REF；
 #           省略时回退为资源 VERSION。installer 以它作升级比对锚点。
 #
 # 将资源铺设到 <project-root>/.horizon/，并向 CLAUDE.md / AGENTS.md
@@ -28,7 +28,7 @@ while [ "$#" -gt 1 ]; do
     --force)  FORCE=1; shift ;;
     --ref)
       if [ -z "${2:-}" ]; then
-        echo "ERROR: --ref 需要一个参数（如 v0.3.0）" >&2
+        echo "ERROR: --ref 需要一个参数（如 v1.0.0）" >&2
         exit 2
       fi
       PROVIDED_REF="$2"; shift 2 ;;
@@ -65,8 +65,16 @@ echo "==> Resource:  $RESOURCE_DIR"
 echo "==> Project:   $PROJECT_ROOT"
 echo "==> Target:    $HORIZON_DST"
 
-SRC_VERSION=$(cat "$HORIZON_SRC/VERSION" 2>/dev/null || true)
-INSTALLED_VERSION=$(cat "$HORIZON_DST/VERSION" 2>/dev/null || true)
+if [ -f "$HORIZON_SRC/VERSION" ]; then
+  SRC_VERSION=$(tr -d '\r' < "$HORIZON_SRC/VERSION")
+else
+  SRC_VERSION=""
+fi
+if [ -f "$HORIZON_DST/VERSION" ]; then
+  INSTALLED_VERSION=$(tr -d '\r' < "$HORIZON_DST/VERSION")
+else
+  INSTALLED_VERSION=""
+fi
 
 # ── 0. 升级判定（--update）────────────────────────────────────────
 if [ "$UPDATE" -eq 1 ]; then

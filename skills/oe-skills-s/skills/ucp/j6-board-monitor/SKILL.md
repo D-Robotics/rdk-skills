@@ -1,6 +1,8 @@
 ---
 name: j6-board-monitor
 description: RDK S 系列开发板资源监控与推理期间资源采集。当用户需要监控 BPU 占用率、DDR 带宽、内存使用时触发。支持三种场景：(1) Scenario A：CV 模型在指定帧率（如 10Hz）推理期间同步采集 BPU/DDR/内存数据；(2) Scenario B：独立监控板端硬件资源（无推理负载）；(3) Scenario C：LLM 模型循环推理期间同步采集资源数据，使用 simple_demo_request 保持模型持续运行。关键词：BPU 监控、DDR 带宽、内存使用、资源监控、设定帧率推理、LLM 推理监控、hrt_ucp_monitor、hrut_ddr、simple_demo_request、板端资源评估。注意：不要用 hbm_infer/gRPC 做高频推理监控（通信开销太大）。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Board Monitor

@@ -1,6 +1,8 @@
 ---
 name: x5-runtime-deploy
 description: 编排 X5 Runtime 模型门禁、板端上传、命令行/C++ 推理、正确性、性能与资源验证；当用户要上板运行 X5 .bin、使用 hrt_model_exec 或 BPU SDK 时使用。Plugin .hbm/.hbir 只有在实际 Runtime 兼容证据充分时才接收；不使用 S 系列 UCP。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 Runtime 部署工作流

@@ -1,6 +1,8 @@
 ---
 name: skills
 description: HBDK4模型编译工具的使用指南索引，按任务场景组织
+version: 1.0.0
+license: Apache-2.0
 ---
 
 > 基于HBDK4版本 **4.9.7** 编写，Docker镜像版本 **v3.9.0_rc4**。

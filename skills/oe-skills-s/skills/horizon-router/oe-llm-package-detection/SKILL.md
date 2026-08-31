@@ -1,6 +1,8 @@
 ---
 name: oe-llm-package-detection
 description: OE-LLM 包环境检测 Skill。当任务涉及 LLM 量化、LLM 压缩、LLM 编译、板端 LLM 推理等 LLM 工具链操作，且 .horizon/.env.oe-llm-package 不存在时触发。自动完成 OE-LLM 包路径定位、版本采集、本地环境匹配检查、GPU Docker 判定，并将结果写入 .env 文件。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # OE-LLM 包环境检测

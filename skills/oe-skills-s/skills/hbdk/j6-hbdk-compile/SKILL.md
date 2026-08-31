@@ -1,11 +1,13 @@
 ---
 name: j6-hbdk-compile
 description: 通用模型编译 skill。基于 YAML 配置文件驱动，支持 ONNX 和 BC 模型格式。支持从 PTQ config 自动提取输入预处理参数。工作流：生成配置 -> 默认必须经用户确认 -> 再执行编译与报告。Use when the user mentions 模型编译、compile、导出 hbm、生成上板产物、pyramid 输入、resizer 输入。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK S 系列 HBDK Compile - 通用模型编译 Skill
 
-> 版本: 1.1.8
+> 版本: 1.0.0
 
 ## 概述
 

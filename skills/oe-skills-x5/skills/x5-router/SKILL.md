@@ -1,6 +1,8 @@
 ---
 name: x5-router
 description: 路由 X5 环境、OE Mapper PTQ、Plugin QAT、Runtime、板端 Python 和诊断请求；当目标芯片明确为 X5 或请求包含 bayes-e、hb_mapper、X5 .bin、March.BAYES_E 时使用。只选择一个主 Skill 并生成 route.json；不执行 HAT、X3 或 S 系列工作流。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 路由

@@ -1,6 +1,8 @@
 ---
 name: x5-ptq-config-authoring
 description: 生成并机器校验 X5 OE Mapper PTQ YAML；当模型预检通过、输入和校准合同已明确，需要得到 march=bayes-e 的可审阅配置时使用。拒绝 Plugin load/QAT 混用、HAT 和 S 系列字段。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 PTQ 配置编写

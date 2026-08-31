@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__model-check-result
 description: 在 horizon_plugin_pytorch 量化配置检查中，读取并分析 prepare 产出的 model_check_result.txt，定位模型结构与 qconfig 问题（算子融合、共享模块、qconfig 异常、averaging_constant 非默认值、算子输入浮点检查）。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 分析 Horizon `model_check_result.txt`（模型结构与量化配置检查）

@@ -1,6 +1,8 @@
 ---
 name: oe-package-detection
 description: OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .horizon/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、GPU/CPU Docker 判定，并将结果写入 .env 文件。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # OE 包环境检测

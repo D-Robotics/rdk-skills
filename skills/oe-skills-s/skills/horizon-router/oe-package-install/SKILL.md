@@ -1,6 +1,8 @@
 ---
 name: oe-package-install
 description: OE 包本地安装 Skill。在 oe-package-detection 完成后触发，询问用户是否本地安装。若用户同意，则检测本地 Python / CUDA / PyTorch 版本，匹配 OE 包内 whl，创建 venv 全量安装，更新 .env 为 EXECUTION_MODE=local。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # OE 包本地安装

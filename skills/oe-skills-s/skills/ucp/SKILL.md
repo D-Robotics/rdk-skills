@@ -1,6 +1,8 @@
 ---
 name: ucp
 description: 地平线 J6 UCP 技能入口，通过路由机制将用户意图分发至对应子 skill，涵盖模型性能评测、HBM 推理部署、推理代码生成、Perfetto Trace 采集与分析等能力。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # UCP Skill

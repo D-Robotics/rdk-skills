@@ -1,7 +1,7 @@
 ---
 name: rdk-diagnostic
 description: Read-only health snapshot for D-Robotics RDK boards (X3/X5/Ultra/S100/S600). Use when the user asks what board or SoC this is, memory size, temperature, BPU load, what is running, or why the board is slow, hot, or out of memory. Triggers include 板卡型号, 多大内存, 温度, 发烫, 很烫, 特别烫, 很慢, 卡顿, BPU 占用, 设备快照, 跑着什么, hrut_somstatus, rdkos_info. Do not use to change settings, stop services, or free memory — hand off to rdk-system-config, rdk-headless-mode, or rdk-memory-audit.
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

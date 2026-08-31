@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__adaptation
 description: 为用户的浮点 PyTorch 模型适配地平线机器人公司的 QAT 工具 `horizon_plugin_pytorch`。这是一个编排型 skill，必须按固定顺序依次调用：`__SKILL_j6-plugin-__set-march` → `__SKILL_j6-plugin-__insert-quant-dequant` → `__SKILL_j6-plugin-__dynamic-block` → `__SKILL_j6-plugin-__prepare` → `__SKILL_j6-plugin-__set-fake-quantize`。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 为浮点模型执行完整 Horizon QAT 适配（组合调度版）

@@ -1,7 +1,7 @@
 ---
 name: rdk-network-remote
 description: Diagnose and fix network connectivity and remote access on D-Robotics RDK devices — SSH, serial console, VNC, wired/wireless network, and static IP defaults. Use when the user cannot reach the board, ssh or ping fails, WiFi needs configuring, or they ask how to log in without a monitor. Triggers include ssh 连不上, 连不上板子, 网络不通, ping 不通, 串口登录, 波特率, VNC 远程桌面, 静态 IP, 192.168.127.10, WiFi 配置, 无线网络, 有线直连, remote login. Do not use for CPU frequency or thermal settings (rdk-system-config), disabling the desktop (rdk-headless-mode), or web sample display issues (rdk-vision-pipeline).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

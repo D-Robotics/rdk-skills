@@ -1,7 +1,7 @@
 ---
 name: rdk-vision-pipeline
 description: Bring up and debug the end-to-end vision inference pipeline on D-Robotics RDK devices — camera capture, BPU model inference, and HDMI/Web display output — and locate which stage is broken. Use when the user wants 摄像头跑模型, real-time video inference, web browser preview of detections, or the pipeline runs but shows no image, no boxes, or heavy lag. Triggers include 实时推理, 视频流, 摄像头跑模型, 摄像头实时检测, 端到端, web 展示, 网页看画面, 推流, 画面卡顿, 有画面没有框, web_display, start_nginx. Do not use for single-camera hookup checks (rdk-camera-setup), model file deployment alone (rdk-model-deploy), or pure latency numbers (rdk-model-benchmark).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

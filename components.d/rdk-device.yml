@@ -2,6 +2,7 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 name: RDK Device Skills
 repo: D-Robotics/rdk-device-skills
+ref: v1.0.0
 description: Device-side skills for RDK boards — diagnostics, memory audit, headless mode, camera, vision pipeline, model deploy & benchmarking, GPIO, TROS, doc search, hardware specs, board selection, model zoo, peripherals, accessories, LLM/VLM deployment, embodied AI, S-series delegate, command manual, source map.
 skills:
   - path: skills/rdk-diagnostic/

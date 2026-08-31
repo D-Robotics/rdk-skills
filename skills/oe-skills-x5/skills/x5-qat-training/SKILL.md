@@ -1,6 +1,8 @@
 ---
 name: x5-qat-training
 description: 执行 X5 Plugin calibration、量化感知训练、validation 和 convert 后定点评测；当适配模型已可运行，需要生成可比较指标与检查点时使用。要求 March.BAYES_E 和可复现训练，不使用 HAT Trainer。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 QAT 训练与定点验证

@@ -1,7 +1,7 @@
 ---
 name: rdk-model-benchmark
 description: Emit structured latency/FPS benchmark metrics for quantized models on D-Robotics RDK devices using the official hrt_model_exec perf tool, including a baseline mode with preinstalled models. Use when the user wants to measure inference latency, frame rate, peak FPS, find the optimal thread count, locate slow operators via profiling, or check whether the board performs normally. Triggers include 推理延迟, 帧率, 极限帧率, 能跑多少帧, 性能评测, 性能正常吗, 跑分, 基准测试, 最慢的算子, hrt_model_exec, perf. Do not use for deployment path selection (rdk-model-deploy) or model conversion (hb_mapper toolchain docs).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

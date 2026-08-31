@@ -1,6 +1,8 @@
 ---
 name: j6-hbdk-export-compile
 description: 为量化后的模型生成导出编译流程代码（export QAT BC → convert → remove_io_op → statistics 检查 CPU 算子 → compile HBM）。务必在用户提到导出编译、HBM 编译、模型部署编译、QAT BC 导出、remove_io_op、CPU 算子检查、模型编译部署、HBM 生成时触发此 skill，即使用户只提到其中一个步骤，只要涉及从 QAT BC 到 HBM 的任何环节都应触发。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 基础结构导出编译流程代码生成

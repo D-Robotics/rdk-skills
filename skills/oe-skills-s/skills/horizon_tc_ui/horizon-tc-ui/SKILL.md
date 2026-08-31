@@ -8,6 +8,8 @@ description: >
   当用户提到 OpenExplorer、horizon_tc_ui、工具链、编译模型、生成 YAML、量化、
   calibration、HBIR、HBM、march、fast-perf、check 模式、板端推理、
   定点/浮点 BC 模型判断等场景时，应优先使用本 Skill。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # horizon-tc-ui Skill

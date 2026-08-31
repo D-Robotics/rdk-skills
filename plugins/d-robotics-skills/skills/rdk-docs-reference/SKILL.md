@@ -1,7 +1,7 @@
 ---
 name: rdk-docs-reference
 description: Search and quote official D-Robotics documentation (rdk_x_doc / rdk_s_doc / tros_doc) to answer RDK knowledge questions with sourced citations instead of memory. Use for pin definitions, interface specs, FAQ errors, srpi-config options, config.txt, board differences, release notes, TROS installation and node/application documentation, and as the fallback for any RDK question no workflow skill covers. Triggers include 官方文档, 文档里怎么说, FAQ, 引脚定义在哪查, 接口规格, 支持什么分辨率, S100 和 S600 区别, TROS 节点开发. Do not use as a substitute for live measurement — hand real device state to rdk-diagnostic or rdk-memory-audit.
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

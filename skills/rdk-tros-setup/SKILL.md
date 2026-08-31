@@ -1,7 +1,7 @@
 ---
 name: rdk-tros-setup
 description: Install, verify, troubleshoot, and run TogetheROS.Bot (tros.b) on D-Robotics RDK devices, including sourcing /opt/tros/setup.bash, running hobot package examples and NodeHub apps (e.g. body detection), and WebSocket browser visualization. Use when the user asks how to install tros, confirm it is installed, run a hobot/NodeHub application, view results in the browser, or hits ros2 package-not-found and environment issues. Triggers include tros 安装, tros 装好了吗, ros2 找不到 package, source setup.bash, hobot 节点, 跑 hobot 应用, 人体检测, websocket 可视化, NodeHub, TogetheROS. Do not use for full-source cross-compilation (dev machine, official FAQ) or for model load failures (rdk-model-deploy).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

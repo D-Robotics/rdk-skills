@@ -2,6 +2,7 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 name: BSP Skills
 repo: D-Robotics/bsp-skills
+ref: v1.0.0
 description: Board Support Package (BSP) development skills for RDK boards — host cross-compilation environment, repo/manifest source sync, system image build, kernel/DTB/driver modules, hobot-* deb packages, bootloader/miniboot, Ubuntu rootfs customization for X3/X5, and S-series source acquisition.
 skills:
   - path: skills/bsp-env-setup/

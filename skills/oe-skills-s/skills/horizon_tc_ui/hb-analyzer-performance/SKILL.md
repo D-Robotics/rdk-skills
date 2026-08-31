@@ -1,6 +1,8 @@
 ---
 name: hb-analyzer-performance
 description: 使用 hb_analyzer 分析 J5/J6 模型性能。当用户提到模型文件（.onnx/.bc/.hbm）并想了解性能、延时、带宽、BPU利用率、瓶颈、实测、对比时触发。常见场景：评测模型、检查性能、找瓶颈、板端测试、分析 perf JSON。关键词："性能"、"延时"、"带宽"、"BPU"、"瓶颈"、"太慢"、"实测"、"对比"、"评测"、"hb_analyzer"。即使用户没明确说"分析"，只要提到模型+性能相关词就应该触发。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # HB Analyzer 模型性能分析

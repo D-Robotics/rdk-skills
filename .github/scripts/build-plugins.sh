@@ -23,13 +23,14 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
+PYTHON_BIN="${PYTHON_BIN:-python}"
 
 # Validate catalog inputs before any plugin distribution is removed. A dry run
 # checks includes without regenerating tracked catalog data.
 if [ "$DRY_RUN" -eq 0 ]; then
-  python3 .github/scripts/generate_plugin_catalog.py --repo-root .
+  "$PYTHON_BIN" .github/scripts/generate_plugin_catalog.py --repo-root .
 fi
-python3 .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-includes
+"$PYTHON_BIN" .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-includes
 
 # Load defaults
 DEFAULTS_FILE="plugins.d/_defaults.yml"
@@ -165,11 +166,14 @@ done
 if [ "$DRY_RUN" -eq 0 ]; then
   # Generate top-level marketplace.json files
   mkdir -p .claude-plugin .agents/plugins .cursor-plugin
+  plugin_tmp_dir=".tmp/plugin-build-$$"
+  mkdir -p "$plugin_tmp_dir"
+  trap 'rm -rf "$plugin_tmp_dir"' EXIT
 
-  echo "$claude_plugins" | yq -P -o json > /tmp/claude-plugins.json
-  python3 -c "
+  echo "$claude_plugins" | yq -P -o json > "$plugin_tmp_dir/claude-plugins.json"
+  "$PYTHON_BIN" -c "
 import json
-plugins = json.load(open('/tmp/claude-plugins.json'))
+plugins = json.load(open('$plugin_tmp_dir/claude-plugins.json'))
 marketplace = {
     'name': 'd-robotics-official',
     'owner': {
@@ -186,10 +190,10 @@ json.dump(marketplace, open('.claude-plugin/marketplace.json', 'w'), indent=4)
 print('.claude-plugin/marketplace.json generated')
 "
 
-  echo "$codex_plugins" | yq -P -o json > /tmp/codex-plugins.json
-  python3 -c "
+  echo "$codex_plugins" | yq -P -o json > "$plugin_tmp_dir/codex-plugins.json"
+  "$PYTHON_BIN" -c "
 import json
-plugins = json.load(open('/tmp/codex-plugins.json'))
+plugins = json.load(open('$plugin_tmp_dir/codex-plugins.json'))
 marketplace = {
     'name': 'd-robotics-official',
     'interface': {
@@ -201,10 +205,10 @@ json.dump(marketplace, open('.agents/plugins/marketplace.json', 'w'), indent=4)
 print('.agents/plugins/marketplace.json generated')
 "
 
-  echo "$cursor_plugins" | yq -P -o json > /tmp/cursor-plugins.json
-  python3 -c "
+  echo "$cursor_plugins" | yq -P -o json > "$plugin_tmp_dir/cursor-plugins.json"
+  "$PYTHON_BIN" -c "
 import json
-plugins = json.load(open('/tmp/cursor-plugins.json'))
+plugins = json.load(open('$plugin_tmp_dir/cursor-plugins.json'))
 marketplace = {
     'name': 'd-robotics-official',
     'owner': {
@@ -220,10 +224,10 @@ print('.cursor-plugin/marketplace.json generated')
   # Generate the DeepSeek Harness (DSH) marketplace: installable dsh bundles
   # (npm / git), discoverable through the dsh-plugin GitHub topic.
   mkdir -p .dsh-plugin
-  echo "$dsh_bundles" | yq -P -o json > /tmp/dsh-bundles.json
-  python3 -c "
+  echo "$dsh_bundles" | yq -P -o json > "$plugin_tmp_dir/dsh-bundles.json"
+  "$PYTHON_BIN" -c "
 import json
-bundles = json.load(open('/tmp/dsh-bundles.json'))
+bundles = json.load(open('$plugin_tmp_dir/dsh-bundles.json'))
 marketplace = {
     'name': 'd-robotics-dsh',
     'owner': {
@@ -240,7 +244,6 @@ json.dump(marketplace, open('.dsh-plugin/marketplace.json', 'w'), indent=4)
 print('.dsh-plugin/marketplace.json generated')
 "
 
-  rm -f /tmp/claude-plugins.json /tmp/codex-plugins.json /tmp/cursor-plugins.json /tmp/dsh-bundles.json
 fi
 
 echo "Plugin build complete."

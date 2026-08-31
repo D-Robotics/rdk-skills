@@ -1,6 +1,8 @@
 ---
 name: j6-ucp-hbm-infer
 description: Generate X86-side Python client code for hbm_infer, the Python SDK that connects to BPU boards via gRPC to deploy and run HBM model inference. Use this skill when the user wants to write Python code using hbm_infer client APIs — including HbmRpcSession (standard/flexible mode), HTensor for transmission optimization, output_config for output filtering, and related utilities like get_input_info, get_output_info, get_profile, compress_option, core_id. Triggers on writing or debugging Python inference scripts, optimizing data transfer between X86 and board, or any question about the hbm_infer Python client API.
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # hbm_infer X86 Python Client Code Generation

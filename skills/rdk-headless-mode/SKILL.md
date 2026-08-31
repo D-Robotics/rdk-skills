@@ -1,7 +1,7 @@
 ---
 name: rdk-headless-mode
 description: Safely and reversibly disable or restore the desktop (lightdm) and non-essential services on D-Robotics RDK devices to free memory and CPU. Use when the user wants to run headless, disable the GUI at boot, stop unnecessary services, or restore the desktop later. Triggers include 关桌面, 关闭桌面, 恢复桌面, 图形界面, 不进桌面, 关服务省内存, lightdm, 无头模式. Never touches ssh or network services. Do not use for CPU frequency or thermal settings (rdk-system-config).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

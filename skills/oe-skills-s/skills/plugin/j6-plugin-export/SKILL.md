@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__export
 description: 使用 horizon_plugin_pytorch 的 hbdk4.export 将 QAT 模型导出为 HBIR IR 模块。以独立导出脚本的形式执行，不在训练或评测脚本中添加导出逻辑。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 为 Horizon QAT 模型创建独立 HBIR 导出脚本（hbdk4.export）

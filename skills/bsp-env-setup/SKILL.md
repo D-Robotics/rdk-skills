@@ -1,7 +1,7 @@
 ---
 name: bsp-env-setup
-description: Prepare the host cross-compilation environment for RDK BSP development — Ubuntu host packages, the gcc-arm-11.2 aarch64 toolchain under /opt, the repo tool, and GitHub SSH keys. Use when the user wants to set up a build machine for RDK X3/X5 system development, or hits missing-build-tool errors (make/cmake/bc/bison not found, toolchain missing). 触发词:BSP 环境、编译环境搭建、交叉编译工具链、gcc-arm-11.2、repo 工具、build 机器准备. Do not use for S-series environments (bsp-s-series) or for building images/kernels directly (bsp-image-build / bsp-kernel-build).
-version: 0.1.0
+description: Prepare a supported Ubuntu host for RDK X3/X5 BSP development when a user needs build packages, the gcc-arm-11.2 aarch64 toolchain, repo, or GitHub SSH access. Use for missing-build-tool errors (make/cmake/bc/bison not found, toolchain missing). 触发词:BSP 环境、编译环境搭建、交叉编译工具链、gcc-arm-11.2、repo 工具、build 机器准备. Do not use for S-series environments (bsp-s-series) or for building images/kernels directly (bsp-image-build / bsp-kernel-build).
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics BSP Team
@@ -13,7 +13,7 @@ metadata:
 
 ## Purpose
 
-Set up a Linux development host so it can cross-compile the RDK Linux system for X3/X5. Covers the three prerequisites every other bsp-* skill assumes: Ubuntu build packages, the aarch64 cross toolchain installed under `/opt`, and the `repo` tool with GitHub SSH access.
+Set up a supported Ubuntu development host so it can cross-compile the RDK Linux system for X3/X5. Covers the three prerequisites every other bsp-* skill assumes: Ubuntu build packages, the aarch64 cross toolchain installed under `/opt`, and the `repo` tool with GitHub SSH access.
 
 ## When to use
 
@@ -28,9 +28,16 @@ Do not use:
 
 ## Instructions
 
-1. Confirm the host OS. Recommended: Ubuntu 22.04 (same version as the RDK X5 system, minimizes dependency drift). Ubuntu 20.04/18.04 are documented in the source READMEs with their own package lists.
+1. **Preflight gate — stop unless every condition passes.** Before emitting any package, toolchain, `repo`, `curl`, or SSH command, obtain all of the following from the user:
+   - **Target route:** For S100 or S600, stop and route the request to `bsp-s-series`; do not apply this X3/X5 host flow.
+   - **Supported host:** The build host is x86_64 Ubuntu 22.04. Windows, macOS, containers without a supported Ubuntu host, and unverified Ubuntu releases fail this gate. Direct the user to provision or use a supported Ubuntu 22.04 build host; do not provide installation commands.
+   - **Disk capacity:** The filesystem planned for source sync and builds has at least **100 GB free**. 30 GB is insufficient. If the threshold is not met or cannot be confirmed, stop and ask the user to free space or choose a larger Ubuntu build volume; do not provide installation commands.
+   - **Network and repository access:** The host can reach `archive.d-robotics.cc`, and the user's GitHub SSH key is registered and accepted by `git@github.com`. If either is unavailable, stop and ask the user to restore network access or register/test the SSH key; do not provide installation commands.
+   - **Explicit approval:** Explain that the next steps install packages with `sudo` and extract a toolchain under `/opt`. Continue only after the user explicitly confirms both the passed preflight facts and approval for those changes.
 
-2. Install the host build packages (Ubuntu 22.04 list from `x5-rdk-gen` README):
+   A failed or incomplete gate receives remediation only—never a partial command list. Ubuntu 20.04/18.04 have version-specific package lists in the source READMEs; treat them as unsupported for the Ubuntu 22.04 commands below and direct the user to the matching documentation.
+
+2. **After the gate passes and approval is explicit**, install the host build packages (Ubuntu 22.04 list from `x5-rdk-gen` README):
    ```bash
    sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
                            flex python3-numpy python3-pip mtd-utils zlib1g-dev debootstrap \
@@ -45,9 +52,10 @@ Do not use:
    sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
    ```
 
-4. Ensure GitHub SSH access (source sync clones private repos via SSH):
-   - User must have a GitHub account and add the dev server's SSH key per the official guide
-   - Verify with `ssh -T git@github.com`
+4. Verify the preflight network and GitHub SSH access (source sync clones private repos via SSH):
+   ```bash
+   ssh -T git@github.com
+   ```
 
 5. Verify the environment and report:
    ```bash
@@ -58,7 +66,8 @@ Do not use:
 
 ## Safety
 
-- All installs run as `sudo` on the user's host: show each command before running and get confirmation.
+- The preflight gate is mandatory. Windows, insufficient disk, unavailable network/SSH, or missing explicit approval means no package or toolchain commands.
+- All installs run as `sudo` on the user's host: show each command only after the gate passes and get confirmation before changing the host or `/opt`.
 - Never remove or overwrite an existing toolchain directory without user confirmation.
 - The toolchain URL is the official archive server; do not substitute other sources.
 - This skill only prepares the host — it never touches boards.

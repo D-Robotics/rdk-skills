@@ -1,7 +1,7 @@
 ---
 name: rdk-gpio-40pin
 description: Use the 40PIN interface on D-Robotics RDK devices with the preinstalled Hobot.GPIO Python library, covering GPIO, I2C, SPI, UART, and PWM wiring and first-run samples. Use when the user wants to light an LED, read a sensor, use serial/I2C/SPI/PWM on the 40PIN header, or asks about pin definitions and voltage levels. Triggers include 点亮 LED, 点灯, GPIO, 40PIN, 引脚定义, 串口, UART, I2C 传感器, PWM, Hobot.GPIO, 3.3V. Do not use for MIPI camera hookup (rdk-camera-setup) or kernel driver development.
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

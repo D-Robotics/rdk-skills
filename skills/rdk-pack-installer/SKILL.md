@@ -57,7 +57,7 @@ Do not use when:
 6. **Decide between fresh install and upgrade.** Under the confirmed `PROJECT_ROOT`, compare the installed state with the registry record:
    - Installed anchor: read `<PROJECT_ROOT>/<workspace_dir>/INSTALLED_REF`; if absent, read `<PROJECT_ROOT>/<workspace_dir>/VERSION`.
    - Registry anchor: the record's `ref` (pinned release tag).
-   - Compare after stripping a leading `v` from both sides — `v2.1.0` and `2.1.0` denote the same release.
+   - Compare after stripping a leading `v` from both sides — `v1.0.0` and `1.0.0` denote the same release.
    - No installed anchor → **fresh install**, proceed to step 7.
    - Anchors equal → the workspace is **already up to date**: tell the user "already up to date (<ref>)" and stop; do not re-run setup. Only if the user confirms a forced reinstall anyway, proceed with `--force` added to the upgrade command in step 7.
    - Anchors differ → **upgrade**: tell the user that `<workspace_dir>/` will be rebuilt (deleted and re-laid down, so local edits inside it are lost) and that routing rules are re-injected idempotently, get explicit confirmation, then proceed.

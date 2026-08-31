@@ -11,7 +11,7 @@
   dimension: correctness
   prompt: "hobot-dtb 包要更新，直接 mk_debs 就行吗"
   expect:
-    skill: bsp-kernel-build
+    skill: bsp-deb-build
     behavior:
       - explains the dependency: hobot-dtb consumes deploy/kernel outputs, so rebuild the kernel first
 
@@ -23,3 +23,13 @@
     behavior:
       - flags RT kernel behavior change before building
       - asks for confirmation before the long build
+
+- id: bsp-knl-004
+  dimension: routing
+  prompt: "给我做一个 X5 的正式发布镜像，包含刚改完的 DTB"
+  expect:
+    skill: bsp-image-build
+    behavior:
+      - recognizes that a complete release image is outside kernel-artifact scope
+      - routes to bsp-image-build before offering mk_kernel.sh
+      - does not present mk_kernel.sh as the terminal answer

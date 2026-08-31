@@ -1,6 +1,8 @@
 ---
 name: x5-runtime-perf-eval
 description: 在 X5 板端评测模型延时、吞吐和稳定性；当功能正确性已通过，需要使用 hrt_model_exec 或 ai_benchmark 得到可复现性能报告时使用。先读本地工具参数，不猜命令；不修改频率或停止业务进程而未确认。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 Runtime 性能评测

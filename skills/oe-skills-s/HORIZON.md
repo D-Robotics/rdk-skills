@@ -9,7 +9,7 @@
 - Skill 索引：`.horizon/skill-index.json`
 - 文档目录：`.horizon/docs/`
 - Skill 目录：`.horizon/skills/`
-- 当前 release 版本：`0.2.0`
+- 当前 release 版本：`1.0.0`
 
 ## 2. 使用规则
 
@@ -46,7 +46,7 @@
 
 ## 6. 内置 Skills
 
-- `horizon-router@0.2.0` -> `.horizon/skills/horizon-router/SKILL.md`: Horizon 顶层路由 skill，用于在具体 skill 之间做渐进式任务分流。
+- `horizon-router@1.0.0` -> `.horizon/skills/horizon-router/SKILL.md`: Horizon 顶层路由 skill，用于在具体 skill 之间做渐进式任务分流。
 
 ### OE 包环境
 
@@ -61,16 +61,16 @@
 
 ### HBDK (hbdk)
 
-- `j6-hbdk-compile@1.1.8` -> `.horizon/skills/hbdk/j6-hbdk-compile/SKILL.md`
+- `j6-hbdk-compile@1.0.0` -> `.horizon/skills/hbdk/j6-hbdk-compile/SKILL.md`
 - `hbdk-manual@1.0.0` -> `.horizon/skills/hbdk/hbdk-manual/SKILL.md`
 
 ### Horizon Plugin (plugin)
 
 - `__SKILL_j6-plugin-__adaptation@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__adaptation/SKILL.md`
-- `__SKILL_j6-plugin-__export@1.0.1` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__export/SKILL.md`
+- `__SKILL_j6-plugin-__export@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__export/SKILL.md`
 - `__SKILL_j6-plugin-__model-check-result@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__model-check-result/SKILL.md`
 - `__SKILL_j6-plugin-__graph-diff@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__graph-diff/SKILL.md`
-- `__SKILL_j6-plugin-__hbdk-generating@1.2.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__hbdk-generating/SKILL.md`
+- `__SKILL_j6-plugin-__hbdk-generating@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__hbdk-generating/SKILL.md`
 - `__SKILL_j6-plugin-__consistency-debug@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__consistency-debug/SKILL.md`
 - `__SKILL_j6-plugin-__precision-tuning@1.0.0` -> `.horizon/skills/plugin/__SKILL_j6-plugin-__precision-tuning/SKILL.md`
 
@@ -80,10 +80,10 @@
 
 ### UCP / Runtime (ucp)
 
-- `j6-ucp-infer-generating@1.1.1` -> `.horizon/skills/ucp/j6-ucp-infer-generating/SKILL.md`
-- `j6-ucp-hbm-infer@1.1.0` -> `.horizon/skills/ucp/j6-ucp-hbm-infer/SKILL.md`
+- `j6-ucp-infer-generating@1.0.0` -> `.horizon/skills/ucp/j6-ucp-infer-generating/SKILL.md`
+- `j6-ucp-hbm-infer@1.0.0` -> `.horizon/skills/ucp/j6-ucp-hbm-infer/SKILL.md`
 - `j6-ucp-model-perf-eval@1.0.0` -> `.horizon/skills/ucp/j6-ucp-model-perf-eval/SKILL.md`
-- `j6-ucp-perfetto-trace-analysis@1.1.0` -> `.horizon/skills/ucp/j6-ucp-perfetto-trace-analysis/SKILL.md`
+- `j6-ucp-perfetto-trace-analysis@1.0.0` -> `.horizon/skills/ucp/j6-ucp-perfetto-trace-analysis/SKILL.md`
 - `j6-ucp-perfetto-trace-catcher@1.0.0` -> `.horizon/skills/ucp/j6-ucp-perfetto-trace-catcher/SKILL.md`
 - `j6-board-monitor@1.0.0` -> `.horizon/skills/ucp/j6-board-monitor/SKILL.md`
 

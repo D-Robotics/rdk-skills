@@ -1,6 +1,8 @@
 ---
 name: x5-qat-compile
 description: 对 X5 Plugin 定点模型执行 trace、check_model 和 compile_model/export_hbir；当 quantized 指标已达标，需要生成 .hbm 或 .hbir 与编译报告时使用。禁止输出伪装的 .bin 或自动调用 hb_mapper makertbin。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 QAT 模型检查与编译

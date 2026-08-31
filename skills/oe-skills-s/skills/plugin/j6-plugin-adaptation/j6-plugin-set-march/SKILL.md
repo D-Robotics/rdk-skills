@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__set-march
 description: 在适配 horizon_plugin_pytorch 的过程中，为脚本或入口添加 march 设置逻辑。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 为 Horizon 量化/部署流程设置 march（先询问用户版）

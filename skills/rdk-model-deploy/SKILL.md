@@ -1,7 +1,7 @@
 ---
 name: rdk-model-deploy
 description: Deploy quantized models on D-Robotics RDK devices (.bin for X series, .hbm for S series) via RDK Model Zoo samples, pydev_demo Python APIs, and hrt_model_exec validation. Use when the user wants to run YOLO, classification, segmentation or any model on RDK, asks where to start, or hits model load failures. Triggers include 部署模型, 跑模型, 模型加载失败, dnn_node 报错, Model Zoo, hobot_dnn, bin 模型, hbm 模型. Do not use for model conversion/quantization (hb_mapper, dev machine) or performance benchmarking (rdk-model-benchmark).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

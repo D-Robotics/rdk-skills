@@ -1,7 +1,7 @@
 ---
 name: rdk-camera-setup
 description: Detect, connect, and verify MIPI/USB cameras on D-Robotics RDK devices using i2cdetect and official pydev_demo samples. Use when the user connects a camera and wants to confirm it works, gets no image or a black screen, or i2cdetect finds no address. Triggers include 摄像头, MIPI, USB 相机, IMX219, OV5647, IMX477, 出图, 黑屏, 扫不到地址, mipi_cam, /dev/video0. Do not use for sensor driver development or ISP tuning — point to official 07_Advanced_development docs.
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

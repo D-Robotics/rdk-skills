@@ -99,8 +99,8 @@ bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
 # Upgrade an existing workspace: compares the installed VERSION, skips when
 # current, otherwise rebuilds .drobotics/ (no stale files). --ref records the
 # source tag into the workspace's INSTALLED_REF; omit it for a manual update.
-bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
-# bash skills/oe-skills-s/setup.sh --update --ref v0.3.0 $PROJECT_ROOT
+bash skills/oe-skills-x5/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
+# bash skills/oe-skills-s/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
 ```
 
 The pack repos remain the authoritative upstreams and the documented fallback source:

@@ -1,7 +1,7 @@
 ---
 name: rdk-memory-audit
 description: Measure DRAM and CMA/ION memory on D-Robotics RDK devices and verify reclamation with before/after data. Use when the user asks how much memory is left, wants to measure or free memory, or mentions drop_caches, CMA, ION, ion alloc failed. Triggers include 内存不够, 内存不足, 还剩多少内存, 实测内存, 腾出内存, 释放内存, 清缓存, 内存够不够. Do not use to stop the desktop or services (rdk-headless-mode) and do not quote doc theory instead of live measurement.
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

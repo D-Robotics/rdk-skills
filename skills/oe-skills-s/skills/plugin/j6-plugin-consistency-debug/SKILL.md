@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__consistency-debug
 description: 当用户遇到 Horizon Plugin PyTorch 训练部署一致性问题（QAT 模型正常但 BC/HBM 掉点、export/convert/compile 阶段精度偏差）时使用。本 skill 引导用户按 qat.pt -> qat.export.pt -> qat.bc -> quantized.bc -> hbm 分段定位问题，并在每个阶段帮助适配工具、分析工具产出物。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # J6 Horizon Plugin PyTorch 训练部署一致性问题定位

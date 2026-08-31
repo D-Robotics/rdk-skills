@@ -1,6 +1,8 @@
 ---
 name: x5-ptq-deploy
 description: 编排 ONNX/Caffe 到 X5 bayes-e .bin 的 OE Mapper PTQ 全流程；当用户要求 checker、校准、YAML、makertbin、模型信息和 Runtime 验证形成闭环时使用。通过原子 Skills 执行，不接受 Plugin QAT .hbm/.hbir、HAT 或 S 系列流程。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 PTQ 部署工作流

@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__precision-tuning
 description: 当用户遇到 Horizon Plugin PyTorch 精度调优问题时使用。本 skill 聚焦 PyTorch 侧精度调优，不处理 export、convert、compile 或板端一致性问题。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # J6 Horizon Plugin PyTorch 精度调优

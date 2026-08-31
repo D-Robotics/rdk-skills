@@ -1,7 +1,7 @@
 ---
 name: rdk-system-maintain
 description: Keep the D-Robotics RDK OS healthy over time — repair apt sources (sunrise.list / archive.d-robotics.cc), fix apt update failures and lock errors, guide system upgrades against Release Notes, expand the TF-card filesystem, and clean up disk space. Use when apt update fails, the source domain cannot be resolved, disk is full, or the user asks how to upgrade RDK OS. Triggers include apt update 失败, 换源, 软件源, 版本升级, 升级新版本, sunrise.list, Could not resolve, apt 锁, 磁盘满了, 空间不足, 扩容, Expand Filesystem. Do not use for flashing a new image (install_os docs via rdk-docs-reference), memory measurement (rdk-memory-audit), or network-layer failures (rdk-network-remote).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

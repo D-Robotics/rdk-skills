@@ -1,6 +1,8 @@
 ---
 name: horizon-router
 description: OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 Horizon 子 Skill。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Horizon Router

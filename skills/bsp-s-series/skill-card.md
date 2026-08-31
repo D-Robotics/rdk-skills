@@ -13,10 +13,13 @@
 
 Guiding S-series BSP source acquisition and build setup while keeping X/S platform isolation intact.
 
+Require the exact S board/chip and intended artifact. X3/X5 manifests, image configs, toolchains, and commands are not interchangeable; keep S source acquisition separate from generic `bsp-source-sync`.
+
 ## Known risks
 
 - Fabricating S-series build commands before the source package is at hand — this skill deliberately defers to official docs.
 - Users reusing X-series commands on S boards; the skill must block that explicitly.
+- A proposed X5 command for S100/S600 must be rejected before any build guidance.
 - Download center access needs a developer account; credentials are the user's responsibility.
 
 ## Sources

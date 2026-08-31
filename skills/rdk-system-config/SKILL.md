@@ -1,7 +1,7 @@
 ---
 name: rdk-system-config
 description: Configure D-Robotics RDK system settings including CPU performance mode (governor), thermal trip points, srpi-config, and boot auto-start services. Use when the user wants max CPU frequency, performance mode, to adjust throttle temperature, or auto-start a program at boot. Triggers include 性能模式, 锁频, 最高频率, 降频温度, 温控, governor, 开机自启动, srpi-config. Do not use to stop desktop or services (rdk-headless-mode), for network/WiFi setup or connectivity issues (rdk-network-remote), or for pure doc questions (rdk-docs-reference).
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 metadata:
   author: D-Robotics RDK Team

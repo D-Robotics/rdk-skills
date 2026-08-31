@@ -182,6 +182,19 @@ class PluginContractTests(unittest.TestCase):
         missing = [tool for tool in ("bash", "yq", "rsync") if shutil.which(tool) is None]
         if missing:
             self.skipTest(f"build dependencies unavailable: {', '.join(missing)}")
+        bash = next(
+            (
+                candidate
+                for candidate in (
+                    r"C:\Program Files\Git\bin\bash.exe",
+                    r"C:\Program Files\Git\usr\bin\bash.exe",
+                    shutil.which("bash"),
+                )
+                if candidate and Path(candidate).exists()
+            ),
+            None,
+        )
+        self.assertIsNotNone(bash, "no usable bash executable")
 
         catalog_paths = (
             self.repo / "skills/rdk-pack-installer/references/pack-registry.json",
@@ -202,8 +215,11 @@ class PluginContractTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
+            script_argument = script.as_posix()
+            if script.drive:
+                script_argument = f"/{script.drive[0].lower()}{script_argument[2:]}"
             result = subprocess.run(
-                ["bash", str(script), "--dry-run"],
+                [bash, script_argument, "--dry-run"],
                 cwd=self.repo,
                 capture_output=True,
                 text=True,

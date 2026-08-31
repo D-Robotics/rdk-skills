@@ -5,6 +5,8 @@ description: >
   结合节点敏感度分析渐进回退，找到满足 Cosine Similarity 阈值（默认 >=0.99）的
   最小混精度 quant_config，产出达标配置与调优报告。
   触发关键词：HMCT 精度调优、PTQ 调优、量化精度、cosine similarity 不达标、混合精度。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # RDK S 系列 HMCT Cosine Similarity 调优（工作流）

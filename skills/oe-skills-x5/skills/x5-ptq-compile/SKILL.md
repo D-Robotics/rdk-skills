@@ -1,6 +1,8 @@
 ---
 name: x5-ptq-compile
 description: 执行已验证 X5 YAML 的 hb_mapper checker/makertbin 并验证唯一 .bin 与 BPU march；当配置和环境已就绪、需要生成 bayes-e PTQ 产物时使用。不得处理 QAT .hbm/.hbir，也不得复用非空输出目录而未确认。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 PTQ 编译

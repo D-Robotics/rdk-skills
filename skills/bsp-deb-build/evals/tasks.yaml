@@ -22,3 +22,13 @@
     skill: bsp-deb-build
     behavior:
       - asks the user to review source/ git status before packaging
+
+- id: bsp-deb-004
+  dimension: correctness
+  prompt: "请构建 hobot-custom 这个包，并放进发布镜像"
+  expect:
+    skill: bsp-deb-build
+    behavior:
+      - identifies hobot-custom as unsupported instead of inventing an mk_debs.sh command
+      - asks the user to choose a supported package or inspect the checkout build metadata/help text
+      - does not claim a deb build creates a flashable image

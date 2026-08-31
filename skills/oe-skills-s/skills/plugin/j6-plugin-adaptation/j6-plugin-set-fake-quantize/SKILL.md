@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__set-fake-quantize
 description: 在适配 horizon_plugin_pytorch 的量化流程中，为模型设置 fake quantize 状态（QAT/CALIBRATION/VALIDATION）。只添加/调用 set_fake_quantize，不做其他修改。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 为 Horizon 量化流程设置 fake quantize 状态（set_fake_quantize）

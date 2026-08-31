@@ -1,6 +1,8 @@
 ---
 name: x5-calibration-data-prepare
 description: 为 X5 OE Mapper PTQ 准备和审计校准数据；当用户需要选择代表性样本、复现训练前处理、生成二进制/数组数据与 manifest 时使用。只处理 PTQ 数据，不处理 HAT Dataset/Trainer 或 QAT 训练管线。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 校准数据准备

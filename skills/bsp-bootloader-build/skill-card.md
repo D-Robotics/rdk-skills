@@ -13,11 +13,14 @@
 
 Rebuilding the minimal boot firmware for RDK X5 bootloader customization.
 
+Before build or flash guidance, collect the board, boot medium, exact change, recovery method, and backup location. Normal image customization belongs to `bsp-image-build`; do not emit flash commands until the recovery and target selection are explicitly confirmed.
+
 ## Known risks
 
 - A broken miniboot bricks the board — always have the official miniboot image and a recovery path.
 - X3 steps are not in the official build README; guessing them risks unbootable hardware.
 - `xbuild.sh lunch` configs are board-specific; picking the wrong one produces a wrong boot image.
+- Replacing bootloader data is irreversible without a validated recovery path and a backup of the current artifact.
 
 ## Sources
 

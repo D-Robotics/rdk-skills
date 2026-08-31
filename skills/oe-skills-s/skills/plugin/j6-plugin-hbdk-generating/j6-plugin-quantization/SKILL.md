@@ -1,6 +1,8 @@
 ---
 name: __SKILL_j6-plugin-__quantization
 description: 为基础网络结构生成量化流程代码（set_march → 插入 Quant/DeQuant → 配置量化参数 → prepare → 校准 → QAT 训练）。务必在用户提到模型量化、量化流程、QAT 校准、Horizon 量化适配、HistogramObserver/MinMaxObserver 配置、量化参数配置、校准训练、QuantStub 插入时触发此 skill，即使用户只问其中一个步骤，只要涉及 Horizon 量化流程的任何环节都应触发。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # 基础结构量化流程代码生成

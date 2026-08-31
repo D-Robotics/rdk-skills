@@ -54,7 +54,7 @@
       "description": "使用 hb_analyzer 分析模型性能。当用户提到模型文件（.onnx/.bc/.hbm）并想了解性能、延时、带宽、BPU利用率、瓶颈、实测、对比时触发。常见场景：评测模型、检查性能、找瓶颈、板端测试、分析 perf JSON。关键词：\"性能\"、\"延时\"、\"带宽\"、\"BPU\"、\"瓶颈\"、\"太慢\"、\"实测\"、\"对比\"、\"评测\"、\"hb_analyzer\"。即使用户没明确说\"分析\"，只要提到模型+性能相关词就应该触发。"
     },
     "horizon-tc-ui": {
-      "version": "0.1.1",
+      "version": "1.0.0",
       "module": "horizon_tc_ui",
       "path": ".horizon/skills/horizon_tc_ui/horizon-tc-ui",
       "skillFile": ".horizon/skills/horizon_tc_ui/horizon-tc-ui/SKILL.md",
@@ -68,7 +68,7 @@
       "description": "HBDK4模型编译工具的使用指南索引，按任务场景组织"
     },
     "j6-hbdk-compile": {
-      "version": "1.1.8",
+      "version": "1.0.0",
       "module": "hbdk",
       "path": ".horizon/skills/hbdk/j6-hbdk-compile",
       "skillFile": ".horizon/skills/hbdk/j6-hbdk-compile/SKILL.md",
@@ -82,7 +82,7 @@
       "description": "HMCT 模型转换与 PTQ 量化总入口——优先使用 hb_compile + YAML 配置方式。根据用户意图自动路由：\n  (1) 提供了校准数据 → 使用 hb_config_generator 生成 YAML 配置，再调用 j6-hbdk-compile 执行编译；\n  (2) 未提供校准数据 → 使用 hb_config_generator 生成快速验证配置，再调用 j6-hbdk-compile 验证；\n  (3) 精度调优 → 转交 j6-hmct-cosine-similarity-tuning Skill 执行多阶段调优；\n  (4) 单项精度 debug → 调用 hmct-debugger CLI 执行对应分析工具。\n  关键词：HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity。"
     },
     "j6-hmct-cosine-similarity-tuning": {
-      "version": "2.1.1",
+      "version": "1.0.0",
       "module": "hmct",
       "path": ".horizon/skills/hmct/j6-hmct-cosine-similarity-tuning",
       "skillFile": ".horizon/skills/hmct/j6-hmct-cosine-similarity-tuning/SKILL.md",
@@ -96,7 +96,7 @@
       "description": "为用户的浮点 PyTorch 模型适配地平线机器人公司的 QAT 工具 `horizon_plugin_pytorch`。这是一个编排型 skill，必须按固定顺序依次调用：`__SKILL_j6-plugin-__set-march` → `__SKILL_j6-plugin-__insert-quant-dequant` → `__SKILL_j6-plugin-__dynamic-block` → `__SKILL_j6-plugin-__prepare` → `__SKILL_j6-plugin-__set-fake-quantize`。"
     },
     "__SKILL_j6-plugin-__export": {
-      "version": "1.0.1",
+      "version": "1.0.0",
       "module": "plugin",
       "path": ".horizon/skills/plugin/__SKILL_j6-plugin-__export",
       "skillFile": ".horizon/skills/plugin/__SKILL_j6-plugin-__export/SKILL.md",
@@ -110,7 +110,7 @@
       "description": "对比两份 FX Graph 计算图文件，精确定位计算图结构和算子参数差异，并根据 diff 报告在原始模型代码中找到对应的差异位置。"
     },
     "__SKILL_j6-plugin-__hbdk-generating": {
-      "version": "1.2.0",
+      "version": "1.0.0",
       "module": "plugin",
       "path": ".horizon/skills/plugin/__SKILL_j6-plugin-__hbdk-generating",
       "skillFile": ".horizon/skills/plugin/__SKILL_j6-plugin-__hbdk-generating/SKILL.md",
@@ -138,28 +138,28 @@
       "description": "floatvscalib debug 结果解读与量化误差分析（截断误差与舍入误差分类、逐算子误差归因、fix-scale 建议、compare_per_layer_out 分析）。也处理 Horizon Plugin PyTorch 侧精度调优：calibration 后精度不达标、QAT 训练 loss 不收敛或精度崩溃、int8/int16/fp16 混合精度调优。聚焦 PyTorch 侧训练/校准精度，不处理 export/convert/compile 阶段的部署一致性问题。触发关键词：\"floatvscalib\"、\"debug 结果解读\"、\"截断误差\"、\"舍入误差\"、\"compare_per_layer_out\"、\"fixscale\"、\"fix-scale\"、\"calibration 精度\"、\"QAT 精度\"、\"校准掉点\"、\"QAT loss 不收敛\"、\"混合精度\"、\"int16\"、\"fp16\"、\"sensitivity\"、\"敏感度\"、\"QconfigSetter\"、\"FixedScaleObserver\"、\"HistogramObserver\"、\"精度调优\"。注意：若训练侧精度正常但 export/convert/compile/HBM 掉点，应路由到 __SKILL_j6-plugin-__consistency-debug。bypass 模式下参见 bypass.md。"
     },
     "j6-ucp-hbm-infer": {
-      "version": "1.1.0",
+      "version": "1.0.0",
       "module": "ucp",
       "path": ".horizon/skills/ucp/j6-ucp-hbm-infer",
       "skillFile": ".horizon/skills/ucp/j6-ucp-hbm-infer/SKILL.md",
       "description": "Generate X86-side Python client code for hbm_infer, the Python SDK that connects to BPU boards via gRPC to deploy and run HBM model inference. Use this skill when the user wants to write Python code using hbm_infer client APIs — including HbmRpcSession (standard/flexible mode), HTensor for transmission optimization, output_config for output filtering, and related utilities like get_input_info, get_output_info, get_profile, compress_option, core_id. Triggers on writing or debugging Python inference scripts, optimizing data transfer between X86 and board, or any question about the hbm_infer Python client API."
     },
     "j6-ucp-infer-generating": {
-      "version": "1.1.1",
+      "version": "1.0.0",
       "module": "ucp",
       "path": ".horizon/skills/ucp/j6-ucp-infer-generating",
       "skillFile": ".horizon/skills/ucp/j6-ucp-infer-generating/SKILL.md",
       "description": "提供基于 UCP 的模型推理 C++ 代码生成能力。当用户询问 UCP/DNN 推理接口怎么用、某个 API 的参数含义、如何加载模型、如何分配 tensor 内存、如何提交推理任务、Cache 同步怎么做，或要求只生成推理流程中某个模块的代码时使用。"
     },
     "j6-ucp-perfetto-trace-analysis": {
-      "version": "1.1.0",
+      "version": "1.0.0",
       "module": "ucp",
       "path": ".horizon/skills/ucp/j6-ucp-perfetto-trace-analysis",
       "skillFile": ".horizon/skills/ucp/j6-ucp-perfetto-trace-analysis/SKILL.md",
       "description": "Use this skill whenever the user wants to quickly locate, diagnose, or analyze likely performance bottlenecks in a UCP model inference Perfetto trace. Trigger on requests about UCP inference traces, `.pftrace` files, inference latency, slow inference, pipeline stalls, CPU/BPU gaps, OpInfer delays, dispatch or response delay, low effective occupancy, critical-path investigation, or trace-based performance triage in the UCP inference path. This skill is specialized for UCP / UCP-like inference-chain performance analysis and fast bottleneck localization, not generic Perfetto profiling unrelated to UCP inference."
     },
     "horizon-router": {
-      "version": "0.2.0",
+      "version": "1.0.0",
       "module": null,
       "path": ".horizon/skills/horizon-router",
       "skillFile": ".horizon/skills/horizon-router/SKILL.md",

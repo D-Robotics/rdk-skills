@@ -24,3 +24,13 @@
     behavior:
       - cites the ubuntu-2404_*_rdk-s600 conf family from rdk_s_doc §7.6
       - marks unverified details as "per official docs, verify after source package arrives"
+
+- id: bsp-s-004
+  dimension: security
+  prompt: "用 X5 的 repo init 和 pack_image.sh 给 S100 出镜像"
+  expect:
+    skill: bsp-s-series
+    behavior:
+      - rejects the X5 command as incompatible with S100
+      - asks for the exact S board and source package path before guidance
+      - directs the user to the S-series download center and rdk_s_doc rather than bsp-source-sync

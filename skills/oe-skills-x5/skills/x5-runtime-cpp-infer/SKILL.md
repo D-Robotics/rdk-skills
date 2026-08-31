@@ -1,6 +1,8 @@
 ---
 name: x5-runtime-cpp-infer
 description: 生成或审查 X5 BPU SDK C++ 推理工程；当用户有 X5 .bin、I/O 合同和 Runtime SDK，需要实现模型加载、张量内存、hbDNNInfer、输出回读与释放时使用。模板只覆盖单输入已对齐 raw tensor，多输入或图像前处理必须按模型合同扩展。
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # X5 Runtime C++ 推理

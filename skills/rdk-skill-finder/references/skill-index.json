@@ -123,7 +123,7 @@
     },
     {
       "catalog_path": "skills/bsp-deb-build",
-      "description": "Rebuild the official hobot-* debian packages with mk_debs.sh (all or a named package like hobot-boot / hobot-dtb / hobot-multimedia). Use when the user wants to repackage a hobot-* component, inject fixes into the image via deb, or asks which packages can be built. 触发词:hobot-* 包、mk_debs、deb 包、重新打包、hobot-boot、hobot-configs. Do not use for kernel compilation itself (bsp-kernel-build) or full images (bsp-image-build).",
+      "description": "Rebuild one supported official hobot-* Debian package with mk_debs.sh (for example hobot-boot, hobot-dtb, or hobot-multimedia). Use when the user wants to repackage a component or asks which packages can be built. Package output is not a flashable image; hand image assembly to bsp-image-build after the .deb exists. 触发词:hobot-* 包、mk_debs、deb 包、重新打包、hobot-boot、hobot-configs. Do not use for kernel compilation itself (bsp-kernel-build) or full images (bsp-image-build).",
       "install_type": "flat",
       "name": "bsp-deb-build",
       "pack": "BSP Skills",
@@ -131,7 +131,7 @@
     },
     {
       "catalog_path": "skills/bsp-env-setup",
-      "description": "Prepare the host cross-compilation environment for RDK BSP development — Ubuntu host packages, the gcc-arm-11.2 aarch64 toolchain under /opt, the repo tool, and GitHub SSH keys. Use when the user wants to set up a build machine for RDK X3/X5 system development, or hits missing-build-tool errors (make/cmake/bc/bison not found, toolchain missing). 触发词:BSP 环境、编译环境搭建、交叉编译工具链、gcc-arm-11.2、repo 工具、build 机器准备. Do not use for S-series environments (bsp-s-series) or for building images/kernels directly (bsp-image-build / bsp-kernel-build).",
+      "description": "Prepare a supported Ubuntu host for RDK X3/X5 BSP development when a user needs build packages, the gcc-arm-11.2 aarch64 toolchain, repo, or GitHub SSH access. Use for missing-build-tool errors (make/cmake/bc/bison not found, toolchain missing). 触发词:BSP 环境、编译环境搭建、交叉编译工具链、gcc-arm-11.2、repo 工具、build 机器准备. Do not use for S-series environments (bsp-s-series) or for building images/kernels directly (bsp-image-build / bsp-kernel-build).",
       "install_type": "flat",
       "name": "bsp-env-setup",
       "pack": "BSP Skills",
@@ -139,7 +139,7 @@
     },
     {
       "catalog_path": "skills/bsp-image-build",
-      "description": "Build an RDK system image identical to the official release using pack_image.sh — choose a build_params config (ubuntu-22.04 desktop/server × rdk-x5/rdk-x3 × beta/release), local build mode -l, and third_packages preinstalls. Use when the user wants to build/flash-able RDK OS image, customize preinstalled debs, or asks what pack_image.sh does. 触发词:系统镜像、整机镜像、pack_image.sh、desktop/server 版本、build_params、third_packages、.img. Do not use for kernel-only builds (bsp-kernel-build), deb-only builds (bsp-deb-build), or S-series (bsp-s-series).",
+      "description": "Build a complete RDK X3/X5 system image with pack_image.sh after explicitly selecting board, desktop/server, beta/release, checkout, free space, and any third-party deb. Use when the user wants a flashable RDK OS image or preinstalled debs. 触发词:系统镜像、整机镜像、pack_image.sh、desktop/server 版本、build_params、third_packages、.img. Do not use for kernel-only builds (bsp-kernel-build), deb-only builds (bsp-deb-build), or S-series (bsp-s-series).",
       "install_type": "flat",
       "name": "bsp-image-build",
       "pack": "BSP Skills",
@@ -147,7 +147,7 @@
     },
     {
       "catalog_path": "skills/bsp-kernel-build",
-      "description": "Build the RDK Linux kernel, device tree, and driver modules with mk_kernel.sh (X5 also offers mk_kernel_rt.sh for the real-time kernel). Use when the user wants to compile the kernel, rebuild dtb, add driver modules, or needs kernel_headers for out-of-tree builds. 触发词:编译内核、内核、设备树、dtb、驱动模块、mk_kernel、实时内核、RT 内核、kernel headers. Do not use for full images (bsp-image-build), deb packaging (bsp-deb-build), or S-series (bsp-s-series).",
+      "description": "Build RDK Linux kernel, device-tree, and driver-module artifacts with mk_kernel.sh (X5 also offers mk_kernel_rt.sh). Require board family, target, config source, and deployment target; confirm boot replacement or reboot. Use for kernel/DTB/module/RT work, not full images (bsp-image-build), deb packaging (bsp-deb-build), or S-series (bsp-s-series).",
       "install_type": "flat",
       "name": "bsp-kernel-build",
       "pack": "BSP Skills",
@@ -187,7 +187,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/hmct",
-      "description": "HMCT 模型转换与 PTQ 量化总入口——优先使用 hb_compile + YAML 配置方式。 根据用户意图自动路由： (1) 提供了校准数据 → 使用 hb_config_generator 生成 YAML 配置，再调用 j6-hbdk-compile 执行编译； (2) 未提供校准数据 → 使用 hb_config_generator 生成快速验证配置，再调用 j6-hbdk-compile 验证； (3) 用户希望进行精度调优 → 转交 j6-hmct-cosine-similarity-tuning SKILL 执行多阶段调优； (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。 当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。",
+      "description": "HMCT 模型转换与 PTQ 量化总入口——优先使用 hb_compile + YAML 配置方式。 根据用户意图自动路由： (1) 提供了校准数据 → 使用 hb_config_generator 生成 YAML 配置，再调用 j6-hbdk-compile 执行编译； (2) 未提供校准数据 → 使用 hb_config_generator 生成快速验证配置，再调用 j6-hbdk-compile 验证； (3) 用户希望进行精度调优 → 转交 j6-hmct-cosine-similarity-tuning SKILL 执行多阶段调优； (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。 当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。\n",
       "install_type": "workspace",
       "name": "hmct-workflow",
       "pack": "OE Tool Chain (S)",
@@ -203,7 +203,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/horizon_tc_ui/horizon-tc-ui",
-      "description": "OpenExplorer 工具链 CLI 包的集成 Skill。适用于处理 hb_compile、hb_model_info、 hb_verifier、hb_analyzer、hb_config_generator、hb_eval_preprocess 等工具相关问题， 包括 YAML 配置编写、ONNX/Caffe 模型编译、PTQ 量化、HBIR/HBM 产物生成、 模型信息查看、精度验证、性能分析、评估数据预处理和板端部署验证。 当用户提到 OpenExplorer、horizon_tc_ui、工具链、编译模型、生成 YAML、量化、 calibration、HBIR、HBM、march、fast-perf、check 模式、板端推理、 定点/浮点 BC 模型判断等场景时，应优先使用本 Skill。",
+      "description": "OpenExplorer 工具链 CLI 包的集成 Skill。适用于处理 hb_compile、hb_model_info、 hb_verifier、hb_analyzer、hb_config_generator、hb_eval_preprocess 等工具相关问题， 包括 YAML 配置编写、ONNX/Caffe 模型编译、PTQ 量化、HBIR/HBM 产物生成、 模型信息查看、精度验证、性能分析、评估数据预处理和板端部署验证。 当用户提到 OpenExplorer、horizon_tc_ui、工具链、编译模型、生成 YAML、量化、 calibration、HBIR、HBM、march、fast-perf、check 模式、板端推理、 定点/浮点 BC 模型判断等场景时，应优先使用本 Skill。\n",
       "install_type": "workspace",
       "name": "horizon-tc-ui",
       "pack": "OE Tool Chain (S)",
@@ -235,7 +235,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/hmct/j6-hmct-cosine-similarity-tuning",
-      "description": "HMCT PTQ 精度调优工作流。自动按 INT8→INT16→dual-int16→FP16 逐级验证上限， 结合节点敏感度分析渐进回退，找到满足 Cosine Similarity 阈值（默认 >=0.99）的 最小混精度 quant_config，产出达标配置与调优报告。 触发关键词：HMCT 精度调优、PTQ 调优、量化精度、cosine similarity 不达标、混合精度。",
+      "description": "HMCT PTQ 精度调优工作流。自动按 INT8→INT16→dual-int16→FP16 逐级验证上限， 结合节点敏感度分析渐进回退，找到满足 Cosine Similarity 阈值（默认 >=0.99）的 最小混精度 quant_config，产出达标配置与调优报告。 触发关键词：HMCT 精度调优、PTQ 调优、量化精度、cosine similarity 不达标、混合精度。\n",
       "install_type": "workspace",
       "name": "j6-hmct-cosine-similarity-tuning",
       "pack": "OE Tool Chain (S)",

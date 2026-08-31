@@ -7,6 +7,8 @@ tools:
     description: 计算图差异对比脚本，解析两个 FX Graph 文件并生成结构化 diff 报告
     path: __SKILL_j6-plugin-__graph-diff/j6_plugin_graph_diff.py
     required: true
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # FX Graph 计算图对比与源码定位工具
