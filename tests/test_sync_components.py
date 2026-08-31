@@ -98,7 +98,7 @@ class SelectiveSyncTests(unittest.TestCase):
                 "--work-root", bash_path(work_root),
                 "--summary-file", bash_path(summary_file),
             ] + (["--fail-after-replace", str(fail_after)] if fail_after else [])
-              + (["--fail-compare", fail_compare] if fail_compare else []),
+              + (["--fail-compare", fail_compare] if fail_compare else [])),
             env={**os.environ, "PYTHONPATH": str(ROOT / ".github")},
             capture_output=True,
             text=True,
