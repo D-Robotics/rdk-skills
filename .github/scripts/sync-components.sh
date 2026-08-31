@@ -20,6 +20,7 @@ pause_after_replace=${SYNC_COMPONENTS_PAUSE_AFTER_REPLACE:-}
 pause_after_backup=${SYNC_COMPONENTS_PAUSE_AFTER_BACKUP:-}
 fail_backup=${SYNC_COMPONENTS_FAIL_BACKUP:-}
 ready_file=${SYNC_COMPONENTS_READY_FILE:-}
+fail_compare=${SYNC_COMPONENTS_FAIL_COMPARE:-}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --components-dir) components_dir=${2:-}; shift 2 ;;
@@ -32,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     --pause-after-backup) pause_after_backup=${2:-}; shift 2 ;;
     --fail-backup) fail_backup=true; shift ;;
     --ready-file) ready_file=${2:-}; shift 2 ;;
+    --fail-compare) fail_compare=${2:-}; shift 2 ;;
     *) usage ;;
   esac
 done
@@ -227,10 +229,23 @@ rollback() {
 }
 
 transaction_active=true
+compare_output="$work_root/compare-output"
 for catalog_dir in "${catalog_dir_list[@]}"; do
   target="skills/$catalog_dir"
   staged="$stage_root/$catalog_dir"
-  if [[ -n "$fail_after_replace" ]] || [[ ! -d "$target" ]] || rsync -ani --delete "$staged/" "$target/" | grep -q .; then
+  needs_replace=false
+  if [[ -n "$fail_after_replace" ]] || [[ ! -d "$target" ]]; then
+    needs_replace=true
+  else
+    if [[ "$fail_compare" == "$catalog_dir" ]]; then
+      fail "could not compare catalog directory: $catalog_dir"
+    fi
+    if ! rsync -ani --delete "$staged/" "$target/" >"$compare_output" 2>&1; then
+      fail "could not compare catalog directory: $catalog_dir"
+    fi
+    [[ -s "$compare_output" ]] && needs_replace=true
+  fi
+  if [[ "$needs_replace" == true ]]; then
     changed=true
     backup="$stage_root/.previous-$catalog_dir"
     if [[ -e "$target" && "$fail_backup" == true ]]; then fail "could not backup catalog directory: $catalog_dir"; fi

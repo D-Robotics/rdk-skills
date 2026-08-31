@@ -78,7 +78,7 @@ class SelectiveSyncTests(unittest.TestCase):
             ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
         )
 
-    def run_sync(self, component: str, work_root=None, fail_after=None):
+    def run_sync(self, component: str, work_root=None, fail_after=None, fail_compare=None):
         summary_file = self.root / "sync-summary.json"
         work_root = work_root or self.hub_root / ".tmp" / "component-sync-test"
         return subprocess.run(
@@ -89,7 +89,8 @@ class SelectiveSyncTests(unittest.TestCase):
                 "--repo-base-url", bash_path(self.repo_base),
                 "--work-root", bash_path(work_root),
                 "--summary-file", bash_path(summary_file),
-            ] + (["--fail-after-replace", str(fail_after)] if fail_after else []),
+            ] + (["--fail-after-replace", str(fail_after)] if fail_after else [])
+              + (["--fail-compare", fail_compare] if fail_compare else []),
             cwd=self.hub_root,
             env={**os.environ, "PYTHONPATH": str(ROOT / ".github")},
             capture_output=True,
@@ -174,6 +175,22 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, (result.stdout, result.stderr))
         self.assertEqual(hash_tree(self.hub_root / "skills" / "bsp-env-setup"), first_before)
         self.assertEqual(hash_tree(second.parent), second_before)
+
+    def test_compare_failure_rolls_back_prior_catalog_dir(self):
+        (self.components_dir / "bsp-skills.yml").write_text(
+            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n"
+            "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-second\n",
+            encoding="utf-8",
+        )
+        second = self.hub_root / "skills" / "bsp-env-second"
+        second.mkdir(parents=True)
+        (second / "old.txt").write_text("old\n", encoding="utf-8")
+        first_before, second_before = hash_tree(self.hub_root / "skills" / "bsp-env-setup"), hash_tree(second)
+        result = self.run_sync("bsp-skills", fail_compare="bsp-env-second")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(hash_tree(self.hub_root / "skills" / "bsp-env-setup"), first_before)
+        self.assertEqual(hash_tree(second), second_before)
 
     @unittest.skipIf(os.name == "nt", "Git Bash signal delivery is not POSIX on Windows")
     def test_term_during_backup_move_window_restores_original_tree(self):
