@@ -7,8 +7,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import tempfile
+import time
 import unittest
 
 
@@ -172,6 +174,23 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, (result.stdout, result.stderr))
         self.assertEqual(hash_tree(self.hub_root / "skills" / "bsp-env-setup"), first_before)
         self.assertEqual(hash_tree(second.parent), second_before)
+
+    @unittest.skipIf(os.name == "nt", "Git Bash signal delivery is not POSIX on Windows")
+    def test_term_during_backup_move_window_restores_original_tree(self):
+        target = self.hub_root / "skills" / "bsp-env-setup"
+        before = hash_tree(target)
+        command = [
+            "bash", bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
+            "--component", "bsp-skills", "--repo-base-url", bash_path(self.repo_base),
+            "--work-root", bash_path(self.hub_root / ".tmp" / "component-sync-signal"),
+            "--summary-file", bash_path(self.root / "signal-summary.json"),
+            "--pause-after-backup", "10",
+        ]
+        process = subprocess.Popen(command, cwd=self.hub_root)
+        time.sleep(1)
+        os.kill(process.pid, signal.SIGTERM)
+        self.assertEqual(process.wait(timeout=10), 143)
+        self.assertEqual(hash_tree(target), before)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ work_root=
 summary_file=
 fail_after_replace=${SYNC_COMPONENTS_FAIL_AFTER_REPLACE:-}
 pause_after_replace=${SYNC_COMPONENTS_PAUSE_AFTER_REPLACE:-}
+pause_after_backup=${SYNC_COMPONENTS_PAUSE_AFTER_BACKUP:-}
 fail_backup=${SYNC_COMPONENTS_FAIL_BACKUP:-}
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,6 +28,7 @@ while [[ $# -gt 0 ]]; do
     --summary-file) summary_file=${2:-}; shift 2 ;;
     --fail-after-replace) fail_after_replace=${2:-}; shift 2 ;;
     --pause-after-replace) pause_after_replace=${2:-}; shift 2 ;;
+    --pause-after-backup) pause_after_backup=${2:-}; shift 2 ;;
     --fail-backup) fail_backup=true; shift ;;
     *) usage ;;
   esac
@@ -226,8 +228,11 @@ for catalog_dir in "${catalog_dir_list[@]}"; do
     changed=true
     backup="$stage_root/.previous-$catalog_dir"
     if [[ -e "$target" && "$fail_backup" == true ]]; then fail "could not backup catalog directory: $catalog_dir"; fi
-    if [[ -e "$target" ]] && ! mv "$target" "$backup"; then fail "could not backup catalog directory: $catalog_dir"; fi
+    # Pre-register before moving: rollback only acts if the backup exists, so
+    # this is safe both before a failed move and after a successful one.
     replacement_dirs+=("$catalog_dir")
+    if [[ -e "$target" ]] && ! mv "$target" "$backup"; then fail "could not backup catalog directory: $catalog_dir"; fi
+    [[ -n "$pause_after_backup" ]] && sleep "$pause_after_backup"
     if ! mv "$staged" "$target"; then
       rollback
       fail "could not replace catalog directory: $catalog_dir"
