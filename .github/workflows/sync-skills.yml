@@ -57,118 +57,22 @@ jobs:
           truncate -s 0 /tmp/changed-components.txt
           truncate -s 0 /tmp/failed-components.txt
           truncate -s 0 /tmp/sync-versions.txt
-          truncate -s 0 /tmp/rsynced-skill-dirs.txt
-
-          # Aggregate per-component files into a single config so the
-          # iteration loop below can index by position. The components.d/
-          # layout means concurrent onboarding PRs never touch a shared
-          # file — see components.d/README.md for the schema.
-          CONFIG=/tmp/components.aggregated.yml
-          yq ea '[.] | {"components": .}' components.d/*.yml > "$CONFIG"
-
-          # Configure git to use the token via credential helper
-          # so it never appears in clone URLs or error output
           if [ -n "${GH_TOKEN:-}" ]; then
             git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=${GH_TOKEN}"; }; f'
           fi
-
-          component_count=$(yq '.components | length' "$CONFIG")
-          echo "Found $component_count components to sync"
-
-          for i in $(seq 0 $((component_count - 1))); do
-            name=$(yq ".components[$i].name" "$CONFIG")
-            repo=$(yq ".components[$i].repo" "$CONFIG")
-            ref=$(yq ".components[$i].ref // \"main\"" "$CONFIG")
-
-            echo ""
-            echo "=== Syncing: $name (repo=$repo, ref=$ref) ==="
-
-            # Clone with sparse checkout
-            tmp_dir=".tmp/$(echo "$repo" | tr '/' '-')"
-            rm -rf "$tmp_dir"
-            if ! git clone --depth 1 --filter=blob:none --sparse \
-                 "https://github.com/${repo}.git" \
-                 "$tmp_dir" -b "$ref" 2>/dev/null; then
-              echo "  [FAIL] could not clone $repo@$ref"
-              echo "$name" >> /tmp/failed-components.txt
+          for component_file in components.d/*.yml; do
+            component_id=$(basename "$component_file" .yml)
+            summary_file="/tmp/sync-${component_id}.json"
+            if ! bash .github/scripts/sync-components.sh --components-dir components.d --component "$component_id" --repo-base-url https://github.com --work-root ".tmp/component-sync-${component_id}" --summary-file "$summary_file"; then
+              echo "$component_id" >> /tmp/failed-components.txt
               continue
             fi
-
-            # Capture upstream HEAD info
-            upstream_sha=$(git -C "$tmp_dir" rev-parse HEAD)
-            upstream_short_sha=$(git -C "$tmp_dir" rev-parse --short HEAD)
-            upstream_date=$(git -C "$tmp_dir" show -s --format=%cs HEAD)
-            echo -e "$name\t$upstream_short_sha\t$upstream_sha\t$upstream_date" >> /tmp/sync-versions.txt
-
-            # Collect all skill paths for sparse checkout
-            n_skills=$(yq ".components[$i].skills | length" "$CONFIG")
-            sparse_paths=""
-            for j in $(seq 0 $((n_skills - 1))); do
-              path=$(yq ".components[$i].skills[$j].path" "$CONFIG")
-              sparse_paths="$sparse_paths $path"
+            echo "$component_id" >> /tmp/rsynced-components.txt
+            yq -r '.components[0] | [.component_id, .source_sha, .changed] | @tsv' "$summary_file" | while IFS=$'\t' read -r name sha changed; do
+              echo -e "$name\t${sha:0:7}\t$sha\tunknown" >> /tmp/sync-versions.txt
+              if [ "$changed" = true ]; then echo "$name" >> /tmp/changed-components.txt; fi
             done
-            # Workspace packs are self-installable from the Hub mirror: their
-            # install script sits at the check-out root, so materialize it too
-            # (--no-cone allows file entries at the repo root).
-            if [ "$(yq ".components[$i].install_type" "$CONFIG")" = "workspace" ]; then
-              install_script=$(yq ".components[$i].install_script" "$CONFIG")
-              sparse_paths="$sparse_paths $install_script"
-              sparse_opts="--no-cone"
-            else
-              sparse_opts=""
-            fi
-            (cd "$tmp_dir" && git sparse-checkout set $sparse_opts $sparse_paths 2>/dev/null) || true
-
-            # Copy each skill path to its catalog directory
-            synced=false
-            for j in $(seq 0 $((n_skills - 1))); do
-              src_path=$(yq ".components[$i].skills[$j].path" "$CONFIG")
-              catalog_dir=$(yq ".components[$i].skills[$j].catalog_dir" "$CONFIG")
-              src_full="$tmp_dir/$src_path"
-
-              if [ -d "$src_full" ] && [ -n "$(ls -A "$src_full" 2>/dev/null)" ]; then
-                mkdir -p "skills/$catalog_dir"
-                rsync -a --delete "$src_full/" "skills/$catalog_dir/"
-                echo "skills/$catalog_dir" >> /tmp/rsynced-skill-dirs.txt
-                echo "  [OK] $src_path -> skills/$catalog_dir/"
-                synced=true
-              else
-                echo "  [WARN] $name: source path '$src_path' empty or missing — skipping to preserve existing catalog"
-                echo "$name" >> /tmp/failed-components.txt
-              fi
-            done
-
-            if $synced; then
-              echo "$name" >> /tmp/rsynced-components.txt
-
-              # Overlay the pack's install script into the mirrored catalog
-              # dir so a Hub checkout is a complete install source for
-              # workspace packs (rsync --delete cannot see root-level files).
-              if [ "$(yq ".components[$i].install_type" "$CONFIG")" = "workspace" ]; then
-                install_script=$(yq ".components[$i].install_script" "$CONFIG")
-                catalog_dir=$(yq ".components[$i].skills[0].catalog_dir" "$CONFIG")
-                if [ -f "$tmp_dir/$install_script" ]; then
-                  cp "$tmp_dir/$install_script" "skills/$catalog_dir/$install_script"
-                  echo "  [OK] overlay $install_script -> skills/$catalog_dir/"
-                else
-                  echo "  [WARN] $name: $install_script missing in checkout — no overlay"
-                fi
-              fi
-
-              for j in $(seq 0 $((n_skills - 1))); do
-                catalog_dir=$(yq ".components[$i].skills[$j].catalog_dir" "$CONFIG")
-                if [ -n "$(git status --porcelain "skills/$catalog_dir" 2>/dev/null)" ]; then
-                  echo "$name" >> /tmp/changed-components.txt
-                  break
-                fi
-              done
-            fi
-
-            echo ""
           done
-
-          rm -rf .tmp
-
       - name: Fail if nothing synced
         run: |
           if [ ! -s /tmp/rsynced-components.txt ]; then

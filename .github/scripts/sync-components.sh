@@ -15,6 +15,7 @@ component_id=
 repo_base_url=
 work_root=
 summary_file=
+fail_after_replace=${SYNC_COMPONENTS_FAIL_AFTER_REPLACE:-}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --components-dir) components_dir=${2:-}; shift 2 ;;
@@ -22,6 +23,7 @@ while [[ $# -gt 0 ]]; do
     --repo-base-url) repo_base_url=${2:-}; shift 2 ;;
     --work-root) work_root=${2:-}; shift 2 ;;
     --summary-file) summary_file=${2:-}; shift 2 ;;
+    --fail-after-replace) fail_after_replace=${2:-}; shift 2 ;;
     *) usage ;;
   esac
 done
@@ -30,6 +32,16 @@ done
 [[ "$component_id" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "invalid component id: $component_id" >&2; exit 2; }
 [[ -d "$components_dir" ]] || { echo "components directory does not exist: $components_dir" >&2; exit 2; }
 [[ -d "$(dirname "$summary_file")" ]] || { echo "invalid summary destination: $summary_file" >&2; exit 2; }
+
+# A cleanup target must be a newly-created child of this checkout's .tmp/
+# namespace.  In particular, never accept an existing directory or skills/.
+hub_root=$(realpath -m .)
+work_root=$(realpath -m "$work_root")
+allowed_tmp="$hub_root/.tmp"
+case "$work_root" in "$allowed_tmp"/component-sync|"$allowed_tmp"/component-sync-*) ;; *)
+  echo "unsafe work root: $work_root" >&2; exit 2 ;;
+esac
+[[ ! -e "$work_root" ]] || { echo "unsafe work root already exists: $work_root" >&2; exit 2; }
 
 component_file="$components_dir/$component_id.yml"
 [[ -f "$component_file" ]] || { echo "unknown component: $component_id" >&2; exit 2; }
@@ -127,10 +139,13 @@ PY
 # The clone work tree is always disposable. The staging root sits under skills/
 # so each final rename is on the target filesystem.
 cleanup() {
-  rm -rf "$work_root" "${stage_root:-}"
+  [[ "${work_root_owned:-false}" == true ]] && rm -rf "$work_root"
+  rm -rf "${stage_root:-}"
 }
+mkdir -p "$allowed_tmp"
+mkdir "$work_root"
+work_root_owned=true
 trap cleanup EXIT
-mkdir -p "$work_root"
 mkdir -p skills
 stage_root=$(mktemp -d "skills/.component-sync-${component_id}.XXXXXX")
 checkout="$work_root/source"
@@ -168,19 +183,40 @@ if [[ "$install_type" == workspace ]]; then
   cp "$checkout/$install_script" "$stage_root/${catalog_dir_list[0]}/$install_script"
 fi
 
+replacement_count=0
+declare -a replacement_dirs=()
+rollback() {
+  local catalog_dir target backup
+  for catalog_dir in "${replacement_dirs[@]}"; do
+    target="skills/$catalog_dir"
+    backup="$stage_root/.previous-$catalog_dir"
+    rm -rf "$target"
+    [[ -e "$backup" ]] && mv "$backup" "$target"
+  done
+}
+
 for catalog_dir in "${catalog_dir_list[@]}"; do
   target="skills/$catalog_dir"
   staged="$stage_root/$catalog_dir"
-  if [[ ! -d "$target" ]] || ! diff -qr "$target" "$staged" >/dev/null; then
+  if [[ -n "$fail_after_replace" ]] || [[ ! -d "$target" ]] || ! diff -qr "$target" "$staged" >/dev/null; then
     changed=true
     backup="$stage_root/.previous-$catalog_dir"
-    if [[ -e "$target" ]]; then mv "$target" "$backup"; fi
+    replacement_dirs+=("$catalog_dir")
+    if [[ -e "$target" ]] && ! mv "$target" "$backup"; then rollback; fail "could not backup catalog directory: $catalog_dir"; fi
     if ! mv "$staged" "$target"; then
-      [[ -e "$backup" ]] && mv "$backup" "$target"
+      rollback
       fail "could not replace catalog directory: $catalog_dir"
     fi
-    rm -rf "$backup"
+    replacement_count=$((replacement_count + 1))
+    if [[ "$fail_after_replace" == "$replacement_count" ]]; then
+      rollback
+      fail "injected replacement failure"
+    fi
   fi
+done
+
+for catalog_dir in "${replacement_dirs[@]}"; do
+  rm -rf "$stage_root/.previous-$catalog_dir"
 done
 
 write_summary

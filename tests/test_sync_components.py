@@ -76,17 +76,18 @@ class SelectiveSyncTests(unittest.TestCase):
             ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
         )
 
-    def run_sync(self, component: str):
+    def run_sync(self, component: str, work_root=None, fail_after=None):
         summary_file = self.root / "sync-summary.json"
+        work_root = work_root or self.hub_root / ".tmp" / "component-sync-test"
         return subprocess.run(
             [
                 "bash", bash_path(SCRIPT),
                 "--components-dir", bash_path(self.components_dir),
                 "--component", component,
                 "--repo-base-url", bash_path(self.repo_base),
-                "--work-root", bash_path(self.root / "work"),
+                "--work-root", bash_path(work_root),
                 "--summary-file", bash_path(summary_file),
-            ],
+            ] + (["--fail-after-replace", str(fail_after)] if fail_after else []),
             cwd=self.hub_root,
             env={**os.environ, "PYTHONPATH": str(ROOT / ".github")},
             capture_output=True,
@@ -111,6 +112,52 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertEqual(
             hash_tree(self.hub_root / "skills" / "rdk-diagnostic"), diagnostic_before
         )
+
+    def test_rejects_existing_unrelated_catalog_as_work_root(self):
+        diagnostic = self.hub_root / "skills" / "rdk-diagnostic"
+        before = hash_tree(diagnostic)
+
+        result = self.run_sync("bsp-skills", work_root=diagnostic)
+
+        self.assertNotEqual(result.returncode, 0, (result.stdout, result.stderr))
+        self.assertIn("unsafe work root", result.stderr)
+        self.assertEqual(hash_tree(diagnostic), before)
+
+    def test_rejects_unknown_component_empty_source_and_clone_failure(self):
+        self.assertNotEqual(self.run_sync("unknown").returncode, 0)
+
+        (self.components_dir / "bsp-skills.yml").write_text(
+            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "  - path: source/missing\n    catalog_dir: bsp-env-setup\n",
+            encoding="utf-8",
+        )
+        self.assertIn("empty or missing", self.run_sync("bsp-skills").stderr)
+
+        (self.components_dir / "bsp-skills.yml").write_text(
+            "repo: acme/missing\nref: main\nskills:\n"
+            "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n",
+            encoding="utf-8",
+        )
+        self.assertIn("could not clone", self.run_sync("bsp-skills").stderr)
+
+    def test_rolls_back_all_catalog_dirs_when_replacement_fails(self):
+        (self.components_dir / "bsp-skills.yml").write_text(
+            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n"
+            "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-second\n",
+            encoding="utf-8",
+        )
+        second = self.hub_root / "skills" / "bsp-env-second" / "old.txt"
+        second.parent.mkdir(parents=True)
+        second.write_text("old\n", encoding="utf-8")
+        first_before = hash_tree(self.hub_root / "skills" / "bsp-env-setup")
+        second_before = hash_tree(second.parent)
+
+        result = self.run_sync("bsp-skills", fail_after=1)
+
+        self.assertNotEqual(result.returncode, 0, (result.stdout, result.stderr))
+        self.assertEqual(hash_tree(self.hub_root / "skills" / "bsp-env-setup"), first_before)
+        self.assertEqual(hash_tree(second.parent), second_before)
 
 
 if __name__ == "__main__":
