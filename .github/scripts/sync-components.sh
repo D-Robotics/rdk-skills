@@ -21,6 +21,7 @@ pause_after_backup=${SYNC_COMPONENTS_PAUSE_AFTER_BACKUP:-}
 fail_backup=${SYNC_COMPONENTS_FAIL_BACKUP:-}
 ready_file=${SYNC_COMPONENTS_READY_FILE:-}
 fail_compare=${SYNC_COMPONENTS_FAIL_COMPARE:-}
+python_bin=${PYTHON_BIN:-python3}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --components-dir) components_dir=${2:-}; shift 2 ;;
@@ -58,7 +59,7 @@ esac
 component_file="$components_dir/$component_id.yml"
 [[ -f "$component_file" ]] || { echo "unknown component: $component_id" >&2; exit 2; }
 
-config=$(python3 - "$component_file" <<'PY'
+config=$($python_bin - "$component_file" <<'PY'
 import json
 import re
 import sys
@@ -125,18 +126,18 @@ print(json.dumps({
 PY
 )
 
-repo=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["repo"])' <<<"$config")
-source_ref=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["ref"])' <<<"$config")
-install_type=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["install_type"])' <<<"$config")
-install_script=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["install_script"])' <<<"$config")
+repo=$($python_bin -c 'import json,sys; print(json.load(sys.stdin)["repo"])' <<<"$config")
+source_ref=$($python_bin -c 'import json,sys; print(json.load(sys.stdin)["ref"])' <<<"$config")
+install_type=$($python_bin -c 'import json,sys; print(json.load(sys.stdin)["install_type"])' <<<"$config")
+install_script=$($python_bin -c 'import json,sys; print(json.load(sys.stdin)["install_script"])' <<<"$config")
 
 source_sha=""
 changed=false
 failure=""
-catalog_dirs=$(python3 -c 'import json,sys; print("\n".join(x["catalog_dir"] for x in json.load(sys.stdin)["skills"]))' <<<"$config")
+catalog_dirs=$($python_bin -c 'import json,sys; print("\n".join(x["catalog_dir"] for x in json.load(sys.stdin)["skills"]))' <<<"$config")
 
 write_summary() {
-  python3 - "$summary_file" "$component_id" "$source_ref" "$source_sha" "$catalog_dirs" "$changed" "$failure" <<'PY'
+  $python_bin - "$summary_file" "$component_id" "$source_ref" "$source_sha" "$catalog_dirs" "$changed" "$failure" <<'PY'
 import json
 import sys
 
@@ -186,11 +187,11 @@ clone_url="${repo_base_url%/}/${repo}.git"
 git clone --depth 1 --filter=blob:none --sparse --branch "$source_ref" "$clone_url" "$checkout" >/dev/null 2>&1 || fail "could not clone $repo@$source_ref"
 source_sha=$(git -C "$checkout" rev-parse HEAD) || fail "could not resolve source SHA"
 
-mapfile -t source_paths < <(python3 -c 'import json,sys; print("\n".join(x["path"] for x in json.load(sys.stdin)["skills"]))' <<<"$config")
+mapfile -t source_paths < <($python_bin -c 'import json,sys; print("\n".join(x["path"] for x in json.load(sys.stdin)["skills"]))' <<<"$config")
 if [[ "$install_type" == workspace ]]; then
   git -C "$checkout" sparse-checkout set --no-cone "${source_paths[@]}" "$install_script" >/dev/null 2>&1 || fail "could not sparse-checkout component paths"
 else
-  git -C "$checkout" sparse-checkout set "${source_paths[@]}" >/dev/null 2>&1 || fail "could not sparse-checkout component paths"
+  git -C "$checkout" sparse-checkout set --no-cone "${source_paths[@]}" >/dev/null 2>&1 || fail "could not sparse-checkout component paths"
 fi
 
 mapfile -t catalog_dir_list < <(printf '%s\n' "$catalog_dirs")
@@ -280,3 +281,6 @@ for catalog_dir in "${replacement_dirs[@]}"; do
 done
 
 write_summary
+
+
+

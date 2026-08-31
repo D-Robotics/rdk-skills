@@ -84,7 +84,7 @@ class SelectiveSyncTests(unittest.TestCase):
         )
 
     def bash_command(self, args):
-        return [BASH, "-lc", 'cd "$1" && shift && exec "$@"', "--", bash_path(self.hub_root), *args]
+        return [BASH, "-c", 'cd -- "$1" && shift && exec bash "$@"', "bash", bash_path(self.hub_root), *args]
 
     def run_sync(self, component: str, work_root=None, fail_after=None, fail_compare=None):
         summary_file = self.root / "sync-summary.json"
@@ -99,7 +99,7 @@ class SelectiveSyncTests(unittest.TestCase):
                 "--summary-file", bash_path(summary_file),
             ] + (["--fail-after-replace", str(fail_after)] if fail_after else [])
               + (["--fail-compare", fail_compare] if fail_compare else [])),
-            env={**os.environ, "PYTHONPATH": str(ROOT / ".github")},
+            env={**os.environ, "PYTHONPATH": str(ROOT / ".github"), "PYTHON_BIN": "python" if BASH_UNAME.startswith(("MINGW", "MSYS")) else "python3"},
             capture_output=True,
             text=True,
         )
@@ -233,3 +233,4 @@ class SelectiveSyncTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
