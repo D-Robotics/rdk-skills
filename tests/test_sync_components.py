@@ -29,7 +29,9 @@ def hash_tree(root: Path) -> str:
 
 
 def bash_path(path: Path) -> str:
-    """Convert a Windows path to the POSIX spelling used by Git Bash."""
+    """Use native POSIX paths, or Git Bash's Windows mount spelling."""
+    if os.name != "nt":
+        return str(path.resolve())
     value = str(path.resolve())
     return f"/mnt/{value[0].lower()}{value[2:]}".replace("\\", "/")
 
@@ -127,21 +129,27 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertEqual(hash_tree(diagnostic), before)
 
     def test_rejects_unknown_component_empty_source_and_clone_failure(self):
-        self.assertNotEqual(self.run_sync("unknown").returncode, 0)
+        unknown = self.run_sync("unknown")
+        self.assertNotEqual(unknown.returncode, 0)
+        self.assertIn("unknown component", unknown.stderr)
 
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/bsp-skills\nref: main\nskills:\n"
             "  - path: source/missing\n    catalog_dir: bsp-env-setup\n",
             encoding="utf-8",
         )
-        self.assertIn("empty or missing", self.run_sync("bsp-skills").stderr)
+        empty = self.run_sync("bsp-skills")
+        self.assertNotEqual(empty.returncode, 0)
+        self.assertIn("source path is empty or missing", empty.stderr)
 
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/missing\nref: main\nskills:\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n",
             encoding="utf-8",
         )
-        self.assertIn("could not clone", self.run_sync("bsp-skills").stderr)
+        clone = self.run_sync("bsp-skills")
+        self.assertNotEqual(clone.returncode, 0)
+        self.assertIn("could not clone", clone.stderr)
 
     def test_rejects_summary_directory_before_catalog_changes(self):
         target = self.hub_root / "skills" / "bsp-env-setup"
@@ -203,8 +211,15 @@ class SelectiveSyncTests(unittest.TestCase):
             "--summary-file", bash_path(self.root / "signal-summary.json"),
             "--pause-after-backup", "10",
         ]
+        ready = self.root / "backup-ready"
+        command.extend(["--ready-file", bash_path(ready)])
         process = subprocess.Popen(command, cwd=self.hub_root)
-        time.sleep(1)
+        deadline = time.monotonic() + 15
+        while not ready.exists() and time.monotonic() < deadline:
+            if process.poll() is not None:
+                self.fail(f"sync exited before ready marker: {process.returncode}")
+            time.sleep(0.05)
+        self.assertTrue(ready.exists(), "sync did not reach backup-ready transition")
         os.kill(process.pid, signal.SIGTERM)
         self.assertEqual(process.wait(timeout=10), 143)
         self.assertEqual(hash_tree(target), before)
