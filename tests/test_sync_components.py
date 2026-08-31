@@ -140,6 +140,20 @@ class SelectiveSyncTests(unittest.TestCase):
         )
         self.assertIn("could not clone", self.run_sync("bsp-skills").stderr)
 
+    def test_rejects_summary_directory_before_catalog_changes(self):
+        target = self.hub_root / "skills" / "bsp-env-setup"
+        before = hash_tree(target)
+        command = [
+            "bash", bash_path(SCRIPT), "--components-dir", bash_path(self.components_dir),
+            "--component", "bsp-skills", "--repo-base-url", bash_path(self.repo_base),
+            "--work-root", bash_path(self.hub_root / ".tmp" / "component-sync-summary"),
+            "--summary-file", bash_path(self.root),
+        ]
+        result = subprocess.run(command, cwd=self.hub_root, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid summary destination", result.stderr)
+        self.assertEqual(hash_tree(target), before)
+
     def test_rolls_back_all_catalog_dirs_when_replacement_fails(self):
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/bsp-skills\nref: main\nskills:\n"

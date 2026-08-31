@@ -16,6 +16,8 @@ repo_base_url=
 work_root=
 summary_file=
 fail_after_replace=${SYNC_COMPONENTS_FAIL_AFTER_REPLACE:-}
+pause_after_replace=${SYNC_COMPONENTS_PAUSE_AFTER_REPLACE:-}
+fail_backup=${SYNC_COMPONENTS_FAIL_BACKUP:-}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --components-dir) components_dir=${2:-}; shift 2 ;;
@@ -24,6 +26,8 @@ while [[ $# -gt 0 ]]; do
     --work-root) work_root=${2:-}; shift 2 ;;
     --summary-file) summary_file=${2:-}; shift 2 ;;
     --fail-after-replace) fail_after_replace=${2:-}; shift 2 ;;
+    --pause-after-replace) pause_after_replace=${2:-}; shift 2 ;;
+    --fail-backup) fail_backup=true; shift ;;
     *) usage ;;
   esac
 done
@@ -32,6 +36,8 @@ done
 [[ "$component_id" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "invalid component id: $component_id" >&2; exit 2; }
 [[ -d "$components_dir" ]] || { echo "components directory does not exist: $components_dir" >&2; exit 2; }
 [[ -d "$(dirname "$summary_file")" ]] || { echo "invalid summary destination: $summary_file" >&2; exit 2; }
+[[ ! -d "$summary_file" ]] || { echo "invalid summary destination: $summary_file" >&2; exit 2; }
+touch "$summary_file" 2>/dev/null || { echo "invalid summary destination: $summary_file" >&2; exit 2; }
 
 # A cleanup target must be a newly-created child of this checkout's .tmp/
 # namespace.  In particular, never accept an existing directory or skills/.
@@ -140,12 +146,25 @@ PY
 # so each final rename is on the target filesystem.
 cleanup() {
   [[ "${work_root_owned:-false}" == true ]] && rm -rf "$work_root"
-  rm -rf "${stage_root:-}"
+  [[ "${rollback_failed:-false}" != true ]] && rm -rf "${stage_root:-}"
 }
 mkdir -p "$allowed_tmp"
 mkdir "$work_root"
 work_root_owned=true
-trap cleanup EXIT
+transaction_active=false
+rollback_failed=false
+on_exit() {
+  if [[ "$transaction_active" == true ]] && ! rollback; then rollback_failed=true; fi
+  cleanup
+}
+on_signal() {
+  if [[ "$transaction_active" == true ]] && ! rollback; then rollback_failed=true; fi
+  cleanup
+  trap - EXIT
+  exit 143
+}
+trap on_exit EXIT
+trap on_signal HUP INT TERM
 mkdir -p skills
 stage_root=$(mktemp -d "skills/.component-sync-${component_id}.XXXXXX")
 checkout="$work_root/source"
@@ -187,27 +206,34 @@ replacement_count=0
 declare -a replacement_dirs=()
 rollback() {
   local catalog_dir target backup
+  local status=0
   for catalog_dir in "${replacement_dirs[@]}"; do
     target="skills/$catalog_dir"
     backup="$stage_root/.previous-$catalog_dir"
-    rm -rf "$target"
-    [[ -e "$backup" ]] && mv "$backup" "$target"
+    if [[ -e "$backup" ]]; then
+      rm -rf "$target" || status=1
+      mv "$backup" "$target" || status=1
+    fi
   done
+  return "$status"
 }
 
+transaction_active=true
 for catalog_dir in "${catalog_dir_list[@]}"; do
   target="skills/$catalog_dir"
   staged="$stage_root/$catalog_dir"
-  if [[ -n "$fail_after_replace" ]] || [[ ! -d "$target" ]] || ! diff -qr "$target" "$staged" >/dev/null; then
+  if [[ -n "$fail_after_replace" ]] || [[ ! -d "$target" ]] || rsync -ani --delete "$staged/" "$target/" | grep -q .; then
     changed=true
     backup="$stage_root/.previous-$catalog_dir"
+    if [[ -e "$target" && "$fail_backup" == true ]]; then fail "could not backup catalog directory: $catalog_dir"; fi
+    if [[ -e "$target" ]] && ! mv "$target" "$backup"; then fail "could not backup catalog directory: $catalog_dir"; fi
     replacement_dirs+=("$catalog_dir")
-    if [[ -e "$target" ]] && ! mv "$target" "$backup"; then rollback; fail "could not backup catalog directory: $catalog_dir"; fi
     if ! mv "$staged" "$target"; then
       rollback
       fail "could not replace catalog directory: $catalog_dir"
     fi
     replacement_count=$((replacement_count + 1))
+    [[ -n "$pause_after_replace" ]] && sleep "$pause_after_replace"
     if [[ "$fail_after_replace" == "$replacement_count" ]]; then
       rollback
       fail "injected replacement failure"
@@ -218,5 +244,6 @@ done
 for catalog_dir in "${replacement_dirs[@]}"; do
   rm -rf "$stage_root/.previous-$catalog_dir"
 done
+transaction_active=false
 
 write_summary
