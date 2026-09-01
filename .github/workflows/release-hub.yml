@@ -118,9 +118,12 @@ jobs:
       - name: Collect merged component-upgrade metadata since the previous Hub tag
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          previous_tag=$(git tag --merged HEAD --list 'v[0-9]*' --sort=-version:refname | head -n 1 || true)
+          git tag --merged HEAD --list 'v*' > "$RUNNER_TEMP/merged-hub-tags.txt"
+          previous_tag=$(python3 -B .github/scripts/release_contract.py previous-tag \
+            --tags-file "$RUNNER_TEMP/merged-hub-tags.txt" --destination-tag "v$VERSION")
           gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls?state=closed&base=main&per_page=100" |
             jq '[.[][] | select(.merged_at != null and ([.labels[].name] | index("component-upgrade"))) |
               {number: .number, mergedAt: .merged_at, mergeCommit: {oid: .merge_commit_sha}, body: .body}]' \

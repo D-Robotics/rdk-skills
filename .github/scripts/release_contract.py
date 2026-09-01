@@ -59,6 +59,19 @@ def semver_key(value: str, *, leading_v: bool = True) -> tuple[int, int, int]:
     return tuple(int(part) for part in numeric.split("."))
 
 
+def previous_release_tag(tags: Iterable[str], *, destination_tag: str) -> str:
+    """Return the newest canonical ancestor tag other than the destination."""
+    semver_key(destination_tag)
+    candidates = {
+        tag.strip()
+        for tag in tags
+        if isinstance(tag, str)
+        and tag.strip() != destination_tag
+        and STABLE_TAG.fullmatch(tag.strip()) is not None
+    }
+    return max(candidates, key=semver_key, default="")
+
+
 def _remote_tag_map(tag_refs: str) -> dict[str, str]:
     refs: dict[str, str] = {}
     for raw_line in tag_refs.splitlines():
@@ -213,6 +226,9 @@ def main() -> int:
     notes_verify = commands.add_parser("verify-notes-hash")
     notes_verify.add_argument("--tag-object-file", type=Path, required=True)
     notes_verify.add_argument("--notes-file", type=Path, required=True)
+    previous_tag = commands.add_parser("previous-tag")
+    previous_tag.add_argument("--tags-file", type=Path, required=True)
+    previous_tag.add_argument("--destination-tag", required=True)
     destination = commands.add_parser("destination-state")
     destination.add_argument("--tag-refs-file", type=Path, required=True)
     destination.add_argument("--tag", required=True)
@@ -239,6 +255,13 @@ def main() -> int:
             require_release_notes_digest(
                 args.tag_object_file.read_text(encoding="utf-8"),
                 args.notes_file.read_bytes(),
+            )
+        elif args.command == "previous-tag":
+            print(
+                previous_release_tag(
+                    args.tags_file.read_text(encoding="utf-8").splitlines(),
+                    destination_tag=args.destination_tag,
+                )
             )
         elif args.command == "destination-state":
             print(

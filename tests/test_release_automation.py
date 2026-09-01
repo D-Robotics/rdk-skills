@@ -44,6 +44,23 @@ class GitHubResponseTests(unittest.TestCase):
 
 
 class HubReleaseRecoveryTests(unittest.TestCase):
+    def test_recovery_excludes_the_half_release_tag_when_selecting_previous_tag(self):
+        """Recovery notes must use the same prior-tag boundary as the failed normal run."""
+        contract = load_contract()
+
+        self.assertEqual(
+            contract.previous_release_tag(
+                ["v1.0.0", "v1.1.0", "v1.2.0"], destination_tag="v1.2.0"
+            ),
+            "v1.1.0",
+        )
+        self.assertEqual(
+            contract.previous_release_tag(
+                ["v1.0.0", "v1.1.0"], destination_tag="v1.2.0"
+            ),
+            "v1.1.0",
+        )
+
     def test_recovery_notes_must_match_the_digest_preserved_in_the_tag(self):
         """A recovery retry cannot silently publish different validated notes."""
         contract = load_contract()

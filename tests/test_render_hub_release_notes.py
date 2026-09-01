@@ -306,6 +306,7 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         self.assertIn('recovered_sha=$(awk', preflight)
         self.assertIn('git switch --detach "$candidate_sha"', preflight)
         self.assertIn('git merge-base --is-ancestor "$candidate_sha" origin/main', preflight)
+        self.assertIn("release_contract.py previous-tag", preflight)
         self.assertIn('if [[ "$PREFLIGHT_ACTION" == create-tag ]]', script)
 
     def test_publish_revalidates_every_source_release_fact_after_approval(self):
