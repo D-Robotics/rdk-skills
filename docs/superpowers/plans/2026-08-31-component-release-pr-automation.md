@@ -54,7 +54,7 @@ Expose `RDK_RELEASE_DISPATCHER_APP_ID` and `RDK_RELEASE_DISPATCHER_PRIVATE_KEY` 
 
 - [ ] **Step 3: Configure merge and release boundaries**
 
-Add one branch ruleset covering all branch refs except `bot/component-upgrade/*`. Give human repository roles `write`, `maintain`, and `admin` bypass, but do not add the component proposal App Integration as a bypass actor. Add two overlapping all-tag rulesets: creation with only the Release App integration as an `always` bypass actor, and update plus deletion with no bypass actors. Require maintainer approval and Hub CI checks on `main`; enable GitHub Auto-merge. Create Environment `release` with required maintainer approval, self-review prevention, and a deployment branch policy restricted to `main` before storing either Release App credential there.
+Add one branch ruleset covering all branch refs except `bot/component-upgrade/*`. Give human repository roles `write`, `maintain`, and `admin` bypass, but do not add the component proposal App Integration as a bypass actor. Add two overlapping all-tag rulesets: creation with only the Release App integration as an `always` bypass actor, and update plus deletion with no bypass actors. Require maintainer approval and Hub CI checks on `main`; enable GitHub Auto-merge. Configure Environment `release` in single-reviewer mode with required designated maintainer approval. When the sole reviewer is also the workflow dispatcher, self-review prevention is disabled; administrator bypass must remain disabled. Restrict deployments to protected `main` only before storing credentials there; the protected-main-only deployment rule and Environment-only Release App key are compensating controls for this deliberate tradeoff.
 
 - [ ] **Step 4: Verify the App boundary**
 

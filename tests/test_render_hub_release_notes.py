@@ -308,6 +308,26 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         self.assertEqual(inputs["recover_existing_tag"]["default"], "false")
         self.assertEqual(self.jobs["publish"]["environment"], "release")
         self.assertEqual(self.jobs["publish"]["permissions"], {"contents": "read"})
+        environment_policies = {
+            path: (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                "docs/RELEASING.md",
+                "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
+                "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
+            )
+        }
+        for path, policy in environment_policies.items():
+            for required in (
+                "required designated maintainer approval",
+                "single-reviewer mode",
+                "self-review prevention is disabled",
+                "administrator bypass must remain disabled",
+                "protected `main` only",
+                "Environment-only Release App key",
+            ):
+                self.assertIn(required, policy, f"{path}: {required}")
+            self.assertNotIn("self-review prevention,", policy, path)
+            self.assertNotIn("prevent the initiating actor", policy, path)
         for name, job in self.jobs.items():
             self.assertNotEqual((job.get("permissions") or {}).get("contents"), "write", name)
             for step in job["steps"]:

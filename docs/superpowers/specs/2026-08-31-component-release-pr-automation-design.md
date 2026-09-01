@@ -185,7 +185,7 @@ The component proposal App is not a bypass actor for either tag ruleset. Despite
 
 ## Rollout sequence
 
-1. Register the three Hub-only Apps; configure their exact repository scopes, the bot-branch exclusion and non-bypassing component proposal Integration, the overlapping tag rulesets, secrets/variables, Hub branch protection, Auto-merge, and a protected `release` Environment with required approval, self-review prevention, and deployments restricted to `main`.
+1. Register the three Hub-only Apps; configure their exact repository scopes, the bot-branch exclusion and non-bypassing component proposal Integration, the overlapping tag rulesets, secrets/variables, Hub branch protection, and Auto-merge. Configure the protected `release` Environment in single-reviewer mode with required designated maintainer approval. When the sole reviewer is also the workflow dispatcher, self-review prevention is disabled; administrator bypass must remain disabled. Restrict deployments to protected `main` only; the protected-main-only deployment rule and Environment-only Release App key are compensating controls for this deliberate tradeoff.
 2. Add and test the Hub component-upgrade workflow in dry-run mode.
 3. Add the source notification workflow to one pilot repository (BSP Skills).
 4. Exercise the event-to-PR path in a non-production repository or with dry-run before enabling real PR writes.
