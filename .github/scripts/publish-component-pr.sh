@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 
-# Apply a validated proposal to trusted main, push only its stable bot branch
-# over SSH, and use a separate Pull-requests-only App token for PR operations.
+# Apply a validated proposal to trusted main, then use one exact-repository
+# component proposal App token for the stable bot branch and PR operations.
 set -euo pipefail
 export PYTHONDONTWRITEBYTECODE=1
 
@@ -26,7 +26,7 @@ done
 [[ -f "$patch_file" && -f "$metadata_file" && -n "$summary_file" ]] || usage
 [[ -d "$(dirname "$summary_file")" && ! -d "$summary_file" ]] || usage
 [[ -n "${GITHUB_REPOSITORY:-}" ]] || { echo "GITHUB_REPOSITORY is required" >&2; exit 2; }
-[[ -n "${GH_TOKEN:-}" ]] || { echo "GH_TOKEN is required for PR operations" >&2; exit 2; }
+[[ -n "${GH_TOKEN:-}" ]] || { echo "GH_TOKEN is required for proposal publication" >&2; exit 2; }
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
@@ -107,10 +107,19 @@ pr_title=$(metadata_value title)
 git config user.name "rdk-component-branch-bot"
 git config user.email "rdk-component-branch-bot@users.noreply.github.com"
 git commit --signoff -m "chore: upgrade $component_name to $new_tag"
+basic_auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 --wrap=0)
+[[ -n "$basic_auth" ]] || { echo "failed to encode proposal publication token" >&2; exit 1; }
+echo "::add-mask::$basic_auth"
+push_with_app_token() {
+  GIT_CONFIG_COUNT=1 \
+  GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+  GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $basic_auth" \
+    git push "$@"
+}
 if [[ -n "$remote_branch_sha" ]]; then
-  git push --force-with-lease="$branch_ref:$remote_branch_sha" origin "HEAD:$branch_ref"
+  push_with_app_token --force-with-lease="$branch_ref:$remote_branch_sha" origin "HEAD:$branch_ref"
 else
-  git push --force-with-lease="$branch_ref:" origin "HEAD:$branch_ref"
+  push_with_app_token --force-with-lease="$branch_ref:" origin "HEAD:$branch_ref"
 fi
 
 pr_number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --base main --state open --json number --jq '.[0].number')

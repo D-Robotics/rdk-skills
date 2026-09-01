@@ -294,23 +294,22 @@ jobs:
           name: component-upgrade-proposal
           path: ${{ runner.temp }}/component-upgrade-artifact
 
-      - name: Create Hub-only Pull-requests token
+      - name: Create exact-repository component proposal token
         id: pr-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
         with:
           app-id: ${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}
           private-key: ${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
+          owner: D-Robotics
+          repositories: rdk-skills
+          permission-contents: write
           permission-pull-requests: write
 
-      - name: Load the branch-only SSH deploy key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.RDK_COMPONENT_BRANCH_DEPLOY_KEY }}
-
-      - name: Configure SSH-only branch transport
-        run: git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+      - name: Configure exact public Hub transport
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://github.com/D-Robotics/rdk-skills.git"
+          [[ "$(git remote get-url origin)" == "https://github.com/D-Robotics/rdk-skills.git" ]]
 
       - name: Push the bot branch and upsert its PR
         env:
