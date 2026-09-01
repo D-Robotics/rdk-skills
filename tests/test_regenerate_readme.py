@@ -5,6 +5,7 @@
 
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -47,7 +48,7 @@ class ReadmeRegenerationTests(unittest.TestCase):
             env = {**os.environ, "GH_TOKEN": "must-remain-unread"}
 
             result = subprocess.run(
-                ["python", "-B", str(SCRIPT), "--root", str(repository)],
+                [sys.executable, "-B", str(SCRIPT), "--root", str(repository)],
                 env=env,
                 text=True,
                 capture_output=True,
