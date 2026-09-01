@@ -493,8 +493,16 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         workflow = read_workflow(".github/workflows/sync-skills.yml")
         document = yaml.load(workflow, Loader=yaml.BaseLoader)
 
+        self.assertEqual(document["name"], "Verify committed skills catalog")
+        self.assertEqual(set(document["jobs"]), {"verify"})
         self.assertIn("pull_request", document["on"])
         self.assertEqual(document["permissions"], {"contents": "read"})
+        checkout = next(
+            step
+            for step in document["jobs"]["verify"]["steps"]
+            if step.get("uses") == "actions/checkout@v4"
+        )
+        self.assertEqual(checkout["with"]["persist-credentials"], "false")
         self.assertIn("python3 -m unittest discover -s tests", workflow)
         self.assertIn(".github/scripts/validate.py --mode advisory", workflow)
         self.assertIn("generate_plugin_catalog.py --repo-root . --check-plugin-includes", workflow)
