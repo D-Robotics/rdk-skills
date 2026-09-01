@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import tempfile
 import time
@@ -16,7 +17,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / ".github" / "scripts" / "sync-components.sh"
-BASH = os.environ.get("SYNC_TEST_BASH", "bash")
+BASH = os.environ.get("SYNC_TEST_BASH") or (
+    r"C:\Program Files\Git\bin\bash.exe"
+    if os.name == "nt" and Path(r"C:\Program Files\Git\bin\bash.exe").exists()
+    else ("/bin/bash" if Path("/bin/bash").exists() else shutil.which("bash") or "bash")
+)
 BASH_UNAME = subprocess.check_output([BASH, "-lc", "uname -s"], text=True).strip()
 
 
@@ -43,10 +48,6 @@ def file_url(path: Path) -> str:
     return "file://" + bash_path(path)
 
 
-@unittest.skipIf(
-    BASH_UNAME.startswith(("MINGW", "MSYS")),
-    "Git for Windows local file:// sparse integration hang; exercised in Ubuntu CI/WSL",
-)
 class SelectiveSyncTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
