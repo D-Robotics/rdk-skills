@@ -36,7 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       component_id: ${{ steps.validate.outputs.component_id }}
-      action: ${{ steps.validate.outputs.action }}
+      action: ${{ steps.noop-check.outputs.action }}
+      repair: ${{ steps.noop-check.outputs.repair }}
       dry_run: ${{ steps.event.outputs.dry_run }}
       source_repo: ${{ steps.validate.outputs.source_repo }}
       tag: ${{ steps.validate.outputs.tag }}
@@ -173,6 +174,42 @@ jobs:
           print(f"source_sha={source_sha}")
           PY
 
+      - name: Verify a candidate noop has no mirror or artifact drift
+        id: noop-check
+        env:
+          CANDIDATE_ACTION: ${{ steps.validate.outputs.action }}
+          COMPONENT_ID: ${{ steps.validate.outputs.component_id }}
+          SOURCE_SHA: ${{ steps.validate.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$CANDIDATE_ACTION" != noop ]]; then
+            printf 'action=%s\nrepair=false\n' "$CANDIDATE_ACTION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          verify_root=$(mktemp -d)
+          summary_file=$(mktemp)
+          cleanup() { rm -f "$summary_file"; git worktree remove --force "$verify_root" 2>/dev/null || rm -rf "$verify_root"; }
+          trap cleanup EXIT
+          git worktree add --detach "$verify_root" origin/main
+          (
+            cd "$verify_root"
+            bash "$GITHUB_WORKSPACE/.github/scripts/sync-components.sh" \
+              --components-dir components.d \
+              --component "$COMPONENT_ID" \
+              --repo-base-url https://github.com \
+              --work-root ".tmp/component-sync-noop-${COMPONENT_ID}" \
+              --summary-file "$summary_file"
+            python3 "$GITHUB_WORKSPACE/.github/scripts/component_upgrade.py" \
+              validate-sync-summary --summary-file "$summary_file" --source-sha "$SOURCE_SHA" >/dev/null
+            "$GITHUB_WORKSPACE/.github/scripts/build-plugins.sh"
+            bash "$GITHUB_WORKSPACE/.github/scripts/regenerate-readme.sh"
+          )
+          if git -C "$verify_root" diff --quiet; then
+            printf 'action=noop\nrepair=false\n' >> "$GITHUB_OUTPUT"
+          else
+            printf 'action=upgrade\nrepair=true\n' >> "$GITHUB_OUTPUT"
+          fi
+
   upsert-pr:
     needs: validate
     if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.action == 'upgrade'
@@ -185,9 +222,9 @@ jobs:
           app-id: ${{ vars.RDK_RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RDK_RELEASE_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
           permission-contents: write
           permission-pull-requests: write
-          permission-issues: write
 
       - name: Checkout Hub main
         uses: actions/checkout@v4
@@ -217,4 +254,5 @@ jobs:
             --tag '${{ needs.validate.outputs.tag }}' \
             --release-url '${{ needs.validate.outputs.release_url }}' \
             --source-sha '${{ needs.validate.outputs.source_sha }}' \
+            ${{ needs.validate.outputs.repair == 'true' && '--repair' || '' }} \
             --summary-file /tmp/component-upgrade-result.json

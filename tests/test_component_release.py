@@ -4,6 +4,10 @@
 """Unit tests for component Release event validation."""
 
 import importlib.util
+import os
+import shlex
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -12,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / ".github" / "scripts" / "component_release.py"
+UPGRADE_MODULE_PATH = ROOT / ".github" / "scripts" / "component_upgrade.py"
 
 
 def read_workflow(relative_path: str) -> str:
@@ -22,6 +27,16 @@ def read_workflow(relative_path: str) -> str:
 def branch_for(component_id: str) -> str:
     """Return the one stable upgrade branch for a component."""
     return f"bot/component-upgrade/{component_id}"
+
+
+def load_upgrade_helper():
+    """Load the component-upgrade helper without importing package state."""
+    spec = importlib.util.spec_from_file_location("component_upgrade", UPGRADE_MODULE_PATH)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 spec = importlib.util.spec_from_file_location("component_release", MODULE_PATH)
@@ -249,6 +264,196 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         self.assertIn('source:${component_id}', script)
         self.assertNotIn("gh pr merge", script)
         self.assertNotIn("refs/heads/main", script)
+
+    def test_workflow_scopes_the_mutation_token_to_the_current_hub_only(self):
+        workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        self.assertIn("repositories: ${{ github.event.repository.name }}", workflow)
+        self.assertNotIn("permission-issues: write", workflow)
+
+    def test_existing_bot_branch_is_never_checked_out_as_executable_input(self):
+        script = read_workflow(".github/scripts/upsert-component-pr.sh")
+        self.assertIn('git switch --force-create "$branch" origin/main', script)
+        self.assertIn("--force-with-lease", script)
+        self.assertNotIn('"origin/$branch"', script)
+
+    def test_dry_run_and_verified_noop_cannot_reach_the_mutation_job(self):
+        workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        mutation_job = workflow.split("  upsert-pr:", maxsplit=1)[1]
+        self.assertIn(
+            "needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.action == 'upgrade'",
+            mutation_job,
+        )
+        self.assertIn("Verify a candidate noop has no mirror or artifact drift", workflow)
+
+
+class ComponentUpgradeHelperTests(unittest.TestCase):
+    def test_renderer_preserves_literal_markdown_backticks_without_shell_execution(self):
+        helper = load_upgrade_helper()
+
+        body = helper.render_pr_body(
+            component_name="BSP $(printf SHOULD_NOT_RUN)",
+            component_id="bsp-skills",
+            previous_tag="v1.0.0",
+            new_tag="v1.0.1",
+            release_url="https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
+            source_sha="a" * 40,
+            catalog_dirs=["bsp-env-setup"],
+            generated_artifacts=["README.md"],
+            test_result="PASS: test suite",
+        )
+
+        self.assertIn("BSP $(printf SHOULD_NOT_RUN)", body)
+        self.assertIn("`bsp-skills`", body)
+        self.assertIn("`v1.0.0`", body)
+        self.assertIn("`v1.0.1`", body)
+        self.assertIn("`" + "a" * 40 + "`", body)
+
+    def test_renderer_rejects_nonstable_previous_tag(self):
+        helper = load_upgrade_helper()
+
+        with self.assertRaisesRegex(ValueError, "previous tag"):
+            helper.render_pr_body(
+                component_name="BSP Skills",
+                component_id="bsp-skills",
+                previous_tag="$(printf INJECTED)",
+                new_tag="v1.0.1",
+                release_url="https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
+                source_sha="a" * 40,
+                catalog_dirs=[],
+                generated_artifacts=[],
+                test_result="PASS",
+            )
+
+    def test_sync_summary_sha_mismatch_is_rejected_before_mutation(self):
+        helper = load_upgrade_helper()
+        summary = {
+            "components": [{"source_sha": "b" * 40, "catalog_dirs": ["bsp-env-setup"]}]
+        }
+
+        with self.assertRaisesRegex(ValueError, "synchronized source SHA"):
+            helper.validate_sync_summary(summary, "a" * 40)
+
+    def test_label_preflight_rejects_missing_labels_before_writes(self):
+        helper = load_upgrade_helper()
+
+        with self.assertRaisesRegex(ValueError, "source:bsp-skills"):
+            helper.require_labels(["component-upgrade"], "bsp-skills")
+
+    def test_candidate_noop_with_drift_requires_a_repair_pr(self):
+        helper = load_upgrade_helper()
+
+        self.assertEqual(helper.resolve_action("noop", has_drift=True), "upgrade")
+        self.assertEqual(helper.resolve_action("noop", has_drift=False), "noop")
+
+    def test_tampered_existing_bot_branch_is_not_executed(self):
+        """The proposal must run trusted-main helpers, not remote bot code."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            seed = temp / "seed"
+            remote = temp / "remote.git"
+            runner = temp / "runner"
+            marker = temp / "tampered-branch-executed"
+            scripts = seed / ".github" / "scripts"
+            scripts.mkdir(parents=True)
+            (seed / "components.d").mkdir()
+            (seed / "tests").mkdir()
+            (seed / "tests" / "__init__.py").write_text("", encoding="utf-8")
+            (seed / "components.d" / "bsp-skills.yml").write_text(
+                "name: BSP Skills\nrepo: D-Robotics/bsp-skills\nref: v1.0.0\n",
+                encoding="utf-8",
+            )
+            (scripts / "upsert-component-pr.sh").write_bytes(
+                (ROOT / ".github" / "scripts" / "upsert-component-pr.sh")
+                .read_bytes()
+                .replace(b"\r\n", b"\n")
+            )
+            (scripts / "upsert-component-pr.sh").chmod(0o755)
+            shutil.copy2(ROOT / ".github" / "scripts" / "component_upgrade.py", scripts)
+            (scripts / "sync-components.sh").write_text(
+                "#!/usr/bin/env bash\n"
+                "set -euo pipefail\n"
+                "while [[ $# -gt 0 ]]; do\n"
+                "  if [[ $1 == --summary-file ]]; then summary=$2; shift 2; else shift; fi\n"
+                "done\n"
+                "printf '{\"components\":[{\"source_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"catalog_dirs\":[\"bsp-env-setup\"]}]}' > \"$summary\"\n",
+                encoding="utf-8",
+            )
+            (scripts / "build-plugins.sh").write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            (scripts / "regenerate-readme.sh").write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            for script in scripts.glob("*.sh"):
+                script.chmod(0o755)
+
+            def git(*args: str, cwd: Path) -> None:
+                subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+            git("init", "-b", "main", cwd=seed)
+            git("add", ".", cwd=seed)
+            git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "main", cwd=seed)
+            subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True)
+            git("remote", "add", "origin", str(remote), cwd=seed)
+            git("push", "origin", "main", cwd=seed)
+            git("switch", "-c", "bot/component-upgrade/bsp-skills", cwd=seed)
+            (scripts / "sync-components.sh").write_text(
+                f"#!/usr/bin/env bash\ntouch '{marker.as_posix()}'\n",
+                encoding="utf-8",
+            )
+            (scripts / "sync-components.sh").chmod(0o755)
+            git("add", ".github/scripts/sync-components.sh", cwd=seed)
+            git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "tamper", cwd=seed)
+            git("push", "origin", "bot/component-upgrade/bsp-skills", cwd=seed)
+            git("switch", "main", cwd=seed)
+            subprocess.run(
+                ["git", "-c", "core.autocrlf=false", "clone", "--branch", "main", str(remote), str(runner)],
+                check=True,
+                capture_output=True,
+            )
+            remote_posix = remote.as_posix()
+            if len(remote_posix) > 2 and remote_posix[1] == ":":
+                remote_url_path = f"/mnt/{remote_posix[0].lower()}{remote_posix[2:]}"
+            else:
+                remote_url_path = remote_posix
+            git("remote", "set-url", "origin", f"file://{remote_url_path}", cwd=runner)
+
+            fake_bin = runner
+            (fake_bin / "gh").write_bytes(
+                b"#!/usr/bin/env bash\n"
+                b"if [[ $1 == label ]]; then echo '[{\"name\":\"component-upgrade\"},{\"name\":\"source:bsp-skills\"}]'; "
+                b"elif [[ $1 == pr && $2 == list ]]; then echo ''; "
+                b"elif [[ $1 == pr && $2 == create ]]; then echo 'https://example.invalid/pr/1'; fi\n",
+            )
+            (fake_bin / "gh").chmod(0o755)
+            env = dict(os.environ)
+            for key in list(env):
+                if key.upper() == "GITHUB_REPOSITORY":
+                    del env[key]
+            env.update(
+                {
+                    "GITHUB_REPOSITORY": "D-Robotics/rdk-skills",
+                }
+            )
+            command = " ".join(
+                [
+                    'PATH=".:$PATH"', "GITHUB_REPOSITORY=D-Robotics/rdk-skills",
+                    "exec", "bash", ".github/scripts/upsert-component-pr.sh",
+                    "--component", "bsp-skills",
+                    "--tag", "v1.0.1",
+                    "--release-url", "https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
+                    "--source-sha", "a" * 40,
+                    "--summary-file", shlex.quote(str(temp / "result.json")),
+                ]
+            )
+            result = subprocess.run(
+                ["bash", "-c", command],
+                cwd=runner,
+                env=env,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(marker.exists(), "tampered bot-branch helper was executed")
 
 
 if __name__ == "__main__":

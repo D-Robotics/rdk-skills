@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 
-# Create or update the one reviewable component-upgrade PR for a formal
-# source Release. This script is intentionally called only after the workflow
-# has validated the Release and rejected dry runs/noops.
+# Build a component-upgrade proposal exclusively from trusted origin/main.
+# A pre-existing bot branch is only a remote ref protected by force-with-lease;
+# its content is never checked out or executed.
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 --component ID --tag TAG --release-url URL --source-sha SHA --summary-file FILE" >&2
+  echo "usage: $0 --component ID --tag TAG --release-url URL --source-sha SHA --summary-file FILE [--repair]" >&2
   exit 2
 }
 
@@ -17,6 +17,7 @@ new_tag=
 release_url=
 source_sha=
 summary_file=
+repair=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --component) component_id=${2:-}; shift 2 ;;
@@ -24,6 +25,7 @@ while [[ $# -gt 0 ]]; do
     --release-url) release_url=${2:-}; shift 2 ;;
     --source-sha) source_sha=${2:-}; shift 2 ;;
     --summary-file) summary_file=${2:-}; shift 2 ;;
+    --repair) repair=true; shift ;;
     *) usage ;;
   esac
 done
@@ -33,11 +35,18 @@ done
 [[ "$source_sha" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "invalid source SHA" >&2; exit 2; }
 [[ -n "$release_url" && "$release_url" != *$'\n'* && "$release_url" != *$'\r'* ]] || { echo "invalid release URL" >&2; exit 2; }
 [[ -n "$summary_file" && -d "$(dirname "$summary_file")" && ! -d "$summary_file" ]] || usage
+[[ -n "${GITHUB_REPOSITORY:-}" ]] || { echo "GITHUB_REPOSITORY is required" >&2; exit 2; }
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 component_file="components.d/$component_id.yml"
 [[ -f "$component_file" ]] || { echo "unknown component: $component_id" >&2; exit 2; }
+
+# Labels are a maintainer-provisioned repository prerequisite. This is the
+# first operation that can talk to GitHub and occurs before any bot ref write.
+labels_json=$(gh label list --repo "$GITHUB_REPOSITORY" --limit 100 --json name)
+python3 .github/scripts/component_upgrade.py require-labels \
+  --labels-json "$labels_json" --component "$component_id"
 
 component_data=$(python3 - "$component_file" <<'PY'
 import json
@@ -58,33 +67,22 @@ PY
 )
 component_name=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])' <<<"$component_data")
 component_repo=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["repo"])' <<<"$component_data")
+previous_tag=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["ref"])' <<<"$component_data")
+[[ "$previous_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "previous tag is not stable" >&2; exit 2; }
 expected_url="https://github.com/$component_repo/releases/tag/$new_tag"
 [[ "$release_url" == "$expected_url" ]] || { echo "release URL does not match component and tag" >&2; exit 2; }
 
 branch="bot/component-upgrade/${component_id}"
+branch_ref="refs/heads/$branch"
 git fetch --no-tags origin main
-if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-  git fetch --no-tags origin "$branch"
-  git switch --force-create "$branch" "origin/$branch"
-else
-  git switch --force-create "$branch" origin/main
-fi
+remote_branch_sha=$(git ls-remote --heads origin "$branch_ref" | awk '{print $1}')
 
-# A newer event may update an existing bot branch, so the previous tag is read
-# after selecting that branch rather than assumed from main.
-previous_tag=$(python3 - "$component_file" <<'PY'
-import sys
-from pathlib import Path
-import yaml
+# Always reconstruct the proposal from trusted main. Never switch to or run a
+# helper from the existing stable branch.
+git switch --force-create "$branch" origin/main
 
-data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
-if not isinstance(data, dict) or not isinstance(data.get("ref"), str):
-    raise SystemExit("component ref is required")
-print(data["ref"])
-PY
-)
-
-python3 - "$component_file" "$new_tag" <<'PY'
+if [[ "$previous_tag" != "$new_tag" ]]; then
+  python3 - "$component_file" "$new_tag" <<'PY'
 import re
 import sys
 from pathlib import Path
@@ -101,15 +99,18 @@ if count != 1:
     raise SystemExit("component YAML must contain exactly one ref")
 path.write_bytes(updated)
 PY
+elif [[ "$repair" != true ]]; then
+  echo "same-tag proposal must be an explicit repair" >&2
+  exit 2
+fi
 
-# Validate the registration before synchronization makes any mirror changes.
-# This also rejects a pre-existing bot branch that contains edits beyond the
-# selected component's one pinned ref.
-python3 - "$component_file" "$new_tag" <<'PY'
+# Ensure the trusted proposal changes no component registration except the
+# selected ref; a repair is allowed to leave all component files untouched.
+python3 - "$component_file" "$new_tag" "$repair" <<'PY'
 import subprocess
 import sys
 
-component_file, new_tag = sys.argv[1:]
+component_file, new_tag, repair = sys.argv[1:]
 result = subprocess.run(
     ["git", "diff", "--unified=0", "origin/main", "--", component_file],
     check=True,
@@ -121,13 +122,15 @@ changes = [
     for line in result.stdout.splitlines()
     if line[:1] in ("+", "-") and not line.startswith(("+++", "---"))
 ]
-if len(changes) != 2 or not changes[0].startswith("-ref: ") or changes[1] != f"+ref: {new_tag}":
+expected = [] if repair == "true" else [None, f"+ref: {new_tag}"]
+if (repair == "true" and changes) or (
+    repair != "true" and (len(changes) != 2 or not changes[0].startswith("-ref: ") or changes[1] != expected[1])
+):
     raise SystemExit("component upgrade may change only the selected component ref")
 PY
 
 sync_summary=$(mktemp)
-test_log=$(mktemp)
-trap 'rm -f "$sync_summary" "$test_log"' EXIT
+trap 'rm -f "$sync_summary"' EXIT
 work_root=".tmp/component-sync-${component_id}-${GITHUB_RUN_ID:-local}-${RANDOM}"
 bash .github/scripts/sync-components.sh \
   --components-dir components.d \
@@ -136,24 +139,20 @@ bash .github/scripts/sync-components.sh \
   --work-root "$work_root" \
   --summary-file "$sync_summary"
 
+# Bind mirrored bytes to the dereferenced SHA verified by the workflow before
+# build, test, commit, push, or PR mutation can occur.
+catalog_dirs_json=$(python3 .github/scripts/component_upgrade.py validate-sync-summary \
+  --summary-file "$sync_summary" --source-sha "$source_sha")
+mapfile -t catalog_dirs < <(python3 -c 'import json,sys; print("\n".join(json.load(sys.stdin)))' <<<"$catalog_dirs_json")
+
 .github/scripts/build-plugins.sh
 bash .github/scripts/regenerate-readme.sh
-python3 -B -m unittest discover -s tests -v 2>&1 | tee "$test_log"
+python3 -B -m unittest discover -s tests -v
 
-# Bot branches may carry only their component registration plus that component's
-# mirror and generated Hub artifacts. Never let a stale or tampered bot branch
-# smuggle a second component ref into a PR.
-mapfile -t catalog_dirs < <(python3 - "$sync_summary" <<'PY'
-import json
-import sys
-
-summary = json.load(open(sys.argv[1], encoding="utf-8"))
-for directory in summary["components"][0]["catalog_dirs"]:
-    print(directory)
-PY
-)
 mapfile -t changed_component_files < <(git diff --name-only origin/main -- components.d)
-if [[ "${#changed_component_files[@]}" -ne 1 || "${changed_component_files[0]}" != "$component_file" ]]; then
+if [[ "$repair" == true ]]; then
+  [[ "${#changed_component_files[@]}" -eq 0 ]] || { echo "repair changed a component registration" >&2; exit 1; }
+elif [[ "${#changed_component_files[@]}" -ne 1 || "${changed_component_files[0]}" != "$component_file" ]]; then
   echo "component upgrade changed an unrelated component registration" >&2
   exit 1
 fi
@@ -175,47 +174,35 @@ while IFS= read -r changed_path; do
 done < <(git diff --name-only origin/main)
 
 git diff --check origin/main
-generated_artifacts=$(git diff --name-only origin/main -- \
+generated_artifacts_json=$(git diff --name-only origin/main -- \
   README.md plugins .claude-plugin/marketplace.json .agents/plugins/marketplace.json \
-  .cursor-plugin/marketplace.json .dsh-plugin/marketplace.json | sed 's/^/- /')
-mirrored_dirs=$(printf '%s\n' "${catalog_dirs[@]}" | sed 's/^/- skills\//')
+  .cursor-plugin/marketplace.json .dsh-plugin/marketplace.json | python3 -c 'import json,sys; print(json.dumps([line.rstrip("\n") for line in sys.stdin if line.strip()]))')
 test_result="PASS: python3 -B -m unittest discover -s tests -v"
+
+body_file=$(mktemp)
+trap 'rm -f "$sync_summary" "$body_file"' EXIT
+python3 .github/scripts/component_upgrade.py render-pr-body \
+  --component-name "$component_name" \
+  --component "$component_id" \
+  --previous-tag "$previous_tag" \
+  --new-tag "$new_tag" \
+  --release-url "$release_url" \
+  --source-sha "$source_sha" \
+  --catalog-dirs-json "$catalog_dirs_json" \
+  --artifacts-json "$generated_artifacts_json" \
+  --test-result "$test_result" > "$body_file"
 
 if ! git diff --quiet; then
   git config user.name "rdk-release-bot[bot]"
   git config user.email "rdk-release-bot[bot]@users.noreply.github.com"
   git add -A
   git commit --signoff -m "chore: upgrade $component_name to $new_tag"
-  git push origin "HEAD:refs/heads/$branch"
+  if [[ -n "$remote_branch_sha" ]]; then
+    git push --force-with-lease="$branch_ref:$remote_branch_sha" origin "HEAD:$branch_ref"
+  else
+    git push --force-with-lease="$branch_ref:" origin "HEAD:$branch_ref"
+  fi
 fi
-
-body_file=$(mktemp)
-trap 'rm -f "$sync_summary" "$test_log" "$body_file"' EXIT
-cat > "$body_file" <<EOF
-## Automated component upgrade
-
-| Field | Value |
-| --- | --- |
-| Component | $component_name (`$component_id`) |
-| Previous tag | `$previous_tag` |
-| New tag | `$new_tag` |
-| Source Release | $release_url |
-| Dereferenced source SHA | `$source_sha` |
-
-### Mirrored directories
-
-$mirrored_dirs
-
-### Generated artifacts
-
-${generated_artifacts:-- None}
-
-### Tests
-
-$test_result
-
-A maintainer must review this PR and choose the eventual Hub version after merge.
-EOF
 
 pr_number=$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number')
 pr_title="chore: upgrade $component_name to $new_tag"

@@ -22,6 +22,20 @@ Published tags are immutable release identities.
 3. If a published release needs a correction, publish the next patch version (for example, `v1.0.1`) with release notes explaining the correction.
 4. Do not point a Hub component at a mutable branch for a formal release; use the corresponding annotated source tag.
 
+## Component-upgrade automation prerequisites
+
+Before enabling the Hub component-upgrade workflow, a maintainer must install
+the organization-owned `rdk-release-bot` App with only Hub `Contents: write`,
+`Pull requests: write`, and implicit `Metadata: read` access. Scope the App's
+Actions variable and private-key secret to the approved repositories only.
+
+Maintainers must also provision these PR labels in the Hub before the first
+dispatch: `component-upgrade` and one `source:<component-id>` label for every
+registered component. The workflow performs a read-only label preflight before
+creating or updating a bot branch or PR; it intentionally does not create
+labels or request Issues permission. Missing labels are an operations blocker,
+not a reason to expand the App's privileges.
+
 ## Release procedure
 
 1. Choose the next version and create a release branch or otherwise isolate the release work.
