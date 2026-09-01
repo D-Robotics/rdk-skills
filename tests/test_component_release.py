@@ -286,6 +286,49 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         self.assertIn("Verify a candidate noop has no mirror or artifact drift", workflow)
 
 
+class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
+    def test_reconciliation_is_scheduled_and_detects_drift_in_a_temporary_worktree(self):
+        """Removing isolated reconciliation must fail this safety contract."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+
+        self.assertIn("schedule:", workflow)
+        self.assertIn("mktemp -d", workflow)
+        self.assertIn("git worktree add --detach", workflow)
+        self.assertIn("sync-components.sh", workflow)
+        self.assertIn("build-plugins.sh", workflow)
+        self.assertIn("regenerate-readme.sh", workflow)
+        self.assertIn("git -C \"$verify_root\" diff --quiet", workflow)
+
+    def test_reconciliation_cannot_mutate_catalog_history_or_use_an_app_token(self):
+        """Adding a catalog write, PR flow, or App token must violate the contract."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+
+        self.assertIn("contents: read", workflow)
+        self.assertIn("issues: write", workflow)
+        self.assertIn("component-upgrade-failure", workflow)
+        self.assertIn("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}", workflow)
+        for forbidden in (
+            "git push",
+            "git commit",
+            "git branch",
+            "git tag",
+            "gh pr ",
+            "create-github-app-token",
+        ):
+            self.assertNotIn(forbidden, workflow)
+
+    def test_legacy_sync_has_no_schedule_or_direct_commit(self):
+        """The legacy workflow remains a manual, read-only verifier."""
+        workflow = read_workflow(".github/workflows/sync-skills.yml")
+
+        self.assertNotIn("schedule:", workflow)
+        self.assertNotIn("Commit and push changes", workflow)
+        self.assertNotIn("git commit", workflow)
+        self.assertNotIn("git push", workflow)
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("contents: read", workflow)
+
+
 class ComponentUpgradeHelperTests(unittest.TestCase):
     def test_renderer_preserves_literal_markdown_backticks_without_shell_execution(self):
         helper = load_upgrade_helper()

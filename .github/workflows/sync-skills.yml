@@ -1,269 +1,34 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 #
-# Sync skills from product repos into the D-Robotics/rdk-skills catalog.
-# Reads component definitions from components.d/*.yml (one file per
-# component) — teams onboard by adding their own file there, not by
-# editing this workflow or any shared file.
-#
-# Requires a PAT (SKILLS_SYNC_PAT) with read access to all product
-# repos, stored as a repository secret. For public repos the token
-# is optional but recommended to avoid rate limits.
+# Component synchronization is state-changing and is intentionally handled only
+# by component-upgrade.yml. This legacy entry point is retained solely for an
+# operator to verify the committed catalog without changing it.
 
-name: Sync Skills from Product Repos
+name: Verify committed skills catalog
 
 on:
-  schedule:
-    # Hourly
-    - cron: "0 * * * *"
-  workflow_dispatch: # Allow manual trigger
-  push:
-    branches:
-      - main
-    paths:
-      # New/updated pack registrations sync on merge to main
-      - 'components.d/**'
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-
-concurrency:
-  group: sync-skills
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  sync:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout skills catalog
+      - name: Checkout committed catalog
         uses: actions/checkout@v4
         with:
           ref: main
+          persist-credentials: false
 
       - name: Install catalog generator dependencies
         run: python3 -m pip install -r .github/requirements.txt
 
-      - name: Verify yq is available
-        run: yq --version
-
-      - name: Sync skills from product repos
-        env:
-          GH_TOKEN: ${{ secrets.SKILLS_SYNC_PAT }}
-        run: |
-          set -euo pipefail
-          truncate -s 0 /tmp/rsynced-components.txt
-          truncate -s 0 /tmp/changed-components.txt
-          truncate -s 0 /tmp/failed-components.txt
-          truncate -s 0 /tmp/sync-versions.txt
-          if [ -n "${GH_TOKEN:-}" ]; then
-            git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=${GH_TOKEN}"; }; f'
-          fi
-          for component_file in components.d/*.yml; do
-            component_id=$(basename "$component_file" .yml)
-            summary_file="/tmp/sync-${component_id}.json"
-            if ! bash .github/scripts/sync-components.sh --components-dir components.d --component "$component_id" --repo-base-url https://github.com --work-root ".tmp/component-sync-${component_id}" --summary-file "$summary_file"; then
-              echo "$component_id" >> /tmp/failed-components.txt
-              continue
-            fi
-            echo "$component_id" >> /tmp/rsynced-components.txt
-            yq -r '.components[0] | [.component_id, .source_sha, .changed] | @tsv' "$summary_file" | while IFS=$'\t' read -r name sha changed; do
-              echo -e "$name\t${sha:0:7}\t$sha\tunknown" >> /tmp/sync-versions.txt
-              if [ "$changed" = true ]; then echo "$name" >> /tmp/changed-components.txt; fi
-            done
-          done
-      - name: Fail if nothing synced
-        run: |
-          if [ ! -s /tmp/rsynced-components.txt ]; then
-            echo "::error::All component checkouts failed — no skills were synced"
-            exit 1
-          fi
-
-      - name: Check skill compliance (advisory)
+      - name: Verify committed catalog and plugin declarations
         run: |
           set -euo pipefail
           python3 .github/scripts/validate.py --mode advisory
-          echo ""
-          echo "::notice::Compliance check is advisory (observation period) — skills are reported, not blocked or removed."
-
-      - name: Prune orphaned skill dirs
-        run: |
-          bash .github/scripts/prune-orphans.sh
-          if [ -s /tmp/pruned-orphans.txt ]; then
-            echo "- orphan pruning" >> /tmp/changed-components.txt
-          fi
-
-      - name: Run catalog tests
-        run: python3 -m unittest discover -s tests -v
-
-      - name: Rebuild plugin catalog
-        run: |
-          set -euo pipefail
-          .github/scripts/build-plugins.sh
-          if ! git diff --quiet -- plugins/ \
-              .claude-plugin/marketplace.json \
-              .agents/plugins/marketplace.json \
-              .cursor-plugin/marketplace.json 2>/dev/null; then
-            if ! grep -qx "- plugin catalog" /tmp/changed-components.txt 2>/dev/null; then
-              echo "- plugin catalog" >> /tmp/changed-components.txt
-            fi
-          fi
-
-      - name: Regenerate README tables
-        run: bash .github/scripts/regenerate-readme.sh
-
-      - name: Build sync summary
-        id: summary
-        run: |
-          if [ -s /tmp/failed-components.txt ]; then
-            echo "has_failures=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_failures=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          if [ ! -s /tmp/changed-components.txt ]; then
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::All components synced; no upstream content changes detected"
-            exit 0
-          fi
-          echo "has_changes=true" >> "$GITHUB_OUTPUT"
-
-          sort -u -o /tmp/changed-components.txt /tmp/changed-components.txt
-          changed=$(cat /tmp/changed-components.txt | tr '\n' ',' | sed 's/- //g;s/,$//')
-          echo "title=chore: sync skills ($changed)" >> "$GITHUB_OUTPUT"
-          {
-            echo 'body<<EOFBODY'
-            echo "## Automated skills sync"
-            echo ""
-            echo "**Components updated:**"
-            cat /tmp/changed-components.txt
-            echo ""
-            if [ -s /tmp/sync-versions.txt ]; then
-              echo "**Upstream versions:**"
-              while IFS=$'\t' read -r name sha full date; do
-                echo "  - $name: $sha ($date)"
-              done < /tmp/sync-versions.txt
-              echo ""
-            fi
-            if [ -s /tmp/failed-components.txt ]; then
-              echo ""
-              echo "**Components that failed to sync:**"
-              cat /tmp/failed-components.txt
-              echo ""
-            fi
-            echo "Triggered by: \`${{ github.event_name }}\`"
-            echo 'EOFBODY'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Commit and push changes
-        if: steps.summary.outputs.has_changes == 'true'
-        run: |
-          git config user.name "D-Robotics Skills Bot"
-          git config user.email "skills-bot@d-robotics.com"
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No actual changes to commit — content already up to date"
-            exit 0
-          fi
-          {
-            echo "chore: sync skills from product repos"
-            echo ""
-            while IFS=$'\t' read -r name sha full date; do
-              printf '  - %s: %s (%s)\n' "$name" "$sha" "$date"
-            done < /tmp/sync-versions.txt
-            echo ""
-            echo "Triggered by: ${{ github.event_name }}"
-          } > /tmp/commit-msg.txt
-          git commit -F /tmp/commit-msg.txt
-          git push
-
-      - name: Update sync-failure tracking issue (rolling)
-        if: always()
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const hasFailures = '${{ steps.summary.outputs.has_failures }}' === 'true';
-            const jobFailed = '${{ job.status }}' === 'failure';
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-
-            const { data: openIssues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: 'sync-failure',
-            });
-            const tracker = openIssues[0];
-
-            if (!hasFailures && !jobFailed) {
-              if (tracker) {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: tracker.number,
-                  body: `Sync run [#${context.runId}](${runUrl}) completed cleanly — closing the rolling sync-failure tracker.`,
-                });
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: tracker.number,
-                  state: 'closed',
-                });
-              }
-              return;
-            }
-
-            let title, bodyLines = [];
-            const today = new Date().toISOString().slice(0, 10);
-
-            if (jobFailed) {
-              title = `Sync failure tracker — workflow run failed (${today})`;
-              bodyLines.push(
-                `The most recent sync workflow run failed entirely.`,
-                ``,
-                `**Most recent run:** [#${context.runId}](${runUrl})`,
-                `**Trigger:** \`${context.eventName}\``,
-                `**Last updated:** ${today}`,
-                ``,
-                `This issue auto-updates on every sync run and closes when sync runs cleanly again.`,
-              );
-            } else {
-              let failed = '';
-              try {
-                failed = fs.readFileSync('/tmp/failed-components.txt', 'utf8').trim();
-              } catch (e) {
-                failed = '(failed-components.txt not available)';
-              }
-              const count = failed.split('\n').filter(l => l.trim()).length;
-              title = `Sync failure tracker — ${count} component(s) failing (${today})`;
-              bodyLines.push(
-                `Components that failed to sync on the most recent run. This issue auto-updates each sync and closes when all components are syncing cleanly.`,
-                ``,
-                `**Currently failing (${count}):**`,
-                failed,
-                ``,
-                `**Most recent run:** [#${context.runId}](${runUrl})`,
-                `**Last updated:** ${today}`,
-              );
-            }
-            const body = bodyLines.join('\n');
-
-            if (tracker) {
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: tracker.number,
-                title,
-                body,
-              });
-            } else {
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body,
-                labels: ['sync-failure'],
-              });
-            }
+          python3 .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-includes
+          git diff --exit-code

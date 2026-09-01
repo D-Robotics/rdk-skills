@@ -1,0 +1,153 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+#
+# This workflow is deliberately observational.  It reconstructs every pinned
+# component in a disposable worktree, compares its mirrors and generated
+# catalog artifacts, and opens one rolling issue when the committed catalog is
+# no longer reproducible.  component-upgrade.yml is the sole write path for
+# catalog, branch, PR, and tag changes.
+
+name: Reconcile pinned components
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: reconcile-components
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout committed catalog
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install reconciliation dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Reconstruct pinned components in a disposable worktree
+        id: reconcile
+        run: |
+          set -euo pipefail
+          verify_root=$(mktemp -d)
+          summary_root=$(mktemp -d)
+          results_file=$(mktemp)
+          cleanup() {
+            git worktree remove --force "$verify_root" 2>/dev/null || rm -rf "$verify_root"
+            rm -rf "$summary_root"
+          }
+          trap cleanup EXIT
+
+          git worktree add --detach "$verify_root" HEAD
+          : > "$results_file"
+
+          for component_file in "$verify_root"/components.d/*.yml; do
+            component_id=$(basename "$component_file" .yml)
+            source_repo=$(yq -r '.repo' "$component_file")
+            source_ref=$(yq -r '.ref' "$component_file")
+            summary_file="$summary_root/${component_id}.json"
+
+            # A pinned component is an annotated, immutable semver tag.  The
+            # peeled value is the exact commit the temporary reconstruction
+            # must use, preventing a branch from masquerading as a pin.
+            if [[ ! "$source_ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              printf '%s: invalid pinned ref %s\n' "$component_id" "$source_ref" >> "$results_file"
+              continue
+            fi
+            pinned_sha=$(git ls-remote "https://github.com/${source_repo}.git" "refs/tags/${source_ref}^{}" | awk 'NR == 1 { print $1 }')
+            if [[ ! "$pinned_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              printf '%s: pinned ref %s is missing or not an annotated tag\n' "$component_id" "$source_ref" >> "$results_file"
+              continue
+            fi
+
+            if ! (
+              cd "$verify_root"
+              bash "$GITHUB_WORKSPACE/.github/scripts/sync-components.sh" \
+                --components-dir components.d \
+                --component "$component_id" \
+                --repo-base-url https://github.com \
+                --work-root ".tmp/component-sync-reconcile-${component_id}" \
+                --summary-file "$summary_file"
+            ); then
+              printf '%s: failed to reconstruct pinned ref %s\n' "$component_id" "$source_ref" >> "$results_file"
+              continue
+            fi
+
+            reconstructed_sha=$(yq -r '.components[0].source_sha' "$summary_file")
+            if [[ "${reconstructed_sha,,}" != "${pinned_sha,,}" ]]; then
+              printf '%s: reconstructed SHA differs from pinned ref %s\n' "$component_id" "$source_ref" >> "$results_file"
+            fi
+          done
+
+          if ! (
+            cd "$verify_root"
+            "$GITHUB_WORKSPACE/.github/scripts/build-plugins.sh"
+            bash "$GITHUB_WORKSPACE/.github/scripts/regenerate-readme.sh"
+          ); then
+            printf '%s\n' 'catalog or plugin regeneration failed' >> "$results_file"
+          fi
+
+          if ! git -C "$verify_root" diff --quiet; then
+            printf '%s\n' 'component mirrors, catalog, plugins, or README are stale' >> "$results_file"
+          fi
+
+          if [[ -s "$results_file" ]]; then
+            {
+              echo 'has_drift=true'
+              echo 'details<<EOF'
+              sort -u "$results_file"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_drift=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update reconciliation issue
+        if: steps.reconcile.outputs.has_drift == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DETAILS: ${{ steps.reconcile.outputs.details }}
+        run: |
+          set -euo pipefail
+          label='component-upgrade-failure'
+          if ! gh label list --search "$label" --limit 100 --json name --jq '.[].name' | grep -Fxq "$label"; then
+            echo "::error::Repository administrators must pre-create the $label label before reconciliation can report drift."
+            exit 1
+          fi
+
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          title='Component reconciliation failure tracker'
+          body=$(cat <<EOF
+          The pinned component reconciliation detected invalid references or catalog drift.
+
+          **Most recent run:** ${run_url}
+
+          **Findings:**
+          ${DETAILS}
+
+          This rolling issue is opened or updated only by the read-only reconciliation workflow. Resolve the source or committed mirror through the reviewed component-upgrade workflow.
+          EOF
+          )
+          issue_number=$(gh issue list --state open --label "$label" --search '"Component reconciliation failure tracker" in:title' --json number --jq '.[0].number')
+          if [[ -n "$issue_number" && "$issue_number" != null ]]; then
+            gh issue edit "$issue_number" --title "$title" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body" --label "$label"
+          fi
+
+      - name: Mark reconciliation drift as failed
+        if: steps.reconcile.outputs.has_drift == 'true'
+        run: |
+          echo '::error::Pinned components do not reconcile with the committed catalog.'
+          exit 1
