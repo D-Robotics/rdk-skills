@@ -317,6 +317,24 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, workflow)
 
+    def test_reconciliation_output_resists_multiline_ref_delimiter_injection(self):
+        """An invalid multiline ref must not terminate the details output early."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+        injected_ref = "v1.0.0\nEOF\nhas_drift=false"
+
+        self.assertIn("EOF", injected_ref)
+        self.assertIn("output_delimiter=$(uuidgen)", workflow)
+        self.assertIn("printf 'details<<%s\\n' \"$output_delimiter\"", workflow)
+        self.assertIn("printf '%s\\n' \"$output_delimiter\"", workflow)
+        self.assertNotIn("details<<EOF", workflow)
+
+    def test_reconciliation_cleanup_removes_results_tempfile(self):
+        """The findings tempfile is removed on both successful and failed runs."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+        cleanup = workflow.split("cleanup() {", maxsplit=1)[1].split("}\n", maxsplit=1)[0]
+
+        self.assertIn('rm -f "$results_file"', cleanup)
+
     def test_legacy_sync_has_no_schedule_or_direct_commit(self):
         """The legacy workflow remains a manual, read-only verifier."""
         workflow = read_workflow(".github/workflows/sync-skills.yml")

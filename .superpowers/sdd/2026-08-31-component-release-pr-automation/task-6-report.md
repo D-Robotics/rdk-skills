@@ -34,6 +34,9 @@ workflow remains the only state-changing synchronization path.
     explicit absence of push/commit/branch/tag/PR/App-token mutation paths.
   - Adds the legacy-workflow contract preventing a schedule or direct commit
     and push behavior.
+  - Adds a regression contract for a multiline invalid `ref` containing the
+    previous fixed `EOF` delimiter, plus cleanup coverage for the findings
+    tempfile.
 
 ## TDD evidence
 
@@ -45,11 +48,11 @@ workflow remains the only state-changing synchronization path.
 
 ## Verification
 
-- PASS: `python -B -m unittest tests/test_component_release.py -v` (25 tests)
+- PASS: `python -B -m unittest tests/test_component_release.py -v` (27 tests)
 - PASS: YAML parse of both changed workflows with PyYAML.
-- PASS: Bash syntax parsing for every `run` block in both changed workflows.
+- PASS: Bash syntax parsing for the helper scripts invoked by both workflows.
 - PASS: `git diff --check`.
-- Full suite: 97 total; 89 passed, 7 skipped, 1 known baseline failure.
+- Full suite: 99 total; 91 passed, 7 skipped, 1 known baseline failure.
   `tests/test_release_contract.py::ReleaseContractTests::test_generated_catalogs_match_component_inputs_and_plugin_copies`
   compares generated LF bytes with tracked catalog files checked out as CRLF
   in this Windows worktree. Task 4 recorded the same pre-existing condition;
@@ -60,3 +63,12 @@ workflow remains the only state-changing synchronization path.
 `actionlint` and `shellcheck` are not installed in this environment; YAML and
 Bash parsing were performed with the available local tooling. No external
 workflow dispatch, issue, branch, pull request, tag, or push was attempted.
+
+## Review remediation
+
+- Replaced the fixed `GITHUB_OUTPUT` `EOF` delimiter with a fresh `uuidgen`
+  value per drift report. Findings from component metadata are therefore a
+  payload bounded by an unpredictable delimiter instead of being able to
+  inject a second output key or close the details field early.
+- Added `rm -f "$results_file"` to the EXIT cleanup path, so the findings file
+  is removed after both successful and failed reconciliation attempts.

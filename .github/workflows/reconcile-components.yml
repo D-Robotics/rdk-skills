@@ -46,6 +46,7 @@ jobs:
           cleanup() {
             git worktree remove --force "$verify_root" 2>/dev/null || rm -rf "$verify_root"
             rm -rf "$summary_root"
+            rm -f "$results_file"
           }
           trap cleanup EXIT
 
@@ -103,11 +104,15 @@ jobs:
           fi
 
           if [[ -s "$results_file" ]]; then
+            output_delimiter=$(uuidgen)
             {
-              echo 'has_drift=true'
-              echo 'details<<EOF'
+              printf 'has_drift=true\n'
+              # Component metadata is untrusted for this report. A unique
+              # delimiter prevents an invalid multiline value from forging a
+              # GITHUB_OUTPUT record or truncating the details field.
+              printf 'details<<%s\n' "$output_delimiter"
               sort -u "$results_file"
-              echo 'EOF'
+              printf '%s\n' "$output_delimiter"
             } >> "$GITHUB_OUTPUT"
           else
             echo 'has_drift=false' >> "$GITHUB_OUTPUT"
