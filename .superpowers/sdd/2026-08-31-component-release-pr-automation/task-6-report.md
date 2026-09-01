@@ -48,7 +48,7 @@ workflow remains the only state-changing synchronization path.
 
 ## Verification
 
-- PASS: `python -B -m unittest tests/test_component_release.py -v` (27 tests)
+- PASS: `python -B -m unittest tests/test_component_release.py -v` (28 tests)
 - PASS: YAML parse of both changed workflows with PyYAML.
 - PASS: Bash syntax parsing for the helper scripts invoked by both workflows.
 - PASS: `git diff --check`.
@@ -66,9 +66,19 @@ workflow dispatch, issue, branch, pull request, tag, or push was attempted.
 
 ## Review remediation
 
-- Replaced the fixed `GITHUB_OUTPUT` `EOF` delimiter with a fresh `uuidgen`
-  value per drift report. Findings from component metadata are therefore a
+- Replaced the fixed `GITHUB_OUTPUT` `EOF` delimiter with a fresh UUID value
+  per drift report. Findings from component metadata are therefore a
   payload bounded by an unpredictable delimiter instead of being able to
   inject a second output key or close the details field early.
 - Added `rm -f "$results_file"` to the EXIT cleanup path, so the findings file
   is removed after both successful and failed reconciliation attempts.
+
+## Re-review remediation
+
+- Generates the output delimiter with `python3` and `uuid.uuid4()` rather than
+  relying on the optional `uuidgen` command. Python is already required by the
+  workflow's dependency installation and is available on the supported Ubuntu
+  runner, so an absent `uuidgen` cannot prevent the workflow from setting the
+  drift output and reaching the Issue reporter.
+- Adds a regression contract that rejects the former `uuidgen`-only output
+  path and requires the Python UUID generation command.

@@ -323,7 +323,10 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         injected_ref = "v1.0.0\nEOF\nhas_drift=false"
 
         self.assertIn("EOF", injected_ref)
-        self.assertIn("output_delimiter=$(uuidgen)", workflow)
+        self.assertIn(
+            "output_delimiter=$(python3 -c 'import uuid; print(uuid.uuid4())')",
+            workflow,
+        )
         self.assertIn("printf 'details<<%s\\n' \"$output_delimiter\"", workflow)
         self.assertIn("printf '%s\\n' \"$output_delimiter\"", workflow)
         self.assertNotIn("details<<EOF", workflow)
@@ -334,6 +337,16 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         cleanup = workflow.split("cleanup() {", maxsplit=1)[1].split("}\n", maxsplit=1)[0]
 
         self.assertIn('rm -f "$results_file"', cleanup)
+
+    def test_reconciliation_generates_its_delimiter_with_python3(self):
+        """Missing uuidgen must not skip the drift Issue reporting path."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+
+        self.assertIn(
+            "output_delimiter=$(python3 -c 'import uuid; print(uuid.uuid4())')",
+            workflow,
+        )
+        self.assertNotIn("output_delimiter=$(uuidgen)", workflow)
 
     def test_legacy_sync_has_no_schedule_or_direct_commit(self):
         """The legacy workflow remains a manual, read-only verifier."""

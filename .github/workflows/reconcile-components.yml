@@ -104,7 +104,7 @@ jobs:
           fi
 
           if [[ -s "$results_file" ]]; then
-            output_delimiter=$(uuidgen)
+            output_delimiter=$(python3 -c 'import uuid; print(uuid.uuid4())')
             {
               printf 'has_drift=true\n'
               # Component metadata is untrusted for this report. A unique
