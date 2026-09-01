@@ -57,6 +57,6 @@ Result: clean.
 
 ## Commit
 
-Commit SHA: `1b5e7ca`
+Commit SHA: `9957bde98c4d5e1b20a1cb8996ed75fbbd85e7f3`
 
 Commit message: `ci: fix DCO action version`
