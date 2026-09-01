@@ -1,0 +1,393 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+
+name: Create component upgrade PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      schema_version:
+        description: Dispatcher payload schema (automated runs use 1)
+        required: false
+        default: '1'
+        type: string
+      source_repo:
+        description: Source repository, for example D-Robotics/bsp-skills
+        required: true
+        type: string
+      tag:
+        description: Published stable source Release tag
+        required: true
+        type: string
+      release_url:
+        description: Canonical Release URL supplied by the dispatcher
+        required: false
+        default: ''
+        type: string
+      target_sha:
+        description: Dereferenced source commit supplied by the dispatcher
+        required: false
+        default: ''
+        type: string
+      published_at:
+        description: GitHub Release publication time supplied by the dispatcher
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: Validate without creating a branch or pull request
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: component-upgrade-${{ inputs.source_repo }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
+      component_id: ${{ steps.validate.outputs.component_id }}
+      action: ${{ steps.noop-check.outputs.action }}
+      repair: ${{ steps.noop-check.outputs.repair }}
+      dry_run: ${{ steps.event.outputs.dry_run }}
+      source_repo: ${{ steps.validate.outputs.source_repo }}
+      tag: ${{ steps.validate.outputs.tag }}
+      release_url: ${{ steps.validate.outputs.release_url }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+    steps:
+      - name: Checkout trusted Hub validation code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install validation dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Normalize input and require dispatcher authority
+        id: event
+        env:
+          SCHEMA_VERSION: ${{ inputs.schema_version }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          TAG: ${{ inputs.tag }}
+          RELEASE_URL: ${{ inputs.release_url }}
+          TARGET_SHA: ${{ inputs.target_sha }}
+          PUBLISHED_AT: ${{ inputs.published_at }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          DISPATCH_ACTOR: ${{ github.actor }}
+          EXPECTED_ACTOR: ${{ vars.RDK_RELEASE_DISPATCHER_ACTOR }}
+        run: |
+          set -euo pipefail
+          [[ "$DRY_RUN" == true || "$DRY_RUN" == false ]] || { echo "invalid dry_run input" >&2; exit 1; }
+          [[ "$SOURCE_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo "invalid source repository" >&2; exit 1; }
+          python3 -B .github/scripts/release_contract.py validate-tag "$TAG"
+          python3 -B .github/scripts/component_upgrade.py require-dispatch-authority \
+            --dry-run "$DRY_RUN" --actor "$DISPATCH_ACTOR" --expected-actor "$EXPECTED_ACTOR"
+          if [[ "$DRY_RUN" == false ]]; then
+            [[ "$SCHEMA_VERSION" == 1 ]] || { echo "invalid dispatch schema" >&2; exit 1; }
+            [[ -n "$RELEASE_URL" && "$TARGET_SHA" =~ ^[0-9a-fA-F]{40}$ && -n "$PUBLISHED_AT" ]] || {
+            echo "automated dispatch is missing verified Release facts" >&2
+            exit 1
+            }
+          fi
+          printf 'source_repo=%s\ntag=%s\ndry_run=%s\n' "$SOURCE_REPO" "$TAG" "$DRY_RUN" >> "$GITHUB_OUTPUT"
+
+      - name: Record the trusted main candidate
+        id: candidate
+        run: printf 'candidate_sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the source Release against GitHub
+        id: validate
+        env:
+          SOURCE_REPO: ${{ steps.event.outputs.source_repo }}
+          TAG: ${{ steps.event.outputs.tag }}
+          DRY_RUN: ${{ steps.event.outputs.dry_run }}
+          PAYLOAD_RELEASE_URL: ${{ inputs.release_url }}
+          PAYLOAD_TARGET_SHA: ${{ inputs.target_sha }}
+          PAYLOAD_PUBLISHED_AT: ${{ inputs.published_at }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/$SOURCE_REPO/releases/tags/$TAG")
+          tag_ref=$(gh api "repos/$SOURCE_REPO/git/ref/tags/$TAG")
+          tag_object_sha=$(jq -r '.object.sha // empty' <<<"$tag_ref")
+          [[ "$tag_object_sha" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source tag object SHA is missing" >&2; exit 1; }
+          tag_object=$(gh api "repos/$SOURCE_REPO/git/tags/$tag_object_sha")
+          fact_file=$(mktemp)
+          trap 'rm -f "$fact_file"' EXIT
+          jq -n --arg repo "$SOURCE_REPO" --arg tag "$TAG" \
+            --argjson release "$release" --argjson tag_ref "$tag_ref" --argjson tag_object "$tag_object" \
+            '[{repo: $repo, tag: $tag, release: $release, tag_ref: $tag_ref, tag_object: $tag_object}]' > "$fact_file"
+          verified=$(python3 -B .github/scripts/release_contract.py validate-facts --facts-json "$fact_file")
+          api_url=$(jq -r '.[0].release_url' <<<"$verified")
+          api_published_at=$(jq -r '.[0].published_at' <<<"$verified")
+          source_sha=$(jq -r '.[0].source_sha' <<<"$verified")
+          if [[ "$DRY_RUN" == false ]]; then
+            [[ "$PAYLOAD_RELEASE_URL" == "$api_url" && "${PAYLOAD_TARGET_SHA,,}" == "${source_sha,,}" && "$PAYLOAD_PUBLISHED_AT" == "$api_published_at" ]] || {
+              echo "dispatcher inputs do not match the published source Release" >&2
+              exit 1
+            }
+          fi
+          python3 -B - "$SOURCE_REPO" "$TAG" "$source_sha" "$api_url" "$api_published_at" >> "$GITHUB_OUTPUT" <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          module_path = Path(".github/scripts/component_release.py")
+          spec = importlib.util.spec_from_file_location("component_release", module_path)
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          source_repo, tag, source_sha, release_url, published_at = sys.argv[1:]
+          matches = [component for component in module.load_components(Path(".")) if component.repo == source_repo]
+          if len(matches) != 1:
+              raise SystemExit("source repository must match exactly one component")
+          event = module.ComponentReleaseEvent(
+              source_repo, tag, source_sha, release_url, published_at,
+              is_draft=False, is_prerelease=False,
+          )
+          decision = module.decide_upgrade(matches[0], event, verified_target_sha=source_sha)
+          print(f"component_id={matches[0].component_id}")
+          print(f"action={decision.action}")
+          print(f"source_repo={source_repo}")
+          print(f"tag={tag}")
+          print(f"release_url={release_url}")
+          print(f"source_sha={source_sha}")
+          PY
+
+      - name: Reject an event older than the stable proposal branch
+        env:
+          COMPONENT_ID: ${{ steps.validate.outputs.component_id }}
+          TAG: ${{ steps.validate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          component_file="components.d/${COMPONENT_ID}.yml"
+          main_tag=$(python3 -B -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["ref"])' "$component_file")
+          branch_ref="refs/heads/bot/component-upgrade/${COMPONENT_ID}"
+          proposal_sha=$(git ls-remote --heads origin "$branch_ref" | awk 'NR == 1 { print $1 }')
+          order_args=(.github/scripts/component_upgrade.py require-release-order --incoming-tag "$TAG" --main-tag "$main_tag")
+          if [[ -n "$proposal_sha" ]]; then
+            [[ "$proposal_sha" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "invalid proposal branch SHA" >&2; exit 1; }
+            git fetch --no-tags origin "$branch_ref"
+            proposal_tag=$(git show "$proposal_sha:$component_file" | python3 -B -c 'import sys,yaml; data=yaml.safe_load(sys.stdin.read()); print(data.get("ref", "") if isinstance(data,dict) else "")')
+            order_args+=(--proposal-tag "$proposal_tag")
+          fi
+          python3 -B "${order_args[@]}"
+
+      - name: Verify a candidate noop has no mirror or artifact drift
+        id: noop-check
+        env:
+          CANDIDATE_ACTION: ${{ steps.validate.outputs.action }}
+          COMPONENT_ID: ${{ steps.validate.outputs.component_id }}
+          SOURCE_SHA: ${{ steps.validate.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$CANDIDATE_ACTION" != noop ]]; then
+            printf 'action=%s\nrepair=false\n' "$CANDIDATE_ACTION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          verify_root=$(mktemp -d)
+          summary_file=$(mktemp)
+          cleanup() { rm -f "$summary_file"; git worktree remove --force "$verify_root" 2>/dev/null || rm -rf "$verify_root"; }
+          trap cleanup EXIT
+          git worktree add --detach "$verify_root" "${{ steps.candidate.outputs.candidate_sha }}"
+          (
+            cd "$verify_root"
+            bash .github/scripts/sync-components.sh \
+              --components-dir components.d \
+              --component "$COMPONENT_ID" \
+              --repo-base-url https://github.com \
+              --work-root ".tmp/component-sync-noop-${COMPONENT_ID}" \
+              --summary-file "$summary_file"
+            catalog_dirs=$(python3 -B .github/scripts/component_upgrade.py validate-sync-summary \
+              --summary-file "$summary_file" --source-sha "$SOURCE_SHA")
+            .github/scripts/build-plugins.sh
+            bash .github/scripts/regenerate-readme.sh
+            staged=$(python3 -B .github/scripts/component_upgrade.py stage-proposal \
+              --component-file "components.d/${COMPONENT_ID}.yml" \
+              --catalog-dirs-json "$catalog_dirs" --repair)
+            if [[ "$staged" == '[]' ]]; then
+              printf 'action=noop\nrepair=false\n' >> "$GITHUB_OUTPUT"
+            else
+              printf 'action=upgrade\nrepair=true\n' >> "$GITHUB_OUTPUT"
+            fi
+          )
+
+  build-proposal:
+    needs: validate
+    if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.action == 'upgrade'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the exact trusted main candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.candidate_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install synchronization dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Build and test the proposal without write credentials
+        env:
+          COMPONENT_ID: ${{ needs.validate.outputs.component_id }}
+          TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_URL: ${{ needs.validate.outputs.release_url }}
+          SOURCE_SHA: ${{ needs.validate.outputs.source_sha }}
+          REPAIR: ${{ needs.validate.outputs.repair }}
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/component-upgrade-artifact"
+          mkdir -p "$artifact_root"
+          args=(
+            .github/scripts/upsert-component-pr.sh
+            --component "$COMPONENT_ID"
+            --tag "$TAG"
+            --release-url "$RELEASE_URL"
+            --source-sha "$SOURCE_SHA"
+            --patch-file "$artifact_root/proposal.patch"
+            --metadata-file "$artifact_root/proposal.json"
+          )
+          [[ "$REPAIR" == true ]] && args+=(--repair)
+          bash "${args[@]}"
+
+      - name: Store the validated proposal
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-upgrade-proposal
+          path: ${{ runner.temp }}/component-upgrade-artifact
+          if-no-files-found: error
+          retention-days: 1
+
+  upsert-pr:
+    needs: [validate, build-proposal]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the exact trusted main candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.candidate_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install publication dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Download the validated proposal
+        uses: actions/download-artifact@v4
+        with:
+          name: component-upgrade-proposal
+          path: ${{ runner.temp }}/component-upgrade-artifact
+
+      - name: Create Hub-only Pull-requests token
+        id: pr-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}
+          private-key: ${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-pull-requests: write
+
+      - name: Load the branch-only SSH deploy key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.RDK_COMPONENT_BRANCH_DEPLOY_KEY }}
+
+      - name: Configure SSH-only branch transport
+        run: git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+
+      - name: Push the bot branch and upsert its PR
+        env:
+          GH_TOKEN: ${{ steps.pr-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          bash .github/scripts/publish-component-pr.sh \
+            --patch-file "$RUNNER_TEMP/component-upgrade-artifact/proposal.patch" \
+            --metadata-file "$RUNNER_TEMP/component-upgrade-artifact/proposal.json" \
+            --summary-file "$RUNNER_TEMP/component-upgrade-result.json"
+
+  report-failure:
+    needs: [validate, build-proposal, upsert-pr]
+    if: >-
+      ${{ always() && !cancelled() &&
+          (needs.validate.result == 'failure' ||
+           needs.build-proposal.result == 'failure' ||
+           needs.upsert-pr.result == 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout trusted Issue-rendering code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Render bounded redacted failure details
+        env:
+          COMPONENT_ID: ${{ needs.validate.outputs.component_id }}
+          SOURCE_REPO: ${{ needs.validate.outputs.source_repo }}
+          TAG: ${{ needs.validate.outputs.tag }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          BUILD_RESULT: ${{ needs.build-proposal.result }}
+          UPSERT_RESULT: ${{ needs.upsert-pr.result }}
+        run: |
+          set -euo pipefail
+          results=$(jq -n \
+            --arg validate "$VALIDATE_RESULT" \
+            --arg build "$BUILD_RESULT" \
+            --arg upsert "$UPSERT_RESULT" \
+            '{validate: $validate, "build-proposal": $build, "upsert-pr": $upsert}')
+          python3 -B .github/scripts/component_upgrade.py render-failure-issue \
+            --component "$COMPONENT_ID" \
+            --source-repo "$SOURCE_REPO" \
+            --tag "$TAG" \
+            --job-results-json "$results" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --title-file "$RUNNER_TEMP/failure-title.txt" \
+            --body-file "$RUNNER_TEMP/failure-body.md"
+
+      - name: Create or update the failure tracker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          label='component-upgrade-failure'
+          gh label list --limit 100 --json name --jq '.[].name' | grep -Fxq "$label" || {
+            echo "::error::Repository administrators must pre-create the $label label."
+            exit 1
+          }
+          title=$(cat "$RUNNER_TEMP/failure-title.txt")
+          issues=$(gh issue list --state open --label "$label" --limit 100 --json number,title)
+          issue_number=$(ISSUES_JSON="$issues" python3 -B - "$title" <<'PY'
+          import json
+          import os
+          import sys
+
+          title = sys.argv[1]
+          rows = json.loads(os.environ["ISSUES_JSON"])
+          print(next((row["number"] for row in rows if row.get("title") == title), ""))
+          PY
+          )
+          if [[ -n "$issue_number" ]]; then
+            gh issue edit "$issue_number" --title "$title" --body-file "$RUNNER_TEMP/failure-body.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/failure-body.md" --label "$label"
+          fi

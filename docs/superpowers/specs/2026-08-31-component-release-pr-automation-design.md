@@ -5,7 +5,7 @@
 
 ## Status
 
-Architecture approved in chat on 2026-08-31. This written specification requires maintainer review before implementation begins.
+Architecture approved in chat on 2026-08-31 and amended by the final-review ledger ruling on 2026-09-01. The split-credential model below is binding.
 
 ## Goal
 
@@ -21,7 +21,7 @@ The four sources are:
 ## Governing decisions
 
 1. A source update is eligible only when its GitHub Release is published, non-draft, non-prerelease, and tagged with a stable semantic version such as `v1.0.1`.
-2. A dedicated GitHub App is the only cross-repository identity. It is installed on the four source repositories and the Hub.
+2. Cross-repository dispatch, Hub PR operations, and Hub bot-branch pushes use three isolated credentials. No App has `Contents: write`.
 3. Each component has at most one open bot-managed Hub pull request. A newer release for that component updates the existing PR instead of opening another one.
 4. Different components always use independent PRs; releases are never automatically batched.
 5. A maintainer approval plus the Hub's required CI checks permits GitHub Auto-merge. The bot has no permission to approve, merge, or bypass branch protection.
@@ -42,20 +42,21 @@ on:
     types: [published]
 ```
 
-The workflow obtains a short-lived GitHub App installation token and calls the Hub repository-dispatch endpoint with event type `rdk-component-release`.
+The workflow obtains a short-lived token from the Hub-only dispatcher App, scoped to the exact Hub repository with `Actions: write`, and calls the Hub `component-upgrade.yml` `workflow_dispatch` endpoint on `main`.
 
 Payload contract:
 
 ```json
 {
-  "event_type": "rdk-component-release",
-  "client_payload": {
-    "schema_version": 1,
+  "ref": "main",
+  "inputs": {
+    "schema_version": "1",
     "source_repo": "D-Robotics/bsp-skills",
     "tag": "v1.0.1",
     "release_url": "https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
     "target_sha": "<40-character commit SHA>",
-    "published_at": "2026-08-31T00:00:00Z"
+    "published_at": "2026-08-31T00:00:00Z",
+    "dry_run": "false"
   }
 }
 ```
@@ -68,27 +69,29 @@ The Hub adds `.github/workflows/component-upgrade.yml` with:
 
 ```yaml
 on:
-  repository_dispatch:
-    types: [rdk-component-release]
   workflow_dispatch:
     inputs:
+      schema_version: { required: false, default: '1' }
       source_repo: { required: true }
       tag: { required: true }
+      release_url: { required: false }
+      target_sha: { required: false }
+      published_at: { required: false }
       dry_run: { type: boolean, default: true }
 ```
 
-The manual dispatch path exists only for testing and recovery; it applies the same validation path as an App event.
+Automated non-dry dispatches must have all six verified facts and the configured dispatcher bot actor. A maintainer may dispatch a dry run manually without that actor or write credentials.
 
 Before changing files, the workflow must:
 
-1. Require the expected GitHub App actor for repository-dispatch events.
+1. Require the expected dispatcher App bot actor for every non-dry `workflow_dispatch`.
 2. Validate the payload schema, allowlisted source repository, and stable `vMAJOR.MINOR.PATCH` tag format.
 3. Locate exactly one matching `components.d/*.yml` record.
-4. Query the source repository's release API using the App token and prove that the release exists, is published, is not draft or prerelease, and has the same tag and target SHA as the payload.
+4. Query the allowlisted public source repository with the job-scoped `GITHUB_TOKEN` and prove that the Release exists, is published, is not draft or prerelease, and has the same tag, canonical URL, publication time, and target SHA as the dispatch inputs.
 5. Verify that the source tag is annotated and resolve it to the expected commit SHA.
 6. Exit successfully without a PR when the component already pins that exact tag and its mirror/catalog is current.
 
-The workflow then changes only the matched component's `ref` to the new tag, invokes the shared sync pipeline, regenerates catalogs/plugins/README tables, and runs the release and catalog tests.
+An unprivileged build job then changes only the matched component's `ref`, invokes the shared sync pipeline, regenerates catalogs/plugins/README tables, runs the release and catalog tests, force-stages additive and ignored files, validates a path allowlist, and emits a binary patch plus structured metadata. It receives no repository write credential. A separate publication job applies only that validated artifact to trusted `main`.
 
 Each component uses a stable branch such as `bot/component-upgrade/bsp-skills`. If that branch has an open PR against `main`, the bot updates it to the newest formal release and rewrites its title/body. Otherwise it creates a new branch and PR.
 
@@ -104,7 +107,7 @@ PR body must include the previous and new tag, canonical source Release URL, der
 
 The current `sync-skills.yml` embeds its synchronization implementation and directly commits to `main`. Implementation extracts the deterministic sync portion into a reusable script or reusable workflow that accepts a component filter and produces machine-readable summaries.
 
-It is called by the component-upgrade workflow from its bot branch, never directly commits to `main`, and remains responsible for:
+It is called from an exact trusted-`main` candidate in the unprivileged proposal-build job, never directly commits to `main`, and remains responsible for:
 
 - sparse checkout of the pinned source tag;
 - mirror updates with stale-file pruning confined to the component catalog directory;
@@ -117,7 +120,7 @@ The existing hourly job is replaced by a read-only reconciliation/audit job. It 
 
 ### 4. Review and merge controls
 
-`main` branch protection requires the Hub test suite and the component-upgrade validation job. The GitHub App may push only its `bot/component-upgrade/*` branches and open/update PRs.
+`main` branch protection requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`. The latter runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check. Repository rules constrain the Hub-only SSH deploy key to `bot/component-upgrade/*` and deny it `main` and tag writes. A separate Hub-only App with `Pull requests: write` may open/update PRs but cannot write repository contents.
 
 Maintainers approve the PR in GitHub. With all required checks passing, GitHub Auto-merge performs the merge. The App never reviews a PR and is not granted permissions that could bypass protections.
 
@@ -130,36 +133,37 @@ Inputs:
 - `version`: semantic version without the `v` prefix;
 - `confirm`: exact value `PUBLISH`;
 - optional release-note additions.
+- `recover_existing_tag`: explicit protected recovery for an exact existing tag that points to the approved candidate and has no GitHub Release.
 
 The workflow:
 
-1. Validates that `main` is clean and the destination `v<version>` tag and GitHub Release do not already exist.
+1. Validates canonical no-leading-zero SemVer, clean `main`, and the destination state. Normal publication requires no tag and no Release; recovery requires an exact existing annotated tag resolving to the approved candidate and no Release.
 2. Verifies every component `ref` resolves to a published formal source release; component versions may differ from one another and from the Hub version.
 3. Runs the Hub release contracts, artifact generation checks, and clean-clone smoke checks.
 4. Generates an English Release body from `.github/RELEASE_TEMPLATE.md`, the component upgrade PRs merged since the prior Hub tag, and the optional approved additions.
-5. Creates one annotated, immutable Hub tag and then the GitHub Release titled exactly `RDK Skills v<version>`.
-6. Publishes the Release only after the environment approval and all prior gates succeed.
+5. Carries the validated source evidence across Environment approval, re-fetches every source Release/tag/object fact, and rejects any tuple that changed before the first write.
+6. Creates one annotated, immutable Hub tag for normal publication with the validated notes SHA-256 in its message. Recovery preserves the exact existing tag and requires its notes digest to match before and after approval, then creates the GitHub Release titled exactly `RDK Skills v<version>`.
+7. Publishes only after the Environment approval and all prior gates succeed. The publish job alone receives job-scoped `GITHUB_TOKEN` `contents: write`.
 
-## GitHub App and secret model
+## Credential and secret model
 
-Create one organization-owned GitHub App, for example `rdk-release-bot`.
-
-| Repository group | Required App permission | Purpose |
+| Credential | Availability | Capability and purpose |
 | --- | --- | --- |
-| Source repositories | Contents: read | Read the published release/tag and send the dispatch event. |
-| Hub | Contents: write; Pull requests: write | Push bot branches and create/update component-upgrade PRs. |
-| Hub | Metadata: read | Resolve repository and release metadata. |
+| Dispatcher App: `RDK_RELEASE_DISPATCHER_APP_ID` / `RDK_RELEASE_DISPATCHER_PRIVATE_KEY` | Private key in the four source repositories; App installed only on Hub | `Actions: write` on exactly `D-Robotics/rdk-skills`; dispatch `component-upgrade.yml`. No `Contents` or Pull requests write. |
+| PR App: `RDK_COMPONENT_PR_BOT_APP_ID` / `RDK_COMPONENT_PR_BOT_PRIVATE_KEY` | Hub only | `Pull requests: write` on exactly the Hub; create/edit proposal PR metadata. No `Contents: write`. |
+| SSH deploy key: `RDK_COMPONENT_BRANCH_DEPLOY_KEY` | Hub only | Push only `bot/component-upgrade/*`; repository rules reject `main` and tag refs. |
+| Job-scoped `GITHUB_TOKEN` | Protected Hub `release` Environment publish job only | `contents: write` solely for the approved Hub annotated tag and GitHub Release. |
 
-The App must not receive administration permission, approval/bypass capability, or a release-publishing role. Store its private key as an organization Actions secret (`RDK_RELEASE_BOT_PRIVATE_KEY`) scoped only to the five repositories; store the app ID as an organization Actions variable (`RDK_RELEASE_BOT_APP_ID`). Generate short-lived installation tokens in each workflow. Do not use a personal access token.
+Neither App receives `Contents: write`, administration, approval/bypass, merge, or release-publication capability. The PR App and deploy key are unavailable to all source repositories. Configure `RDK_RELEASE_DISPATCHER_ACTOR` in Hub to the exact dispatcher bot login. Never use a personal access token.
 
 ## Idempotency and failures
 
 - Duplicate release events produce no duplicate PR because the component's stable bot branch and current pinned ref are checked first.
-- A newer source release updates the existing open PR for that source component.
+- A newer source release updates the existing open PR; delayed events older than protected `main` or the existing proposal are rejected.
 - Simultaneous events use concurrency key `component-upgrade-<component-id>`; different components may run in parallel.
 - Validation failure, inaccessible release, missing App permission, tag mismatch, or failed sync/test leaves `main` untouched and opens/updates an issue labeled `component-upgrade-failure` with redacted diagnostics.
 - A failed PR CI run remains reviewable but cannot auto-merge. Rerunning the workflow updates the same PR.
-- Source releases remain valid even if the Hub notification fails; maintainers can use the Hub workflow-dispatch recovery path.
+- Source releases remain valid even if notification fails; maintainers can manually dry-run the same Hub workflow. Non-dry automation remains actor-bound to the dispatcher App.
 
 ## Verification strategy
 
@@ -171,7 +175,7 @@ The App must not receive administration permission, approval/bypass capability, 
 
 ## Rollout sequence
 
-1. Register and install the GitHub App; configure organization secrets/variables and Hub branch protection/Auto-merge requirements.
+1. Register the two Hub-only Apps and branch-only SSH deploy key; configure exact repository scopes, repository rules, secrets/variables, Hub branch protection, Auto-merge, and the protected Environment.
 2. Add and test the Hub component-upgrade workflow in dry-run mode.
 3. Add the source notification workflow to one pilot repository (BSP Skills).
 4. Exercise the event-to-PR path in a non-production repository or with dry-run before enabling real PR writes.
