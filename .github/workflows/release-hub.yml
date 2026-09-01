@@ -42,7 +42,7 @@ jobs:
       destination_action: ${{ steps.candidate.outputs.destination_action }}
     steps:
       - name: Checkout the protected main candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           fetch-depth: 0
@@ -254,7 +254,7 @@ jobs:
             --tag-object-file "$tag_object_file" --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Store validated Release evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-evidence
           path: |
@@ -274,14 +274,14 @@ jobs:
       contents: read
     steps:
       - name: Checkout the verified main candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.preflight.outputs.candidate_sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Download validated Release evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: release-evidence
           path: ${{ runner.temp }}/release-evidence

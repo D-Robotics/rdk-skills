@@ -17,6 +17,19 @@ WORKFLOW_PATH = ROOT / ".github" / "workflows" / "release-hub.yml"
 RELEASE_APP_TOKEN_ACTION = (
     "actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349"
 )
+CHECKOUT_ACTION = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+UPLOAD_ARTIFACT_ACTION = (
+    "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+)
+DOWNLOAD_ARTIFACT_ACTION = (
+    "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
+)
+PINNED_RELEASE_ACTIONS = {
+    CHECKOUT_ACTION,
+    UPLOAD_ARTIFACT_ACTION,
+    DOWNLOAD_ARTIFACT_ACTION,
+    RELEASE_APP_TOKEN_ACTION,
+}
 
 
 def load_renderer():
@@ -298,7 +311,15 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         for name, job in self.jobs.items():
             self.assertNotEqual((job.get("permissions") or {}).get("contents"), "write", name)
             for step in job["steps"]:
-                if step.get("uses") == "actions/checkout@v4":
+                action = step.get("uses")
+                if action:
+                    self.assertRegex(
+                        action,
+                        r"^[^@\s]+@[0-9a-f]{40}$",
+                        f"{name}: {action}",
+                    )
+                    self.assertIn(action, PINNED_RELEASE_ACTIONS)
+                if action == CHECKOUT_ACTION:
                     self.assertEqual(step["with"].get("persist-credentials"), "false", name)
 
         script = self.script(self.jobs["publish"])
@@ -427,7 +448,7 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         upload = next(
             step
             for step in self.jobs["preflight"]["steps"]
-            if step.get("uses") == "actions/upload-artifact@v4"
+            if step.get("uses") == UPLOAD_ARTIFACT_ACTION
         )
         self.assertEqual(upload["with"]["name"], "release-evidence")
         for filename in (

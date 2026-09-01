@@ -24,7 +24,7 @@ The four sources are:
 2. Cross-repository dispatch, component proposal publication, and Hub release publication use three isolated Hub-only Apps. The component proposal App has `Contents: write` plus `Pull requests: write`; the Release App has only `Contents: write`, and its ID/private key exist only on the protected `release` Environment.
 3. Each component has at most one open bot-managed Hub pull request. A newer release for that component updates the existing PR instead of opening another one.
 4. Different components always use independent PRs; releases are never automatically batched.
-5. A maintainer approval plus the Hub's required CI checks permits GitHub Auto-merge. The bot has no permission to approve, merge, or bypass branch protection.
+5. A maintainer approval plus the Hub's required CI checks and last-push approval permits GitHub Auto-merge. GitHub `Contents: write` includes the merge API, and `Pull requests: write` permits submitting reviews, so permission labels alone do not enforce this separation. The workflows and policy never invoke review, approval, merge, or Auto-merge APIs, neither content-writing App is a branch-ruleset bypass actor, and protected `main` enforces the human gates.
 6. The Hub is released separately and only by a maintainer-triggered workflow after one or more component PRs have merged.
 7. Published Git tags are immutable. A correction is a new patch release, never a force-moved tag.
 
@@ -122,7 +122,7 @@ The existing hourly job is replaced by a read-only reconciliation/audit job. It 
 
 `main` branch protection requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`. The latter runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check. One branch ruleset covers every branch ref except `bot/component-upgrade/*`. Human repository roles `write`, `maintain`, and `admin` may bypass it, but the component proposal App Integration is not a bypass actor. Its exact-repository token can therefore push the excluded stable bot branch and open/update its PR, while protected `main` and other non-bot branches reject that Integration.
 
-Maintainers approve the PR in GitHub. With all required checks passing, GitHub Auto-merge performs the merge. The App never reviews a PR and is not granted permissions that could bypass protections.
+Maintainers approve the PR in GitHub. With the required checks, conversation resolution, and last-push approval satisfied, GitHub Auto-merge may perform the merge. The automation never submits a review, approval, merge, or Auto-merge request. Both content-writing Apps remain outside every branch-ruleset bypass list, so their broad API permissions do not bypass protected `main`.
 
 ### 5. Hub release workflow
 
@@ -154,7 +154,7 @@ The workflow:
 | Release App: `RDK_HUB_RELEASE_APP_ID` / `RDK_HUB_RELEASE_APP_PRIVATE_KEY` | Both values only on protected Hub Environment `release`; App installed only on Hub | `Contents: write` on exactly `D-Robotics/rdk-skills`; after approval, mint a short-lived token used only for the annotated-tag push and matching GitHub Release. Sole bypass actor for the all-tag creation ruleset. |
 | Job-scoped `GITHUB_TOKEN` | Hub workflows | `contents: read` for Hub/source evidence and destination-state queries; never pushes a tag or creates a Release. |
 
-The dispatcher App receives no `Contents: write`. The component proposal App receives no Actions, Issues, administration, approval, or merge capability; the Release App receives no Actions, Pull requests, Issues, administration, approval, or merge capability. Both are unavailable to all source repositories. Configure `RDK_RELEASE_DISPATCHER_ACTOR` in Hub to the exact dispatcher bot login. Never use a personal access token.
+The dispatcher App receives no `Contents: write`. The component proposal App receives no Actions, Issues, or administration permission; the Release App receives no Actions, Pull requests, Issues, or administration permission. Those omissions must not be described as an approval or merge denial: `Pull requests: write` permits submitting reviews, and `Contents: write` includes the merge API. Both private keys are unavailable to all source repositories, and the Release App key exists only behind approval on the protected `release` Environment. Configure `RDK_RELEASE_DISPATCHER_ACTOR` in Hub to the exact dispatcher bot login. Never use a personal access token.
 
 The proposal publication job keeps `GITHUB_TOKEN` at `contents: read`, checks out with `persist-credentials: false`, and mints one short-lived component proposal App token narrowed to the exact Hub repository and exactly `contents: write` plus `pull_requests: write`. It resets `origin` to the public HTTPS Hub URL and supplies Git authorization only to the `git push` invocation through command-scoped `GIT_CONFIG_*` variables; credentials are not embedded in a remote URL or persisted in repository configuration. Repository-role bypasses can also cover write deploy credentials, so such a credential cannot safely enforce the bot-branch boundary and is forbidden in this design.
 

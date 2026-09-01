@@ -46,7 +46,7 @@
 
 - [ ] **Step 1: Register the isolated Apps**
 
-Create a dispatcher App installed only on `D-Robotics/rdk-skills` with `Actions: write`, a component proposal App installed only on that same Hub with `Contents: write` plus `Pull requests: write`, and a Release App installed only on that Hub with `Contents: write`. Grant the dispatcher no content permission. Grant the component proposal App no Actions, Issues, administration, approval, or merge capability. Grant the Release App no Actions, Pull requests, Issues, administration, approval, or merge capability; its sole ruleset bypass is tag creation.
+Create a dispatcher App installed only on `D-Robotics/rdk-skills` with `Actions: write`, a component proposal App installed only on that same Hub with `Contents: write` plus `Pull requests: write`, and a Release App installed only on that Hub with `Contents: write`. Grant the dispatcher no content permission. Grant the component proposal App no Actions, Issues, or administration permission, and grant the Release App no Actions, Pull requests, Issues, or administration permission; its sole ruleset bypass is tag creation. Record explicitly that `Contents: write` includes the merge API and `Pull requests: write` permits submitting reviews, so these permissions do not technically prevent approval or merge operations.
 
 - [ ] **Step 2: Configure scoped credentials**
 
@@ -58,7 +58,7 @@ Add one branch ruleset covering all branch refs except `bot/component-upgrade/*`
 
 - [ ] **Step 4: Verify the App boundary**
 
-Use the component proposal App token to push a temporary `bot/component-upgrade/*` branch and open its PR. Prove the same token cannot push protected `main`, another non-bot branch, or any tag. Prove the dispatcher token cannot write contents. Inspect and audit the component publication workflow to confirm it never invokes a Release API, while explicitly recording that GitHub `Contents: write` also covers Release APIs and cannot provide a permission-level denial proof. Confirm the Release App is absent from every branch-ruleset bypass list and its token cannot push protected `main`; record that branch/tag rulesets constrain ref writes rather than making `Contents: write` intrinsically ref-scoped. In a protection-equivalent non-production Hub, prove the exact-repository Release App token can create a new tag and matching Release but cannot update or delete a tag; alternatively, bind the positive production proof to the first planned formal Release and never create an undeletable disposable production tag. Prove the component proposal credentials are available only to its trusted Hub publication job and the Release App credentials are unavailable before approval and to every source repository. Delete only the temporary branch after recording the result.
+Use the component proposal App token to push a temporary `bot/component-upgrade/*` branch and open its PR. Prove the same token cannot push protected `main`, another non-bot branch, or any tag. Prove the dispatcher token cannot write contents. Inspect and audit every trusted workflow to confirm they never invoke review, approval, merge, Auto-merge, or Release APIs from the component proposal path, while explicitly recording that `Pull requests: write` permits reviews and GitHub `Contents: write` covers merge and Release APIs and therefore cannot provide a permission-level denial proof. Confirm both content-writing Apps are absent from every branch-ruleset bypass list and that protected `main` requires human approval, required checks, conversation resolution, and last-push approval. Confirm the Release App token cannot push protected `main`; record that branch/tag rulesets constrain ref writes rather than making `Contents: write` intrinsically ref-scoped. In a protection-equivalent non-production Hub, prove the exact-repository Release App token can create a new tag and matching Release but cannot update or delete a tag; alternatively, bind the positive production proof to the first planned formal Release and never create an undeletable disposable production tag. Prove the component proposal credentials are available only to its trusted Hub publication job and the Release App credentials are unavailable before Environment approval and to every source repository. Delete only the temporary branch after recording the result.
 
 ## Task 2: Implement component-release validation
 
@@ -308,7 +308,7 @@ Publish a designated BSP patch Release or target a protected non-production Hub.
 
 - [ ] **Step 3: Verify idempotency and Auto-merge boundary**
 
-Repeat the same dispatch and verify the existing PR is updated rather than duplicated. Confirm none of the three Apps can approve or merge; maintainer approval plus required checks enables Auto-merge.
+Repeat the same dispatch and verify the existing PR is updated rather than duplicated. Confirm the workflows and policy never invoke review, approval, merge, or Auto-merge APIs. Verify neither content-writing App is a branch-ruleset bypass actor and that maintainer approval, required checks, conversation resolution, and last-push approval gate GitHub Auto-merge; do not claim the Apps' broad GitHub permissions make review or merge calls impossible.
 
 - [ ] **Step 4: Verify manual Release safeguards**
 
