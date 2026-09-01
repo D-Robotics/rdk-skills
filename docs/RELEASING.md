@@ -39,7 +39,7 @@ registered component. The workflow performs a read-only label preflight before
 creating or updating a bot branch or PR; it intentionally does not create
 PR labels. Failure reporting uses only the job-scoped `GITHUB_TOKEN` with job-level `issues: write`; it never expands an App credential. Missing labels are an operations blocker, not a reason to expand either App's privileges.
 
-Protect Hub `main` with required CI and maintainer review, enable Auto-merge only after those gates, and configure the `release` Environment with required maintainer approval. Before production enablement, prove that the deploy key cannot write `main` or tags and that neither App token can write contents or publish a Release.
+Protect Hub `main` with maintainer review and exactly these required checks: `DCO Check / dco` and `Verify committed skills catalog / verify`. The catalog check runs the full Hub unittest suite plus catalog and plugin validation against the pull-request candidate. `component-upgrade.yml`'s `validate` job is a pre-PR dispatch gate, not a PR-required check. Enable Auto-merge only after those gates, and configure the `release` Environment with required maintainer approval. Before production enablement, prove that the deploy key cannot write `main` or tags and that neither App token can write contents or publish a Release.
 
 ## Release procedure
 

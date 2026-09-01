@@ -488,6 +488,20 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("contents: read", workflow)
 
+    def test_catalog_verifier_runs_as_a_read_only_pull_request_check(self):
+        """Removing the bot-PR CI gate must fail this required-check contract."""
+        workflow = read_workflow(".github/workflows/sync-skills.yml")
+        document = yaml.load(workflow, Loader=yaml.BaseLoader)
+
+        self.assertIn("pull_request", document["on"])
+        self.assertEqual(document["permissions"], {"contents": "read"})
+        self.assertIn("python3 -m unittest discover -s tests", workflow)
+        self.assertIn(".github/scripts/validate.py --mode advisory", workflow)
+        self.assertIn("generate_plugin_catalog.py --repo-root . --check-plugin-includes", workflow)
+        self.assertNotIn("ref: main", workflow)
+        for forbidden in ("git commit", "git push", "gh pr ", "git tag"):
+            self.assertNotIn(forbidden, workflow)
+
 
 class ComponentUpgradeHelperTests(unittest.TestCase):
     def test_renderer_preserves_literal_markdown_backticks_without_shell_execution(self):

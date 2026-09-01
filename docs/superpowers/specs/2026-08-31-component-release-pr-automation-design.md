@@ -120,7 +120,7 @@ The existing hourly job is replaced by a read-only reconciliation/audit job. It 
 
 ### 4. Review and merge controls
 
-`main` branch protection requires the Hub test suite and the component-upgrade validation job. Repository rules constrain the Hub-only SSH deploy key to `bot/component-upgrade/*` and deny it `main` and tag writes. A separate Hub-only App with `Pull requests: write` may open/update PRs but cannot write repository contents.
+`main` branch protection requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`. The latter runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check. Repository rules constrain the Hub-only SSH deploy key to `bot/component-upgrade/*` and deny it `main` and tag writes. A separate Hub-only App with `Pull requests: write` may open/update PRs but cannot write repository contents.
 
 Maintainers approve the PR in GitHub. With all required checks passing, GitHub Auto-merge performs the merge. The App never reviews a PR and is not granted permissions that could bypass protections.
 

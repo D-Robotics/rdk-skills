@@ -2,12 +2,13 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 #
 # Component synchronization is state-changing and is intentionally handled only
-# by component-upgrade.yml. This legacy entry point is retained solely for an
-# operator to verify the committed catalog without changing it.
+# by component-upgrade.yml. This workflow verifies the committed catalog on
+# pull requests and on manual dispatch without changing it.
 
 name: Verify committed skills catalog
 
 on:
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -17,10 +18,9 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout committed catalog
+      - name: Checkout pull request or committed catalog
         uses: actions/checkout@v4
         with:
-          ref: main
           persist-credentials: false
 
       - name: Install catalog generator dependencies
@@ -29,6 +29,7 @@ jobs:
       - name: Verify committed catalog and plugin declarations
         run: |
           set -euo pipefail
+          python3 -m unittest discover -s tests
           python3 .github/scripts/validate.py --mode advisory
           python3 .github/scripts/generate_plugin_catalog.py --repo-root . --check-plugin-includes
           git diff --exit-code
