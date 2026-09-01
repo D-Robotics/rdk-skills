@@ -21,7 +21,7 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: hub-release
@@ -30,6 +30,10 @@ concurrency:
 jobs:
   preflight:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
     steps:
       - name: Checkout the protected main candidate
         uses: actions/checkout@v4
@@ -42,6 +46,7 @@ jobs:
         run: python3 -m pip install -r .github/requirements.txt
 
       - name: Validate confirmation, main, and destination availability
+        id: candidate
         env:
           VERSION: ${{ inputs.version }}
           CONFIRM: ${{ inputs.confirm }}
@@ -70,17 +75,16 @@ jobs:
           [[ "$release_response" == *"HTTP/2 404"* || "$release_response" == *"HTTP/1.1 404"* ]] || {
             echo "could not prove the destination GitHub Release is absent" >&2; exit 1;
           };
+          candidate_sha=$(git rev-parse HEAD)
+          [[ "$candidate_sha" == "$(git rev-parse origin/main)" ]] || {
+            echo "main changed while preflight was running; rerun the release" >&2; exit 1;
+          };
+          printf 'candidate_sha=%s\n' "$candidate_sha" >> "$GITHUB_OUTPUT"
 
-      - name: Verify every pinned component has a formal source Release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Collect pinned component release records
         run: |
           set -euo pipefail
-          components_file=$(mktemp)
-          verified_file=$(mktemp)
-          cleanup() { rm -f "$components_file" "$verified_file"; }
-          trap cleanup EXIT
-          python3 - <<'PY' > "$components_file"
+          python3 - <<'PY' > "$RUNNER_TEMP/release-components.json"
           import json
           from pathlib import Path
           import yaml
@@ -91,26 +95,6 @@ jobs:
               rows.append({"name": data["name"], "repo": data["repo"], "ref": data["ref"]})
           print(json.dumps(rows))
           PY
-          while IFS= read -r component; do
-            repo=$(jq -r '.repo' <<<"$component")
-            ref=$(jq -r '.ref' <<<"$component")
-            [[ "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid component ref: $repo $ref" >&2; exit 1; }
-            release=$(gh api "repos/$repo/releases/tags/$ref")
-            [[ "$(jq -r '.tag_name // empty' <<<"$release")" == "$ref" ]] || { echo "source Release tag mismatch: $repo" >&2; exit 1; }
-            [[ "$(jq -r '.draft' <<<"$release")" == false && "$(jq -r '.prerelease' <<<"$release")" == false ]] || {
-              echo "source Release is not formal: $repo $ref" >&2; exit 1;
-            };
-            [[ -n "$(jq -r '.published_at // empty' <<<"$release")" ]] || { echo "source Release is not published: $repo $ref" >&2; exit 1; }
-            release_url=$(jq -r '.html_url // empty' <<<"$release")
-            [[ "$release_url" == "https://github.com/$repo/releases/tag/$ref" ]] || { echo "source Release URL is not canonical: $repo" >&2; exit 1; }
-            tag_ref=$(gh api "repos/$repo/git/ref/tags/$ref")
-            [[ "$(jq -r '.object.type // empty' <<<"$tag_ref")" == tag ]] || { echo "source tag must be annotated: $repo $ref" >&2; exit 1; }
-            tag_object=$(jq -r '.object.sha // empty' <<<"$tag_ref")
-            target=$(gh api "repos/$repo/git/tags/$tag_object")
-            [[ "$(jq -r '.object.type // empty' <<<"$target")" == commit ]] || { echo "annotated tag must resolve to a commit: $repo $ref" >&2; exit 1; }
-            jq --arg url "$release_url" '. + {release_url: $url, formal_release: true}' <<<"$component" >> "$verified_file"
-          done < <(jq -c '.[]' "$components_file")
-          jq -s . "$verified_file" > "$RUNNER_TEMP/release-components.json"
 
       - name: Collect merged component-upgrade metadata since the previous Hub tag
         env:
@@ -150,10 +134,54 @@ jobs:
                   "number": row["number"], "merged_at": row.get("mergedAt") or "",
                   "component": fields[0].group(1), "from_tag": fields[1].group(1),
                   "to_tag": fields[2].group(1), "release_url": fields[3].group(1),
-                  "formal_release": True,
               })
           Path(destination).write_text(json.dumps(upgrades), encoding="utf-8")
           PY
+
+      - name: Fetch GitHub facts for every source Release used in the notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          requests_file=$(mktemp)
+          facts_file=$(mktemp)
+          cleanup() { rm -f "$requests_file" "$facts_file"; }
+          trap cleanup EXIT
+          python3 - "$RUNNER_TEMP/release-components.json" "$RUNNER_TEMP/release-upgrades.json" <<'PY' > "$requests_file"
+          import importlib.util
+          import json
+          import sys
+          from pathlib import Path
+
+          module_path = Path(".github/scripts/render_hub_release_notes.py")
+          spec = importlib.util.spec_from_file_location("release_notes", module_path)
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          components = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          upgrades = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+          records = module._validate_component_rows(components)
+          for upgrade in module._validate_upgrade_rows(upgrades):
+              records.append({"repo": module.COMPONENT_REPOSITORIES[upgrade["component"]], "ref": upgrade["to_tag"]})
+          unique = {(record["repo"], record["ref"]): record for record in records}
+          print(json.dumps(list(unique.values())))
+          PY
+          while IFS= read -r request; do
+            repo=$(jq -r '.repo' <<<"$request")
+            ref=$(jq -r '.ref' <<<"$request")
+            release=$(gh api "repos/$repo/releases/tags/$ref")
+            tag_ref=$(gh api "repos/$repo/git/ref/tags/$ref")
+            tag_object_sha=$(jq -r '.object.sha // empty' <<<"$tag_ref")
+            [[ -n "$tag_object_sha" ]] || { echo "source tag object SHA is missing: $repo $ref" >&2; exit 1; }
+            tag_object=$(gh api "repos/$repo/git/tags/$tag_object_sha")
+            jq -n --arg repo "$repo" --arg tag "$ref" --argjson release "$release" \
+              --argjson tag_ref "$tag_ref" --argjson tag_object "$tag_object" \
+              '{repo: $repo, tag: $tag, release: $release, tag_ref: $tag_ref, tag_object: $tag_object}' \
+              >> "$facts_file"
+          done < <(jq -c '.[]' "$requests_file")
+          jq -s . "$facts_file" > "$RUNNER_TEMP/release-facts.json"
 
       - name: Run Hub tests and isolated clean-clone smoke checks
         run: |
@@ -183,6 +211,7 @@ jobs:
             --version "$VERSION" \
             --components-json "$RUNNER_TEMP/release-components.json" \
             --upgrades-json "$RUNNER_TEMP/release-upgrades.json" \
+            --release-facts-json "$RUNNER_TEMP/release-facts.json" \
             --additions-file "$additions_file" \
             --output "$RUNNER_TEMP/release-notes.md"
 
@@ -197,11 +226,13 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      contents: write
     steps:
       - name: Checkout the verified main candidate
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ needs.preflight.outputs.candidate_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -215,13 +246,17 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CONFIRM: ${{ inputs.confirm }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           [[ "$CONFIRM" == PUBLISH && "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
           tag="v$VERSION"
           git fetch --tags origin main
-          git diff --quiet HEAD origin/main
+          [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]] || { echo "candidate checkout changed" >&2; exit 1; }
+          [[ "$(git rev-parse origin/main)" == "$CANDIDATE_SHA" ]] || {
+            echo "main advanced during Environment approval; rerun the release" >&2; exit 1;
+          };
           test -z "$(git status --porcelain)" || exit 1
           test -z "$(git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}")" || {
             echo "destination tag appeared after preflight" >&2; exit 1;
@@ -236,7 +271,7 @@ jobs:
           notes_file="$RUNNER_TEMP/release-notes.md"
           test -s "$notes_file" || { echo "validated Release notes are missing" >&2; exit 1; }
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git tag -a "$tag" -m "RDK Skills $tag"
+          git tag -a "$tag" "$CANDIDATE_SHA" -m "RDK Skills $tag"
           git push origin "$tag"
           gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
             --title "RDK Skills v$VERSION" --notes-file "$notes_file"

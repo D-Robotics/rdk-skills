@@ -67,13 +67,40 @@ def upgrades():
     ]
 
 
+def release_facts(records):
+    """Hand-authored GitHub API fixtures for published annotated source tags."""
+    facts = []
+    for index, record in enumerate(records, start=1):
+        tag_object_sha = f"{index:x}" * 40
+        source_sha = f"{index + 4:x}" * 40
+        facts.append(
+            {
+                "repo": record["repo"],
+                "tag": record["ref"],
+                "release": {
+                    "tag_name": record["ref"],
+                    "draft": False,
+                    "prerelease": False,
+                    "published_at": "2026-09-01T00:00:00Z",
+                    "html_url": f"https://github.com/{record['repo']}/releases/tag/{record['ref']}",
+                },
+                "tag_ref": {"object": {"type": "tag", "sha": tag_object_sha}},
+                "tag_object": {"object": {"type": "commit", "sha": source_sha}},
+            }
+        )
+    return facts
+
+
 class HubReleaseNoteTests(unittest.TestCase):
     def setUp(self):
         self.renderer = load_renderer()
 
     def test_release_title_is_exact_and_component_versions_are_independent(self):
         """Collapsing component refs to the Hub version must fail this contract."""
-        notes = self.renderer.render_notes("1.0.1", mixed_components(), upgrades())
+        components = mixed_components()
+        notes = self.renderer.render_notes(
+            "1.0.1", components, upgrades(), release_facts=release_facts(components)
+        )
 
         self.assertEqual(notes.title, "RDK Skills v1.0.1")
         self.assertIn("BSP Skills | `v1.0.1`", notes.body)
@@ -83,21 +110,31 @@ class HubReleaseNoteTests(unittest.TestCase):
 
     def test_rejects_non_english_additions_and_unresolved_template_markers(self):
         """Accepting CJK text or publishing a template placeholder is a release defect."""
+        components = mixed_components()
         with self.assertRaisesRegex(ValueError, "English"):
-            self.renderer.render_notes("1.0.1", mixed_components(), upgrades(), "新增说明")
+            self.renderer.render_notes(
+                "1.0.1", components, upgrades(), "新增说明", release_facts(components)
+            )
         with self.assertRaisesRegex(ValueError, "marker"):
-            self.renderer.render_notes("1.0.1", mixed_components(), upgrades(), "{{REPLACE_ME}}")
+            self.renderer.render_notes(
+                "1.0.1", components, upgrades(), "{{REPLACE_ME}}", release_facts(components)
+            )
 
     def test_rejects_invalid_versions_duplicate_components_and_unpublished_sources(self):
         """Weak input validation could publish a Hub tag with unverifiable source content."""
+        components = mixed_components()
         with self.assertRaisesRegex(ValueError, "version"):
-            self.renderer.render_notes("v1.0.1", mixed_components(), upgrades())
+            self.renderer.render_notes(
+                "v1.0.1", components, upgrades(), release_facts=release_facts(components)
+            )
         with self.assertRaisesRegex(ValueError, "duplicate"):
-            self.renderer.render_notes("1.0.1", mixed_components() + [mixed_components()[0]], upgrades())
-        unpublished = mixed_components()
-        unpublished[0]["formal_release"] = False
+            self.renderer.render_notes(
+                "1.0.1", components + [components[0]], upgrades(), release_facts=release_facts(components)
+            )
+        unpublished = release_facts(components)
+        unpublished[0]["release"]["draft"] = True
         with self.assertRaisesRegex(ValueError, "formal source Release"):
-            self.renderer.render_notes("1.0.1", unpublished, upgrades())
+            self.renderer.render_notes("1.0.1", components, upgrades(), release_facts=unpublished)
 
     def test_accepts_existing_oe_component_upgrade_metadata_names(self):
         """Rejecting the existing component-upgrade PR name would block an otherwise valid release."""
@@ -111,9 +148,48 @@ class HubReleaseNoteTests(unittest.TestCase):
             }
         )
 
-        notes = self.renderer.render_notes("1.0.1", mixed_components(), oe_upgrade)
+        components = mixed_components()
+        notes = self.renderer.render_notes(
+            "1.0.1", components, oe_upgrade, release_facts=release_facts(components)
+        )
 
         self.assertIn("OE Skills X5: `v0.9.9` to `v1.0.0`", notes.body)
+
+    def test_api_facts_verify_published_annotated_source_releases(self):
+        """Treating a PR-supplied URL and boolean as proof must fail this release gate."""
+        raw_components = mixed_components()
+        verified = self.renderer.verify_formal_source_releases(
+            raw_components, release_facts(raw_components)
+        )
+
+        self.assertEqual(verified[0]["source_sha"], "5" * 40)
+        tampered = release_facts(raw_components)
+        tampered[0]["tag_ref"]["object"]["type"] = "commit"
+        with self.assertRaisesRegex(ValueError, "annotated"):
+            self.renderer.verify_formal_source_releases(raw_components, tampered)
+        wrong_release = release_facts(raw_components)
+        wrong_release[0]["release"]["html_url"] = "https://example.invalid/not-a-release"
+        with self.assertRaisesRegex(ValueError, "formal source Release"):
+            self.renderer.verify_formal_source_releases(raw_components, wrong_release)
+        prerelease = release_facts(raw_components)
+        prerelease[0]["release"]["prerelease"] = True
+        with self.assertRaisesRegex(ValueError, "formal source Release"):
+            self.renderer.verify_formal_source_releases(raw_components, prerelease)
+        bad_target = release_facts(raw_components)
+        bad_target[0]["tag_object"]["object"]["sha"] = "not-a-sha"
+        with self.assertRaisesRegex(ValueError, "resolve to a commit"):
+            self.renderer.verify_formal_source_releases(raw_components, bad_target)
+        missing = release_facts(raw_components)[1:]
+        with self.assertRaisesRegex(ValueError, "formal source Release"):
+            self.renderer.verify_formal_source_releases(raw_components, missing)
+
+    def test_rejects_duplicate_component_upgrade_metadata_entries(self):
+        """Repeating one merged PR must not duplicate public release-note history."""
+        components = mixed_components()
+        with self.assertRaisesRegex(ValueError, "duplicate component-upgrade"):
+            self.renderer.render_notes(
+                "1.0.1", components, upgrades() + upgrades(), release_facts=release_facts(components)
+            )
 
 
 if __name__ == "__main__":
