@@ -19,6 +19,11 @@ on:
         required: false
         default: ''
         type: string
+      recover_existing_tag:
+        description: Create only a missing Release for an exact existing annotated tag
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -34,6 +39,7 @@ jobs:
       contents: read
     outputs:
       candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
+      destination_action: ${{ steps.candidate.outputs.destination_action }}
     steps:
       - name: Checkout the protected main candidate
         uses: actions/checkout@v4
@@ -50,36 +56,49 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CONFIRM: ${{ inputs.confirm }}
+          RECOVER_EXISTING_TAG: ${{ inputs.recover_existing_tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           [[ "$CONFIRM" == PUBLISH ]] || { echo "confirm must equal PUBLISH" >&2; exit 1; }
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "version must be MAJOR.MINOR.PATCH without v" >&2; exit 1;
-          };
+          [[ "$RECOVER_EXISTING_TAG" == true || "$RECOVER_EXISTING_TAG" == false ]] || exit 1
+          python3 -B .github/scripts/release_contract.py validate-version "$VERSION"
           tag="v$VERSION"
           git fetch --tags origin main
           git diff --quiet HEAD origin/main
           git diff --quiet origin/main HEAD
           test -z "$(git status --porcelain)" || { echo "main checkout is not clean" >&2; exit 1; }
-          remote_tag=$(git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}")
-          [[ -z "$remote_tag" ]] || { echo "destination tag already exists: $tag" >&2; exit 1; }
-          set +e
-          release_response=$(gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$tag" 2>&1)
-          release_status=$?
-          set -e
-          if [[ "$release_status" -eq 0 ]]; then
-            echo "destination GitHub Release already exists: $tag" >&2
-            exit 1
-          fi
-          [[ "$release_response" == *"HTTP/2 404"* || "$release_response" == *"HTTP/1.1 404"* ]] || {
-            echo "could not prove the destination GitHub Release is absent" >&2; exit 1;
-          };
-          candidate_sha=$(git rev-parse HEAD)
-          [[ "$candidate_sha" == "$(git rev-parse origin/main)" ]] || {
+          main_sha=$(git rev-parse HEAD)
+          [[ "$main_sha" == "$(git rev-parse origin/main)" ]] || {
             echo "main changed while preflight was running; rerun the release" >&2; exit 1;
-          };
-          printf 'candidate_sha=%s\n' "$candidate_sha" >> "$GITHUB_OUTPUT"
+          }
+          tag_refs_file=$(mktemp)
+          release_response_file=$(mktemp)
+          cleanup() { rm -f "$tag_refs_file" "$release_response_file"; }
+          trap cleanup EXIT
+          git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}" > "$tag_refs_file"
+          candidate_sha="$main_sha"
+          if [[ "$RECOVER_EXISTING_TAG" == true ]]; then
+            recovered_sha=$(awk -v ref="refs/tags/$tag^{}" '$2 == ref { print $1 }' "$tag_refs_file")
+            [[ -z "$recovered_sha" ]] || candidate_sha="$recovered_sha"
+          fi
+          set +e
+          gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$tag" > "$release_response_file" 2>&1
+          set -e
+          release_status=$(python3 -B .github/scripts/release_contract.py http-status \
+            --response-file "$release_response_file")
+          destination_action=$(python3 -B .github/scripts/release_contract.py destination-state \
+            --tag-refs-file "$tag_refs_file" --tag "$tag" --candidate-sha "$candidate_sha" \
+            --release-status "$release_status" --recover-existing-tag "$RECOVER_EXISTING_TAG")
+          if [[ "$destination_action" == release-only ]]; then
+            git merge-base --is-ancestor "$candidate_sha" origin/main || {
+              echo "recovery tag target is not protected main history" >&2; exit 1;
+            }
+            git switch --detach "$candidate_sha"
+            test -z "$(git status --porcelain)" || exit 1
+          fi
+          printf 'candidate_sha=%s\ndestination_action=%s\n' \
+            "$candidate_sha" "$destination_action" >> "$GITHUB_OUTPUT"
 
       - name: Collect pinned component release records
         run: |
@@ -126,6 +145,8 @@ jobs:
               sha = ((row.get("mergeCommit") or {}).get("oid"))
               if not sha:
                   continue
+              if subprocess.run(["git", "merge-base", "--is-ancestor", sha, "HEAD"]).returncode != 0:
+                  continue
               if previous_tag and subprocess.run(["git", "merge-base", "--is-ancestor", sha, previous_tag]).returncode == 0:
                   continue
               try:
@@ -143,9 +164,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          requests_file=$(mktemp)
+          requests_file="$RUNNER_TEMP/release-requests.json"
           facts_file=$(mktemp)
-          cleanup() { rm -f "$requests_file" "$facts_file"; }
+          cleanup() { rm -f "$facts_file"; }
           trap cleanup EXIT
           python3 - "$RUNNER_TEMP/release-components.json" "$RUNNER_TEMP/release-upgrades.json" <<'PY' > "$requests_file"
           import importlib.util
@@ -182,6 +203,8 @@ jobs:
               >> "$facts_file"
           done < <(jq -c '.[]' "$requests_file")
           jq -s . "$facts_file" > "$RUNNER_TEMP/release-facts.json"
+          python3 -B .github/scripts/release_contract.py validate-facts \
+            --facts-json "$RUNNER_TEMP/release-facts.json" > /dev/null
 
       - name: Run Hub tests and isolated clean-clone smoke checks
         run: |
@@ -215,12 +238,30 @@ jobs:
             --additions-file "$additions_file" \
             --output "$RUNNER_TEMP/release-notes.md"
 
-      - name: Store validated Release notes
+      - name: Bind recovery to the notes preserved by the existing tag
+        if: steps.candidate.outputs.destination_action == 'release-only'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          tag_object_file=$(mktemp)
+          trap 'rm -f "$tag_object_file"' EXIT
+          git cat-file tag "v$VERSION" > "$tag_object_file"
+          python3 -B .github/scripts/release_contract.py verify-notes-hash \
+            --tag-object-file "$tag_object_file" --notes-file "$RUNNER_TEMP/release-notes.md"
+
+      - name: Store validated Release evidence
         uses: actions/upload-artifact@v4
         with:
-          name: release-notes
-          path: ${{ runner.temp }}/release-notes.md
+          name: release-evidence
+          path: |
+            ${{ runner.temp }}/release-notes.md
+            ${{ runner.temp }}/release-components.json
+            ${{ runner.temp }}/release-upgrades.json
+            ${{ runner.temp }}/release-requests.json
+            ${{ runner.temp }}/release-facts.json
           if-no-files-found: error
+          retention-days: 7
 
   publish:
     needs: preflight
@@ -236,42 +277,98 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Download validated Release notes
+      - name: Download validated Release evidence
         uses: actions/download-artifact@v4
         with:
-          name: release-notes
-          path: ${{ runner.temp }}
+          name: release-evidence
+          path: ${{ runner.temp }}/release-evidence
 
-      - name: Recheck destination and publish the immutable tag and Release
+      - name: Revalidate sources and publish the immutable destination
         env:
           VERSION: ${{ inputs.version }}
           CONFIRM: ${{ inputs.confirm }}
+          RECOVER_EXISTING_TAG: ${{ inputs.recover_existing_tag }}
           CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          PREFLIGHT_ACTION: ${{ needs.preflight.outputs.destination_action }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          [[ "$CONFIRM" == PUBLISH && "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          [[ "$CONFIRM" == PUBLISH ]] || exit 1
+          [[ "$RECOVER_EXISTING_TAG" == true || "$RECOVER_EXISTING_TAG" == false ]] || exit 1
+          [[ "$PREFLIGHT_ACTION" == create-tag || "$PREFLIGHT_ACTION" == release-only ]] || exit 1
+          python3 -B .github/scripts/release_contract.py validate-version "$VERSION"
           tag="v$VERSION"
           git fetch --tags origin main
           [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]] || { echo "candidate checkout changed" >&2; exit 1; }
-          [[ "$(git rev-parse origin/main)" == "$CANDIDATE_SHA" ]] || {
-            echo "main advanced during Environment approval; rerun the release" >&2; exit 1;
-          };
+          if [[ "$PREFLIGHT_ACTION" == create-tag ]]; then
+            [[ "$(git rev-parse origin/main)" == "$CANDIDATE_SHA" ]] || {
+              echo "main advanced during Environment approval; rerun the release" >&2; exit 1;
+            }
+          else
+            git merge-base --is-ancestor "$CANDIDATE_SHA" origin/main || {
+              echo "recovery candidate left protected main history" >&2; exit 1;
+            }
+          fi
           test -z "$(git status --porcelain)" || exit 1
-          test -z "$(git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}")" || {
-            echo "destination tag appeared after preflight" >&2; exit 1;
-          };
+
+          evidence_root="$RUNNER_TEMP/release-evidence"
+          requests_file="$evidence_root/release-requests.json"
+          expected_facts="$evidence_root/release-facts.json"
+          notes_file="$evidence_root/release-notes.md"
+          test -s "$requests_file" && test -s "$expected_facts" && test -s "$notes_file" || {
+            echo "validated Release evidence is missing" >&2; exit 1;
+          }
+          current_facts=$(mktemp)
+          fact_rows=$(mktemp)
+          tag_refs_file=$(mktemp)
+          release_response_file=$(mktemp)
+          tag_object_file=$(mktemp)
+          cleanup() { rm -f "$current_facts" "$fact_rows" "$tag_refs_file" "$release_response_file" "$tag_object_file"; }
+          trap cleanup EXIT
+          while IFS= read -r request; do
+            repo=$(jq -r '.repo' <<<"$request")
+            ref=$(jq -r '.ref' <<<"$request")
+            [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || exit 1
+            python3 -B .github/scripts/release_contract.py validate-tag "$ref"
+            release=$(gh api "repos/$repo/releases/tags/$ref")
+            tag_ref=$(gh api "repos/$repo/git/ref/tags/$ref")
+            tag_object_sha=$(jq -r '.object.sha // empty' <<<"$tag_ref")
+            [[ "$tag_object_sha" =~ ^[0-9a-fA-F]{40}$ ]] || exit 1
+            tag_object=$(gh api "repos/$repo/git/tags/$tag_object_sha")
+            jq -n --arg repo "$repo" --arg tag "$ref" --argjson release "$release" \
+              --argjson tag_ref "$tag_ref" --argjson tag_object "$tag_object" \
+              '{repo: $repo, tag: $tag, release: $release, tag_ref: $tag_ref, tag_object: $tag_object}' \
+              >> "$fact_rows"
+          done < <(jq -c '.[]' "$requests_file")
+          jq -s . "$fact_rows" > "$current_facts"
+          python3 -B .github/scripts/release_contract.py compare-facts \
+            --expected-json "$expected_facts" --current-json "$current_facts" > /dev/null
+
+          git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}" > "$tag_refs_file"
           set +e
-          release_response=$(gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$tag" 2>&1)
-          release_status=$?
+          gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$tag" > "$release_response_file" 2>&1
           set -e
-          [[ "$release_status" -ne 0 && ( "$release_response" == *"HTTP/2 404"* || "$release_response" == *"HTTP/1.1 404"* ) ]] || {
-            echo "destination GitHub Release appeared after preflight or could not be checked" >&2; exit 1;
-          };
-          notes_file="$RUNNER_TEMP/release-notes.md"
-          test -s "$notes_file" || { echo "validated Release notes are missing" >&2; exit 1; }
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git tag -a "$tag" "$CANDIDATE_SHA" -m "RDK Skills $tag"
-          git push origin "$tag"
+          release_status=$(python3 -B .github/scripts/release_contract.py http-status \
+            --response-file "$release_response_file")
+          destination_action=$(python3 -B .github/scripts/release_contract.py destination-state \
+            --tag-refs-file "$tag_refs_file" --tag "$tag" --candidate-sha "$CANDIDATE_SHA" \
+            --release-status "$release_status" --recover-existing-tag "$RECOVER_EXISTING_TAG")
+          [[ "$destination_action" == "$PREFLIGHT_ACTION" ]] || {
+            echo "release destination changed during Environment approval" >&2; exit 1;
+          }
+
+          if [[ "$destination_action" == create-tag ]]; then
+            notes_sha=$(python3 -B .github/scripts/release_contract.py notes-sha --notes-file "$notes_file")
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+            git tag -a "$tag" "$CANDIDATE_SHA" -m "RDK Skills $tag" \
+              -m "Release-Notes-SHA256: $notes_sha"
+            git push origin "$tag"
+          elif [[ "$destination_action" == release-only ]]; then
+            git cat-file tag "$tag" > "$tag_object_file"
+            python3 -B .github/scripts/release_contract.py verify-notes-hash \
+              --tag-object-file "$tag_object_file" --notes-file "$notes_file"
+          else
+            exit 1
+          fi
           gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
             --title "RDK Skills v$VERSION" --notes-file "$notes_file"

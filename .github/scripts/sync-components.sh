@@ -21,6 +21,8 @@ pause_after_backup=${SYNC_COMPONENTS_PAUSE_AFTER_BACKUP:-}
 fail_backup=${SYNC_COMPONENTS_FAIL_BACKUP:-}
 ready_file=${SYNC_COMPONENTS_READY_FILE:-}
 fail_compare=${SYNC_COMPONENTS_FAIL_COMPARE:-}
+compare_ready_file=${SYNC_COMPONENTS_COMPARE_READY_FILE:-}
+compare_continue_file=${SYNC_COMPONENTS_COMPARE_CONTINUE_FILE:-}
 python_bin=${PYTHON_BIN:-python3}
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,11 +37,14 @@ while [[ $# -gt 0 ]]; do
     --fail-backup) fail_backup=true; shift ;;
     --ready-file) ready_file=${2:-}; shift 2 ;;
     --fail-compare) fail_compare=${2:-}; shift 2 ;;
+    --compare-ready-file) compare_ready_file=${2:-}; shift 2 ;;
+    --compare-continue-file) compare_continue_file=${2:-}; shift 2 ;;
     *) usage ;;
   esac
 done
 
 [[ -n "$components_dir" && -n "$component_id" && -n "$repo_base_url" && -n "$work_root" && -n "$summary_file" ]] || usage
+[[ ( -z "$compare_ready_file" && -z "$compare_continue_file" ) || ( -n "$compare_ready_file" && -n "$compare_continue_file" ) ]] || usage
 [[ "$component_id" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "invalid component id: $component_id" >&2; exit 2; }
 [[ -d "$components_dir" ]] || { echo "components directory does not exist: $components_dir" >&2; exit 2; }
 [[ -d "$(dirname "$summary_file")" ]] || { echo "invalid summary destination: $summary_file" >&2; exit 2; }
@@ -209,6 +214,11 @@ if [[ "$install_type" == workspace ]]; then
   cp "$checkout/$install_script" "$stage_root/${catalog_dir_list[0]}/$install_script"
 fi
 
+if [[ -n "$compare_ready_file" ]]; then
+  : > "$compare_ready_file"
+  while [[ ! -e "$compare_continue_file" ]]; do sleep 0.05; done
+fi
+
 replacement_count=0
 declare -a replacement_dirs=()
 declare -A target_existed_before=()
@@ -241,7 +251,7 @@ for catalog_dir in "${catalog_dir_list[@]}"; do
     if [[ "$fail_compare" == "$catalog_dir" ]]; then
       fail "could not compare catalog directory: $catalog_dir"
     fi
-    if ! rsync -ani --delete "$staged/" "$target/" >"$compare_output" 2>&1; then
+    if ! rsync -anic --delete "$staged/" "$target/" >"$compare_output" 2>&1; then
       fail "could not compare catalog directory: $catalog_dir"
     fi
     [[ -s "$compare_output" ]] && needs_replace=true
@@ -281,6 +291,3 @@ for catalog_dir in "${replacement_dirs[@]}"; do
 done
 
 write_summary
-
-
-

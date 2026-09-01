@@ -6,11 +6,16 @@
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import sys
 
 import yaml
 
 
-STABLE_TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
+SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+from release_contract import STABLE_TAG, semver_key as canonical_semver_key  # noqa: E402
+
 COMMIT_SHA = re.compile(r"^[0-9a-fA-F]{40}$")
 
 
@@ -46,6 +51,14 @@ class UpgradeDecision:
     """The idempotent result of evaluating one valid component Release."""
 
     action: str
+
+
+def semver_key(tag: str) -> tuple[int, int, int]:
+    """Return the numeric ordering key for one canonical stable tag."""
+    try:
+        return canonical_semver_key(tag)
+    except ValueError as error:
+        raise ValidationError("release tag must be a stable release tag") from error
 
 
 def load_components(root: Path) -> list[ComponentRef]:
@@ -101,4 +114,6 @@ def decide_upgrade(
 ) -> UpgradeDecision:
     """Return ``noop`` only when the component already pins this exact tag."""
     validate_release_event(event, component, verified_target_sha)
+    if semver_key(event.tag) < semver_key(component.ref):
+        raise ValidationError("release tag is older than the current component ref")
     return UpgradeDecision("noop" if component.ref == event.tag else "upgrade")

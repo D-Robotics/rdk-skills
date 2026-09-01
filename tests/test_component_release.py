@@ -4,6 +4,7 @@
 """Unit tests for component Release event validation."""
 
 import importlib.util
+import json
 import os
 import shlex
 import shutil
@@ -12,6 +13,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -209,6 +212,45 @@ class ComponentReleaseTests(unittest.TestCase):
 
         self.assertEqual(decide_upgrade(self.component, event).action, "noop")
 
+    def test_rejects_a_stable_release_older_than_the_main_pin(self):
+        """A delayed formal Release must not downgrade protected main."""
+        newer_component = ComponentRef(
+            self.component.component_id,
+            self.component.repo,
+            "v1.2.0",
+            self.component.path,
+        )
+        delayed_event = ComponentReleaseEvent(
+            self.component.repo,
+            "v1.1.9",
+            "a" * 40,
+            "https://github.com/D-Robotics/bsp-skills/releases/tag/v1.1.9",
+            "2026-08-31T00:00:00Z",
+            is_draft=False,
+            is_prerelease=False,
+        )
+
+        with self.assertRaisesRegex(ValidationError, "older than the current"):
+            decide_upgrade(newer_component, delayed_event)
+
+    def test_stable_tag_contract_rejects_leading_zero_identifiers(self):
+        """Every Hub entry point must share the source notifier's canonical SemVer."""
+        invalid_tags = ("v01.2.3", "v1.02.3", "v1.2.03")
+        for tag in invalid_tags:
+            event = ComponentReleaseEvent(
+                self.component.repo,
+                tag,
+                "a" * 40,
+                f"https://github.com/D-Robotics/bsp-skills/releases/tag/{tag}",
+                "2026-08-31T00:00:00Z",
+                is_draft=False,
+                is_prerelease=False,
+            )
+            with self.subTest(tag=tag), self.assertRaisesRegex(
+                ValidationError, "stable release tag"
+            ):
+                decide_upgrade(self.component, event)
+
     def test_load_components_requires_unique_registered_repositories(self):
         (self.root / "components.d" / "duplicate.yml").write_text(
             "name: Duplicate\nrepo: D-Robotics/bsp-skills\nref: v1.0.1\n",
@@ -239,8 +281,22 @@ class ComponentReleaseTests(unittest.TestCase):
 class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
     def test_upgrade_workflow_is_dispatch_driven_and_dry_run_safe(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
-        self.assertIn("rdk-component-release", workflow)
-        self.assertIn("dry_run", workflow)
+        document = yaml.load(workflow, Loader=yaml.BaseLoader)
+
+        self.assertEqual(set(document["on"]), {"workflow_dispatch"})
+        inputs = document["on"]["workflow_dispatch"]["inputs"]
+        self.assertEqual(
+            set(inputs),
+            {
+                "schema_version",
+                "source_repo",
+                "tag",
+                "release_url",
+                "target_sha",
+                "published_at",
+                "dry_run",
+            },
+        )
         self.assertNotIn("git push origin main", workflow)
 
     def test_branch_is_stable_per_component(self):
@@ -250,40 +306,92 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
 
     def test_upgrade_workflow_validates_dispatches_before_pr_mutation(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
-        self.assertIn("actions/create-github-app-token@v2", workflow)
-        self.assertIn("github.event.sender.login", workflow)
-        self.assertIn("rdk-release-bot[bot]", workflow)
+        self.assertIn("RDK_RELEASE_DISPATCHER_ACTOR", workflow)
+        self.assertIn("github.actor", workflow)
+        self.assertIn("require-dispatch-authority", workflow)
         self.assertIn("gh api", workflow)
         self.assertIn("component_release.py", workflow)
         self.assertIn("component-upgrade-", workflow)
 
     def test_pr_upsert_preserves_main_and_applies_component_labels(self):
-        script = read_workflow(".github/scripts/upsert-component-pr.sh")
+        script = read_workflow(".github/scripts/publish-component-pr.sh")
         self.assertIn('branch="bot/component-upgrade/${component_id}"', script)
         self.assertIn("component-upgrade", script)
         self.assertIn('source:${component_id}', script)
         self.assertNotIn("gh pr merge", script)
         self.assertNotIn("refs/heads/main", script)
 
-    def test_workflow_scopes_the_mutation_token_to_the_current_hub_only(self):
+    def test_workflow_splits_pr_and_branch_credentials_without_app_contents_write(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        document = yaml.load(workflow, Loader=yaml.BaseLoader)
+        upsert = document["jobs"]["upsert-pr"]
+        token_step = next(
+            step
+            for step in upsert["steps"]
+            if step.get("uses") == "actions/create-github-app-token@v2"
+        )
+
+        self.assertEqual(
+            token_step["with"]["app-id"],
+            "${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}",
+        )
+        self.assertEqual(
+            token_step["with"]["private-key"],
+            "${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}",
+        )
         self.assertIn("repositories: ${{ github.event.repository.name }}", workflow)
-        self.assertNotIn("permission-issues: write", workflow)
+        self.assertEqual(token_step["with"]["permission-pull-requests"], "write")
+        self.assertNotIn("permission-contents", token_step["with"])
+        self.assertIn("RDK_COMPONENT_BRANCH_DEPLOY_KEY", workflow)
+        self.assertNotIn("permission-contents: write", workflow)
+        self.assertNotIn("RDK_RELEASE_BOT_", workflow)
+
+    def test_source_derived_build_job_has_no_repository_write_credential(self):
+        workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        build_job = workflow.split("  build-proposal:", maxsplit=1)[1].split(
+            "  upsert-pr:", maxsplit=1
+        )[0]
+
+        self.assertIn("contents: read", build_job)
+        for forbidden in (
+            "create-github-app-token",
+            "RDK_COMPONENT_BRANCH_DEPLOY_KEY",
+            "RDK_COMPONENT_PR_BOT_PRIVATE_KEY",
+            "permission-contents: write",
+            "git push",
+            "gh pr ",
+        ):
+            self.assertNotIn(forbidden, build_job)
 
     def test_existing_bot_branch_is_never_checked_out_as_executable_input(self):
-        script = read_workflow(".github/scripts/upsert-component-pr.sh")
-        self.assertIn('git switch --force-create "$branch" origin/main', script)
+        script = read_workflow(".github/scripts/publish-component-pr.sh")
+        self.assertIn('git switch --force-create "$branch" "$candidate_sha"', script)
         self.assertIn("--force-with-lease", script)
         self.assertNotIn('"origin/$branch"', script)
 
     def test_dry_run_and_verified_noop_cannot_reach_the_mutation_job(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
-        mutation_job = workflow.split("  upsert-pr:", maxsplit=1)[1]
+        build_job = workflow.split("  build-proposal:", maxsplit=1)[1].split(
+            "  upsert-pr:", maxsplit=1
+        )[0]
         self.assertIn(
             "needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.action == 'upgrade'",
-            mutation_job,
+            build_job,
         )
         self.assertIn("Verify a candidate noop has no mirror or artifact drift", workflow)
+
+    def test_failed_upgrade_uses_only_job_scoped_github_token_for_issue_reporting(self):
+        workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        document = yaml.load(workflow, Loader=yaml.BaseLoader)
+        reporter = document["jobs"]["report-failure"]
+
+        self.assertEqual(reporter["permissions"]["issues"], "write")
+        self.assertEqual(reporter["permissions"]["contents"], "read")
+        reporter_text = workflow.split("  report-failure:", maxsplit=1)[1]
+        self.assertIn("always()", reporter["if"])
+        self.assertIn("component-upgrade-failure", reporter_text)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", reporter_text)
+        self.assertNotIn("create-github-app-token", reporter_text)
 
 
 class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
@@ -297,7 +405,28 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         self.assertIn("sync-components.sh", workflow)
         self.assertIn("build-plugins.sh", workflow)
         self.assertIn("regenerate-readme.sh", workflow)
-        self.assertIn("git -C \"$verify_root\" diff --quiet", workflow)
+        self.assertIn("git -C \"$verify_root\" add -A -f .", workflow)
+        self.assertIn("git -C \"$verify_root\" diff --cached --quiet", workflow)
+        self.assertNotIn("git -C \"$verify_root\" diff --quiet", workflow)
+
+    def test_reconciliation_requires_a_published_formal_release_for_every_pin(self):
+        """A peeled tag without a published formal Release remains invalid drift."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+
+        self.assertIn('gh api "repos/$source_repo/releases/tags/$source_ref"', workflow)
+        self.assertIn('gh api "repos/$source_repo/git/ref/tags/$source_ref"', workflow)
+        self.assertIn('gh api "repos/$source_repo/git/tags/$tag_object_sha"', workflow)
+        self.assertIn("validate-facts --facts-json", workflow)
+
+    def test_reconciliation_reports_early_execution_failures_through_outputs(self):
+        """Malformed YAML or a network failure must still reach the rolling Issue step."""
+        workflow = read_workflow(".github/workflows/reconcile-components.yml")
+
+        self.assertIn("reconcile_status=$?", workflow)
+        self.assertIn("reconciliation execution failed before completing all checks", workflow)
+        failure_index = workflow.index("reconciliation execution failed before completing all checks")
+        output_index = workflow.index("output_delimiter=", failure_index)
+        self.assertGreater(output_index, failure_index)
 
     def test_reconciliation_cannot_mutate_catalog_history_or_use_an_app_token(self):
         """Adding a catalog write, PR flow, or App token must violate the contract."""
@@ -306,7 +435,7 @@ class ComponentReconciliationWorkflowContractTests(unittest.TestCase):
         self.assertIn("contents: read", workflow)
         self.assertIn("issues: write", workflow)
         self.assertIn("component-upgrade-failure", workflow)
-        self.assertIn("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}", workflow)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", workflow)
         for forbidden in (
             "git push",
             "git commit",
@@ -432,17 +561,17 @@ class ComponentUpgradeHelperTests(unittest.TestCase):
             (seed / "components.d").mkdir()
             (seed / "tests").mkdir()
             (seed / "tests" / "__init__.py").write_text("", encoding="utf-8")
-            (seed / "components.d" / "bsp-skills.yml").write_text(
-                "name: BSP Skills\nrepo: D-Robotics/bsp-skills\nref: v1.0.0\n",
-                encoding="utf-8",
+            (seed / "components.d" / "bsp-skills.yml").write_bytes(
+                b"name: BSP Skills\nrepo: D-Robotics/bsp-skills\nref: v1.0.0\n"
             )
-            (scripts / "upsert-component-pr.sh").write_bytes(
-                (ROOT / ".github" / "scripts" / "upsert-component-pr.sh")
+            (scripts / "publish-component-pr.sh").write_bytes(
+                (ROOT / ".github" / "scripts" / "publish-component-pr.sh")
                 .read_bytes()
                 .replace(b"\r\n", b"\n")
             )
-            (scripts / "upsert-component-pr.sh").chmod(0o755)
+            (scripts / "publish-component-pr.sh").chmod(0o755)
             shutil.copy2(ROOT / ".github" / "scripts" / "component_upgrade.py", scripts)
+            shutil.copy2(ROOT / ".github" / "scripts" / "release_contract.py", scripts)
             (scripts / "sync-components.sh").write_text(
                 "#!/usr/bin/env bash\n"
                 "set -euo pipefail\n"
@@ -481,6 +610,7 @@ class ComponentUpgradeHelperTests(unittest.TestCase):
                 check=True,
                 capture_output=True,
             )
+            git("config", "core.autocrlf", "false", cwd=runner)
             remote_posix = remote.as_posix()
             if len(remote_posix) > 2 and remote_posix[1] == ":":
                 remote_url_path = f"/mnt/{remote_posix[0].lower()}{remote_posix[2:]}"
@@ -488,7 +618,60 @@ class ComponentUpgradeHelperTests(unittest.TestCase):
                 remote_url_path = remote_posix
             git("remote", "set-url", "origin", f"file://{remote_url_path}", cwd=runner)
 
-            fake_bin = runner
+            temp_posix = temp.as_posix()
+            if len(temp_posix) > 2 and temp_posix[1] == ":":
+                temp_shell_path = f"/mnt/{temp_posix[0].lower()}{temp_posix[2:]}"
+            else:
+                temp_shell_path = temp_posix
+
+            patch_file = temp / "proposal.patch"
+            metadata_file = temp / "proposal.json"
+            summary_file = temp / "result.json"
+            component_file = runner / "components.d" / "bsp-skills.yml"
+            candidate_sha = subprocess.run(
+                ["git", "rev-parse", "HEAD"], cwd=runner, check=True, text=True,
+                capture_output=True,
+            ).stdout.strip()
+            component_file.write_bytes(
+                b"name: BSP Skills\nrepo: D-Robotics/bsp-skills\nref: v1.0.1\n"
+            )
+            git("add", "components.d/bsp-skills.yml", cwd=runner)
+            patch_file.write_bytes(
+                subprocess.run(
+                    ["git", "diff", "--cached", "--binary", "--full-index", "--no-ext-diff"],
+                    cwd=runner,
+                    check=True,
+                    capture_output=True,
+                ).stdout
+            )
+            git("restore", "--staged", "components.d/bsp-skills.yml", cwd=runner)
+            git("restore", "components.d/bsp-skills.yml", cwd=runner)
+            metadata_file.write_text(
+                json.dumps(
+                    {
+                        "candidate_sha": candidate_sha,
+                        "component_id": "bsp-skills",
+                        "component_name": "BSP Skills",
+                        "component_repo": "D-Robotics/bsp-skills",
+                        "component_file": "components.d/bsp-skills.yml",
+                        "previous_tag": "v1.0.0",
+                        "new_tag": "v1.0.1",
+                        "release_url": "https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
+                        "source_sha": "a" * 40,
+                        "repair": False,
+                        "catalog_dirs": ["bsp-env-setup"],
+                        "generated_artifacts": [],
+                        "staged_paths": ["components.d/bsp-skills.yml"],
+                        "title": "chore: upgrade BSP Skills to v1.0.1",
+                        "body": "Validated inert proposal body.\n",
+                        "test_result": "PASS",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            fake_bin = temp / "fake-bin"
+            fake_bin.mkdir()
             (fake_bin / "gh").write_bytes(
                 b"#!/usr/bin/env bash\n"
                 b"if [[ $1 == label ]]; then echo '[{\"name\":\"component-upgrade\"},{\"name\":\"source:bsp-skills\"}]'; "
@@ -503,17 +686,16 @@ class ComponentUpgradeHelperTests(unittest.TestCase):
             env.update(
                 {
                     "GITHUB_REPOSITORY": "D-Robotics/rdk-skills",
+                    "GH_TOKEN": "test-pr-token",
                 }
             )
             command = " ".join(
                 [
-                    'PATH=".:$PATH"', "GITHUB_REPOSITORY=D-Robotics/rdk-skills",
-                    "exec", "bash", ".github/scripts/upsert-component-pr.sh",
-                    "--component", "bsp-skills",
-                    "--tag", "v1.0.1",
-                    "--release-url", "https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
-                    "--source-sha", "a" * 40,
-                    "--summary-file", shlex.quote(str(temp / "result.json")),
+                    f'PATH="{temp_shell_path}/fake-bin:$PATH"', "GITHUB_REPOSITORY=D-Robotics/rdk-skills",
+                    "GH_TOKEN=test-pr-token", "exec", "bash", ".github/scripts/publish-component-pr.sh",
+                    "--patch-file", shlex.quote(f"{temp_shell_path}/proposal.patch"),
+                    "--metadata-file", shlex.quote(f"{temp_shell_path}/proposal.json"),
+                    "--summary-file", shlex.quote(f"{temp_shell_path}/result.json"),
                 ]
             )
             result = subprocess.run(
@@ -526,7 +708,23 @@ class ComponentUpgradeHelperTests(unittest.TestCase):
                 capture_output=True,
             )
 
-            self.assertEqual(result.returncode, 0, result.stderr)
+            status = subprocess.run(
+                ["git", "status", "--porcelain", "--untracked-files=all"],
+                cwd=runner,
+                text=True,
+                capture_output=True,
+            ).stdout
+            shell_status = subprocess.run(
+                ["bash", "-c", "git status --porcelain --untracked-files=all"],
+                cwd=runner,
+                text=True,
+                capture_output=True,
+            ).stdout
+            self.assertEqual(
+                result.returncode,
+                0,
+                f"{result.stderr}\nWindows status:\n{status}\nShell status:\n{shell_status}",
+            )
             self.assertFalse(marker.exists(), "tampered bot-branch helper was executed")
 
 

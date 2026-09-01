@@ -138,6 +138,88 @@ class SelectiveSyncTests(unittest.TestCase):
             hash_tree(self.hub_root / "skills" / "rdk-diagnostic"), diagnostic_before
         )
 
+    @requires_local_bare_sparse
+    def test_same_size_same_mtime_different_bytes_are_replaced(self):
+        """A quick-check collision must not leave bytes from a different commit."""
+        first = self.run_sync(component="bsp-skills")
+        self.assertEqual(first.returncode, 0, first.stderr)
+        target = self.hub_root / "skills" / "bsp-env-setup" / "SKILL.md"
+        expected = target.read_bytes()
+        tampered = expected.replace(b"bsp-env-setup", b"bsp-env-setuq")
+        self.assertEqual(len(tampered), len(expected))
+        self.assertNotEqual(tampered, expected)
+        target.write_bytes(tampered)
+
+        ready = self.root / "compare-ready"
+        proceed = self.root / "compare-proceed"
+        summary = self.root / "checksum-summary.json"
+        command = self.bash_command(
+            [
+                bash_path(SCRIPT),
+                "--components-dir",
+                bash_path(self.components_dir),
+                "--component",
+                "bsp-skills",
+                "--repo-base-url",
+                file_url(self.repo_base),
+                "--work-root",
+                bash_path(self.hub_root / ".tmp" / "component-sync-checksum"),
+                "--summary-file",
+                bash_path(summary),
+                "--compare-ready-file",
+                bash_path(ready),
+                "--compare-continue-file",
+                bash_path(proceed),
+            ]
+        )
+        process = subprocess.Popen(
+            command,
+            env={
+                **os.environ,
+                "PYTHONPATH": str(ROOT / ".github"),
+                "PYTHON_BIN": (
+                    "python" if BASH_UNAME.startswith(("MINGW", "MSYS")) else "python3"
+                ),
+            },
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        deadline = time.monotonic() + 15
+        while not ready.exists() and time.monotonic() < deadline:
+            if process.poll() is not None:
+                stdout, stderr = process.communicate()
+                self.fail(f"sync exited before compare barrier: {stdout}\n{stderr}")
+            time.sleep(0.05)
+        self.assertTrue(ready.exists(), "sync did not reach the compare barrier")
+        staged_matches = list(
+            (self.hub_root / "skills").glob(
+                ".component-sync-bsp-skills.*/bsp-env-setup/SKILL.md"
+            )
+        )
+        self.assertEqual(len(staged_matches), 1)
+        staged = staged_matches[0]
+        self.assertEqual(staged.stat().st_size, target.stat().st_size)
+        os.utime(
+            target,
+            ns=(staged.stat().st_atime_ns, staged.stat().st_mtime_ns),
+        )
+        os.utime(
+            target.parent,
+            ns=(staged.parent.stat().st_atime_ns, staged.parent.stat().st_mtime_ns),
+        )
+        self.assertEqual(target.stat().st_mtime_ns, staged.stat().st_mtime_ns)
+        self.assertEqual(
+            target.parent.stat().st_mtime_ns, staged.parent.stat().st_mtime_ns
+        )
+        proceed.touch()
+        stdout, stderr = process.communicate(timeout=15)
+
+        self.assertEqual(process.returncode, 0, (stdout, stderr))
+        self.assertEqual(target.read_bytes(), expected)
+        result = json.loads(summary.read_text(encoding="utf-8"))
+        self.assertTrue(result["components"][0]["changed"])
+
     def test_rejects_existing_unrelated_catalog_as_work_root(self):
         diagnostic = self.hub_root / "skills" / "rdk-diagnostic"
         before = hash_tree(diagnostic)

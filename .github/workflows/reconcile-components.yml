@@ -38,11 +38,15 @@ jobs:
 
       - name: Reconstruct pinned components in a disposable worktree
         id: reconcile
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
           verify_root=$(mktemp -d)
           summary_root=$(mktemp -d)
           results_file=$(mktemp)
+          : > "$results_file"
           cleanup() {
             git worktree remove --force "$verify_root" 2>/dev/null || rm -rf "$verify_root"
             rm -rf "$summary_root"
@@ -50,57 +54,89 @@ jobs:
           }
           trap cleanup EXIT
 
-          git worktree add --detach "$verify_root" HEAD
-          : > "$results_file"
+          (
+            set -euo pipefail
+            git worktree add --detach "$verify_root" HEAD
+            shopt -s nullglob
+            component_files=("$verify_root"/components.d/*.yml)
+            [[ "${#component_files[@]}" -gt 0 ]] || exit 1
 
-          for component_file in "$verify_root"/components.d/*.yml; do
-            component_id=$(basename "$component_file" .yml)
-            source_repo=$(yq -r '.repo' "$component_file")
-            source_ref=$(yq -r '.ref' "$component_file")
-            summary_file="$summary_root/${component_id}.json"
+            for component_file in "${component_files[@]}"; do
+              component_id=$(basename "$component_file" .yml)
+              if [[ ! "$component_id" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+                printf '%s\n' 'unknown component descriptor has an invalid file name' >> "$results_file"
+                continue
+              fi
+              source_repo=$(yq -r '.repo' "$component_file")
+              source_ref=$(yq -r '.ref' "$component_file")
+              summary_file="$summary_root/${component_id}.json"
+              fact_file="$summary_root/${component_id}-facts.json"
 
-            # A pinned component is an annotated, immutable semver tag.  The
-            # peeled value is the exact commit the temporary reconstruction
-            # must use, preventing a branch from masquerading as a pin.
-            if [[ ! "$source_ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              printf '%s: invalid pinned ref %s\n' "$component_id" "$source_ref" >> "$results_file"
-              continue
-            fi
-            pinned_sha=$(git ls-remote "https://github.com/${source_repo}.git" "refs/tags/${source_ref}^{}" | awk 'NR == 1 { print $1 }')
-            if [[ ! "$pinned_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-              printf '%s: pinned ref %s is missing or not an annotated tag\n' "$component_id" "$source_ref" >> "$results_file"
-              continue
-            fi
+              if [[ ! "$source_repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || \
+                ! python3 -B "$GITHUB_WORKSPACE/.github/scripts/release_contract.py" validate-tag "$source_ref"; then
+                printf '%s: invalid source repository or canonical tag\n' "$component_id" >> "$results_file"
+                continue
+              fi
+              if ! release=$(gh api "repos/$source_repo/releases/tags/$source_ref"); then
+                printf '%s: published formal Release is inaccessible\n' "$component_id" >> "$results_file"
+                continue
+              fi
+              if ! tag_ref=$(gh api "repos/$source_repo/git/ref/tags/$source_ref"); then
+                printf '%s: annotated source tag is inaccessible\n' "$component_id" >> "$results_file"
+                continue
+              fi
+              tag_object_sha=$(jq -r '.object.sha // empty' <<<"$tag_ref")
+              if [[ ! "$tag_object_sha" =~ ^[0-9a-fA-F]{40}$ ]] || \
+                ! tag_object=$(gh api "repos/$source_repo/git/tags/$tag_object_sha"); then
+                printf '%s: source tag is not a readable annotated tag\n' "$component_id" >> "$results_file"
+                continue
+              fi
+              jq -n --arg repo "$source_repo" --arg tag "$source_ref" \
+                --argjson release "$release" --argjson tag_ref "$tag_ref" --argjson tag_object "$tag_object" \
+                '[{repo: $repo, tag: $tag, release: $release, tag_ref: $tag_ref, tag_object: $tag_object}]' \
+                > "$fact_file"
+              if ! verified=$(python3 -B "$GITHUB_WORKSPACE/.github/scripts/release_contract.py" \
+                validate-facts --facts-json "$fact_file"); then
+                printf '%s: source ref lacks a published formal Release\n' "$component_id" >> "$results_file"
+                continue
+              fi
+              pinned_sha=$(jq -r '.[0].source_sha' <<<"$verified")
+
+              if ! (
+                cd "$verify_root"
+                bash "$GITHUB_WORKSPACE/.github/scripts/sync-components.sh" \
+                  --components-dir components.d \
+                  --component "$component_id" \
+                  --repo-base-url https://github.com \
+                  --work-root ".tmp/component-sync-reconcile-${component_id}" \
+                  --summary-file "$summary_file"
+              ); then
+                printf '%s: failed to reconstruct the published source Release\n' "$component_id" >> "$results_file"
+                continue
+              fi
+
+              reconstructed_sha=$(yq -r '.components[0].source_sha' "$summary_file")
+              if [[ "${reconstructed_sha,,}" != "${pinned_sha,,}" ]]; then
+                printf '%s: reconstructed SHA differs from the formal Release\n' "$component_id" >> "$results_file"
+              fi
+            done
 
             if ! (
               cd "$verify_root"
-              bash "$GITHUB_WORKSPACE/.github/scripts/sync-components.sh" \
-                --components-dir components.d \
-                --component "$component_id" \
-                --repo-base-url https://github.com \
-                --work-root ".tmp/component-sync-reconcile-${component_id}" \
-                --summary-file "$summary_file"
+              "$GITHUB_WORKSPACE/.github/scripts/build-plugins.sh"
+              bash "$GITHUB_WORKSPACE/.github/scripts/regenerate-readme.sh"
             ); then
-              printf '%s: failed to reconstruct pinned ref %s\n' "$component_id" "$source_ref" >> "$results_file"
-              continue
+              printf '%s\n' 'catalog or plugin regeneration failed' >> "$results_file"
             fi
 
-            reconstructed_sha=$(yq -r '.components[0].source_sha' "$summary_file")
-            if [[ "${reconstructed_sha,,}" != "${pinned_sha,,}" ]]; then
-              printf '%s: reconstructed SHA differs from pinned ref %s\n' "$component_id" "$source_ref" >> "$results_file"
+            git -C "$verify_root" add -A -f .
+            if ! git -C "$verify_root" diff --cached --quiet; then
+              printf '%s\n' 'component mirrors, catalog, plugins, or README are stale' >> "$results_file"
             fi
-          done
-
-          if ! (
-            cd "$verify_root"
-            "$GITHUB_WORKSPACE/.github/scripts/build-plugins.sh"
-            bash "$GITHUB_WORKSPACE/.github/scripts/regenerate-readme.sh"
-          ); then
-            printf '%s\n' 'catalog or plugin regeneration failed' >> "$results_file"
-          fi
-
-          if ! git -C "$verify_root" diff --quiet; then
-            printf '%s\n' 'component mirrors, catalog, plugins, or README are stale' >> "$results_file"
+          )
+          reconcile_status=$?
+          if [[ "$reconcile_status" -ne 0 ]]; then
+            printf '%s\n' 'reconciliation execution failed before completing all checks' >> "$results_file"
           fi
 
           if [[ -s "$results_file" ]]; then
@@ -121,7 +157,7 @@ jobs:
       - name: Create or update reconciliation issue
         if: steps.reconcile.outputs.has_drift == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           DETAILS: ${{ steps.reconcile.outputs.details }}
         run: |
           set -euo pipefail

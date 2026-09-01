@@ -10,12 +10,17 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
+import sys
 from typing import Any, Iterable
 
-
-VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
-TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
-SHA = re.compile(r"^[0-9a-fA-F]{40}$")
+SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+from release_contract import (  # noqa: E402
+    COMMIT_SHA as SHA,
+    HUB_VERSION as VERSION,
+    STABLE_TAG as TAG,
+)
 CJK = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 MARKER = re.compile(r"(?:\{\{[^{}\n]+\}\}|<(?!\!)[^>\n]+>|X\.Y\.Z|\b(?:TODO|TBD|REPLACE_ME)\b)")
 PRINTABLE_ASCII = re.compile(r"^[\x09\x0a\x0d\x20-\x7e]*$")
@@ -162,8 +167,8 @@ def parse_merged_upgrade_metadata(pull_request: dict[str, Any]) -> dict[str, Any
     release_url = require_single_table_value("Source Release")
     source_sha = require_single_table_value("Source SHA")
     component_match = re.fullmatch(r"(.+?) \(`[^`]+`\)", component)
-    previous_tag_match = re.fullmatch(r"`(v\d+\.\d+\.\d+)`", previous_tag)
-    new_tag_match = re.fullmatch(r"`(v\d+\.\d+\.\d+)`", new_tag)
+    previous_tag_match = re.fullmatch(r"`([^`]+)`", previous_tag)
+    new_tag_match = re.fullmatch(r"`([^`]+)`", new_tag)
     release_url_match = re.fullmatch(
         r"(https://github\.com/[^\s|]+/releases/tag/v\d+\.\d+\.\d+)", release_url
     )
@@ -177,6 +182,10 @@ def parse_merged_upgrade_metadata(pull_request: dict[str, Any]) -> dict[str, Any
     ):
         if match is None:
             raise ValueError(f"merged component-upgrade PR #{number} contains an invalid {field}")
+    if TAG.fullmatch(previous_tag_match.group(1)) is None:
+        raise ValueError(f"merged component-upgrade PR #{number} contains an invalid Previous tag")
+    if TAG.fullmatch(new_tag_match.group(1)) is None:
+        raise ValueError(f"merged component-upgrade PR #{number} contains an invalid New tag")
     return {
         "number": number,
         "merged_at": pull_request.get("merged_at") or "",

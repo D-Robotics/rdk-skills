@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+
 """Contracts for rendering a protected, mixed-component Hub Release."""
 
 import importlib.util
@@ -5,9 +8,12 @@ import sys
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RENDERER_PATH = ROOT / ".github" / "scripts" / "render_hub_release_notes.py"
+WORKFLOW_PATH = ROOT / ".github" / "workflows" / "release-hub.yml"
 
 
 def load_renderer():
@@ -136,6 +142,28 @@ class HubReleaseNoteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "formal source Release"):
             self.renderer.render_notes("1.0.1", components, upgrades(), release_facts=unpublished)
 
+    def test_rejects_leading_zero_semver_at_every_release_note_boundary(self):
+        """Manual Hub publication must accept the same canonical SemVer as sources."""
+        components = mixed_components()
+        for version in ("01.2.3", "1.02.3", "1.2.03"):
+            with self.subTest(version=version), self.assertRaisesRegex(ValueError, "version"):
+                self.renderer.render_notes(
+                    version,
+                    components,
+                    upgrades(),
+                    release_facts=release_facts(components),
+                )
+
+        invalid_components = mixed_components()
+        invalid_components[0]["ref"] = "v01.2.3"
+        with self.assertRaisesRegex(ValueError, "component tag"):
+            self.renderer.render_notes(
+                "1.2.3",
+                invalid_components,
+                upgrades(),
+                release_facts=release_facts(invalid_components),
+            )
+
     def test_accepts_existing_oe_component_upgrade_metadata_names(self):
         """Rejecting the existing component-upgrade PR name would block an otherwise valid release."""
         oe_upgrade = upgrades()
@@ -243,6 +271,88 @@ class HubReleaseNoteTests(unittest.TestCase):
             self.renderer.parse_merged_upgrade_metadata(
                 {**common, "body": body + "\n| Component | BSP Skills (`bsp-skills`) |"}
             )
+
+
+class HubReleaseWorkflowContractTests(unittest.TestCase):
+    def setUp(self):
+        self.text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.workflow = yaml.load(self.text, Loader=yaml.BaseLoader)
+        self.jobs = self.workflow["jobs"]
+
+    @staticmethod
+    def script(job):
+        return "\n".join(step.get("run", "") for step in job["steps"])
+
+    def test_recovery_is_explicit_environment_protected_and_exact_tag_only(self):
+        """A half-release retry may create only the missing Release for the exact tag."""
+        inputs = self.workflow["on"]["workflow_dispatch"]["inputs"]
+        self.assertEqual(inputs["recover_existing_tag"]["type"], "boolean")
+        self.assertEqual(inputs["recover_existing_tag"]["default"], "false")
+        self.assertEqual(self.jobs["publish"]["environment"], "release")
+        self.assertEqual(self.jobs["publish"]["permissions"], {"contents": "write"})
+        for name, job in self.jobs.items():
+            if name != "publish":
+                self.assertNotEqual((job.get("permissions") or {}).get("contents"), "write")
+
+        script = self.script(self.jobs["publish"])
+        self.assertIn("destination-state", script)
+        self.assertIn("release-only", script)
+        self.assertIn("verify-notes-hash", script)
+        self.assertIn("Release-Notes-SHA256", script)
+        self.assertIn('if [[ "$destination_action" == create-tag ]]', script)
+        self.assertLess(script.index("destination-state"), script.index("git remote set-url"))
+
+        preflight = self.script(self.jobs["preflight"])
+        self.assertIn('recovered_sha=$(awk', preflight)
+        self.assertIn('git switch --detach "$candidate_sha"', preflight)
+        self.assertIn('git merge-base --is-ancestor "$candidate_sha" origin/main', preflight)
+        self.assertIn('if [[ "$PREFLIGHT_ACTION" == create-tag ]]', script)
+
+    def test_publish_revalidates_every_source_release_fact_after_approval(self):
+        """Environment approval must not freeze mutable source Release evidence."""
+        preflight = self.script(self.jobs["preflight"])
+        publish = self.script(self.jobs["publish"])
+        for endpoint in ("releases/tags", "git/ref/tags", "git/tags"):
+            self.assertIn(endpoint, preflight)
+            self.assertIn(endpoint, publish)
+        self.assertIn('["git", "merge-base", "--is-ancestor", sha, "HEAD"]', preflight)
+        self.assertIn("compare-facts", publish)
+        first_write = min(
+            publish.index(marker)
+            for marker in ("git remote set-url", "git tag -a", "git push origin", "gh release create")
+        )
+        self.assertLess(publish.index("compare-facts"), first_write)
+
+    def test_destination_status_is_protocol_independent_and_evidence_is_complete(self):
+        """A real HTTP/2.0 404 must reach the state machine without string matching."""
+        preflight = self.script(self.jobs["preflight"])
+        publish = self.script(self.jobs["publish"])
+        self.assertIn("release_contract.py http-status", preflight)
+        self.assertIn("release_contract.py http-status", publish)
+        self.assertNotIn("HTTP/2 404", self.text)
+        self.assertNotIn("HTTP/1.1 404", self.text)
+        upload = next(
+            step
+            for step in self.jobs["preflight"]["steps"]
+            if step.get("uses") == "actions/upload-artifact@v4"
+        )
+        self.assertEqual(upload["with"]["name"], "release-evidence")
+        for filename in (
+            "release-notes.md",
+            "release-components.json",
+            "release-upgrades.json",
+            "release-requests.json",
+            "release-facts.json",
+        ):
+            self.assertIn(filename, upload["with"]["path"])
+
+    def test_every_hub_version_boundary_uses_the_canonical_contract(self):
+        """Workflow shell regexes must not diverge from the shared SemVer parser."""
+        preflight = self.script(self.jobs["preflight"])
+        publish = self.script(self.jobs["publish"])
+        self.assertIn('validate-version "$VERSION"', preflight)
+        self.assertIn('validate-version "$VERSION"', publish)
+        self.assertNotIn("^[0-9]+\\.[0-9]+\\.[0-9]+$", self.text)
 
 
 if __name__ == "__main__":

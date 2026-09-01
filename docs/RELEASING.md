@@ -9,6 +9,7 @@ This guide is the maintenance contract for formal RDK Skills releases. It applie
 
 - Use semantic versions without a leading `v` in file metadata, for example `1.2.0`.
 - Use the matching annotated Git tag with a leading `v`, for example `v1.2.0`.
+- Numeric identifiers are canonical: `0` or a nonzero digit followed by digits. Values such as `01.2.3`, `1.02.3`, and `1.2.03` are invalid at every source and Hub boundary.
 - The GitHub Release title must be exactly `RDK Skills vX.Y.Z`.
 - The release body must be written in English and start from [`.github/RELEASE_TEMPLATE.md`](../.github/RELEASE_TEMPLATE.md).
 - GitHub's generated `Source code (zip)` and `Source code (tar.gz)` labels are platform-owned and cannot be renamed. Do not upload a duplicate archive merely to change its display name; attach only additional artifacts that carry distinct value and checksums.
@@ -17,40 +18,50 @@ This guide is the maintenance contract for formal RDK Skills releases. It applie
 
 Published tags are immutable release identities.
 
-1. Create and validate the tag before creating the GitHub Release.
+1. Normal publication creates and validates the tag before creating the GitHub Release. Protected release-only recovery may reuse only the exact immutable annotated tag described below.
 2. Never force-push, delete, or recreate a published tag.
 3. If a published release needs a correction, publish the next patch version (for example, `v1.0.1`) with release notes explaining the correction.
 4. Do not point a Hub component at a mutable branch for a formal release; use the corresponding annotated source tag.
 
 ## Component-upgrade automation prerequisites
 
-Before enabling the Hub component-upgrade workflow, a maintainer must install
-the organization-owned `rdk-release-bot` App with only Hub `Contents: write`,
-`Pull requests: write`, and implicit `Metadata: read` access. Scope the App's
-Actions variable and private-key secret to the approved repositories only.
+Before enabling the Hub component-upgrade workflow, maintainers must provision three isolated capabilities:
+
+1. A dispatcher App installed only on `D-Robotics/rdk-skills`, with only `Actions: write` (plus implicit metadata read). Its ID/private key are exposed to the four source repositories as `RDK_RELEASE_DISPATCHER_APP_ID` and `RDK_RELEASE_DISPATCHER_PRIVATE_KEY`. Each notifier scopes its installation token to exactly `D-Robotics/rdk-skills` and invokes the Hub `component-upgrade.yml` workflow-dispatch endpoint. `Actions: write` can dispatch Hub Actions workflows, but cannot write contents, refs, or Releases; keep all Hub workflows trusted and actor-gated where they mutate state.
+2. A PR App installed and available only on `D-Robotics/rdk-skills`, with only `Pull requests: write`, stored as `RDK_COMPONENT_PR_BOT_APP_ID` and `RDK_COMPONENT_PR_BOT_PRIVATE_KEY`. Source repositories must not receive this credential.
+3. A Hub-only SSH deploy key stored as `RDK_COMPONENT_BRANCH_DEPLOY_KEY`. Repository rules must permit it to update only `bot/component-upgrade/*` and must reject `main` and every tag ref. Source repositories must not receive this key.
+
+No App may have `Contents: write`; that permission can create Git refs and GitHub Releases. Only the `publish` job behind the protected `release` Environment receives a job-scoped `GITHUB_TOKEN` with `contents: write`. Set Hub variable `RDK_RELEASE_DISPATCHER_ACTOR` to the exact dispatcher login ending in `[bot]`; every automated non-dry dispatch must match it, while a maintainer manual dry-run remains available.
 
 Maintainers must also provision these PR labels in the Hub before the first
-dispatch: `component-upgrade` and one `source:<component-id>` label for every
+dispatch: `component-upgrade`, `component-upgrade-failure`, and one `source:<component-id>` label for every
 registered component. The workflow performs a read-only label preflight before
 creating or updating a bot branch or PR; it intentionally does not create
-labels or request Issues permission. Missing labels are an operations blocker,
-not a reason to expand the App's privileges.
+PR labels. Failure reporting uses only the job-scoped `GITHUB_TOKEN` with job-level `issues: write`; it never expands an App credential. Missing labels are an operations blocker, not a reason to expand either App's privileges.
+
+Protect Hub `main` with required CI and maintainer review, enable Auto-merge only after those gates, and configure the `release` Environment with required maintainer approval. Before production enablement, prove that the deploy key cannot write `main` or tags and that neither App token can write contents or publish a Release.
 
 ## Release procedure
 
 1. A product-source repository publishes an annotated stable source tag and a formal GitHub Release. A formal source Release is published, non-draft, non-prerelease, and has the canonical URL for that tag.
 2. The component-upgrade automation creates or updates a reviewable Hub PR. Maintainers review and merge it through the protected `main` branch; it is never merged by the release bot.
 3. Choose the independent Hub version. It does not need to equal any component version. Verify every `components.d/*.yml` ref points to a published, annotated formal source Release.
-4. Manually dispatch **Publish Hub release** from `main` with `version` in `MAJOR.MINOR.PATCH` form (without `v`), `confirm` exactly `PUBLISH`, and optional maintainer-approved additions written in English ASCII text.
+4. Manually dispatch **Publish Hub release** from `main` with canonical `version` in `MAJOR.MINOR.PATCH` form (without `v`), `confirm` exactly `PUBLISH`, `recover_existing_tag=false`, and optional maintainer-approved additions written in English ASCII text.
 5. The workflow runs Hub contracts, artifact-currentness checks, and a clean-clone workspace-pack smoke test. It renders the English Release body from [`.github/RELEASE_TEMPLATE.md`](../.github/RELEASE_TEMPLATE.md), the merged `component-upgrade` PR metadata since the previous Hub tag, and the approved additions.
-6. Only after these checks pass does the `release` Environment approval allow publication. The workflow rechecks that both remote `vX.Y.Z` and its GitHub Release are absent, creates one annotated tag, pushes it without force, and runs `gh release create` with title `RDK Skills vX.Y.Z`.
+6. Only after these checks pass does the `release` Environment approval allow publication. The workflow re-fetches every recorded source Release, tag object, publication time, canonical URL, and dereferenced commit; any changed tuple aborts before the first write. It also rechecks that both remote `vX.Y.Z` and its GitHub Release are absent, creates one annotated tag, pushes it without force, and runs `gh release create` with title `RDK Skills vX.Y.Z`.
 7. Re-open the public Release page and verify the exact English title/body, tag target, publication state, and generated source-code links.
 
 ## Release Environment and safeguards
 
 The GitHub `release` Environment must require an authorized maintainer review before the `publish` job can run. The workflow has no scheduled, push, pull-request, or repository-dispatch trigger; release publication is possible only through the manual dispatch above.
 
-All remote tag and GitHub Release collision checks, formal source Release checks, Hub tests, smoke checks, and note rendering run before the workflow creates a local or remote tag. A failed check therefore cannot write a tag or a GitHub Release. Published tags remain immutable: do not force-push, delete, or recreate them.
+All remote tag and GitHub Release state checks, formal source Release checks, Hub tests, smoke checks, evidence rendering, and post-approval source revalidation run before the workflow's first write. Published tags remain immutable: do not force-push, delete, or recreate them.
+
+## Exact-tag Release recovery
+
+Tag creation and GitHub Release creation cannot be atomic. If normal publication pushed the annotated Hub tag but `gh release create` failed, retain the tag and inspect the failed run. Retry **Publish Hub release** with the same `version`, `confirm=PUBLISH`, the same approved notes, and `recover_existing_tag=true`.
+
+Normal publication records `Release-Notes-SHA256` in the annotated tag message. Recovery is accepted only behind the same `release` Environment when no GitHub Release exists, the remote tag is annotated and points to a commit retained in protected `main` history, and the newly validated notes match that preserved digest before and after approval. Recovery checks out that tagged candidate, so a later fast-forward of `main` does not strand the half-release. It never creates, moves, deletes, or force-pushes a tag; it creates only the missing GitHub Release. If the tag target left protected history, the notes differ, source evidence changed, or a Release already exists, stop and investigate rather than altering history.
 
 ## Mixed component versions
 
@@ -64,6 +75,9 @@ Record the following in the pull request, release issue, or release log:
 - Results of source release contracts, Hub test suite, plugin/catalog generation, and clean-clone smoke tests.
 - The exact final release body used to create the GitHub Release.
 - Any known baseline failures, their scope, and why they are not release regressions.
+- The selected destination action (`create-tag` or `release-only`) and the preflight/post-approval evidence artifact.
+
+Local tests and static workflow contracts are not production pilot evidence. Before enabling source non-dry dispatches, record the authorized dry run, isolated end-to-end event, duplicate-event idempotency result, deploy-key/App denial checks, Auto-merge boundary, normal release rejection cases, and exact-tag recovery exercise. Until those external controls and pilots are recorded, production enablement remains pending.
 
 ## Release checklist
 
