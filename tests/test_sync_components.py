@@ -23,6 +23,11 @@ BASH = os.environ.get("SYNC_TEST_BASH") or (
     else ("/bin/bash" if Path("/bin/bash").exists() else shutil.which("bash") or "bash")
 )
 BASH_UNAME = subprocess.check_output([BASH, "-lc", "uname -s"], text=True).strip()
+IS_GIT_FOR_WINDOWS = BASH_UNAME.startswith(("MINGW", "MSYS"))
+requires_local_bare_sparse = unittest.skipIf(
+    IS_GIT_FOR_WINDOWS,
+    "Git for Windows local file:// sparse integration hang; exercised in Ubuntu CI/WSL",
+)
 
 
 def hash_tree(root: Path) -> str:
@@ -113,6 +118,7 @@ class SelectiveSyncTests(unittest.TestCase):
             text=True,
         )
 
+    @requires_local_bare_sparse
     def test_requested_component_sync_prunes_only_its_catalog_tree(self):
         diagnostic_before = hash_tree(self.hub_root / "skills" / "rdk-diagnostic")
 
@@ -142,11 +148,13 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertIn("unsafe work root", result.stderr)
         self.assertEqual(hash_tree(diagnostic), before)
 
-    def test_rejects_unknown_component_empty_source_and_clone_failure(self):
+    def test_rejects_unknown_component(self):
         unknown = self.run_sync("unknown")
         self.assertNotEqual(unknown.returncode, 0)
         self.assertIn("unknown component", unknown.stderr)
 
+    @requires_local_bare_sparse
+    def test_rejects_empty_source(self):
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/bsp-skills\nref: main\nskills:\n"
             "  - path: source/missing\n    catalog_dir: bsp-env-setup\n",
@@ -156,6 +164,8 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertNotEqual(empty.returncode, 0)
         self.assertIn("source path is empty or missing", empty.stderr)
 
+    @requires_local_bare_sparse
+    def test_rejects_clone_failure(self):
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/missing\nref: main\nskills:\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n",
@@ -242,4 +252,3 @@ class SelectiveSyncTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
