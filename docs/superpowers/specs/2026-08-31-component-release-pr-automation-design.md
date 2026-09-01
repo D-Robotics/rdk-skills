@@ -21,7 +21,7 @@ The four sources are:
 ## Governing decisions
 
 1. A source update is eligible only when its GitHub Release is published, non-draft, non-prerelease, and tagged with a stable semantic version such as `v1.0.1`.
-2. Cross-repository dispatch, Hub PR operations, and Hub bot-branch pushes use three isolated credentials. No App has `Contents: write`.
+2. Cross-repository dispatch, Hub PR operations, Hub bot-branch pushes, and Hub release publication use four isolated credentials. Only the Hub-only Release App has `Contents: write`, and its ID/private key exist only on the protected `release` Environment.
 3. Each component has at most one open bot-managed Hub pull request. A newer release for that component updates the existing PR instead of opening another one.
 4. Different components always use independent PRs; releases are never automatically batched.
 5. A maintainer approval plus the Hub's required CI checks permits GitHub Auto-merge. The bot has no permission to approve, merge, or bypass branch protection.
@@ -143,7 +143,7 @@ The workflow:
 4. Generates an English Release body from `.github/RELEASE_TEMPLATE.md`, the component upgrade PRs merged since the prior Hub tag, and the optional approved additions.
 5. Carries the validated source evidence across Environment approval, re-fetches every source Release/tag/object fact, and rejects any tuple that changed before the first write.
 6. Creates one annotated, immutable Hub tag for normal publication with the validated notes SHA-256 in its message. Recovery preserves the exact existing tag and requires its notes digest to match before and after approval, then creates the GitHub Release titled exactly `RDK Skills v<version>`.
-7. Publishes only after the Environment approval and all prior gates succeed. The publish job alone receives job-scoped `GITHUB_TOKEN` `contents: write`.
+7. Publishes only after the Environment approval and all prior gates succeed. Every job keeps its job-scoped `GITHUB_TOKEN` at `contents: read`; after post-approval revalidation, the publish job invokes the token action at a reviewed full commit SHA, mints an exact-repository Release App token, rechecks the approved notes digest, and uses that token only for the tag push and `gh release create --verify-tag` so the CLI cannot synthesize a missing tag.
 
 ## Credential and secret model
 
@@ -152,9 +152,14 @@ The workflow:
 | Dispatcher App: `RDK_RELEASE_DISPATCHER_APP_ID` / `RDK_RELEASE_DISPATCHER_PRIVATE_KEY` | Private key in the four source repositories; App installed only on Hub | `Actions: write` on exactly `D-Robotics/rdk-skills`; dispatch `component-upgrade.yml`. No `Contents` or Pull requests write. |
 | PR App: `RDK_COMPONENT_PR_BOT_APP_ID` / `RDK_COMPONENT_PR_BOT_PRIVATE_KEY` | Hub only | `Pull requests: write` on exactly the Hub; create/edit proposal PR metadata. No `Contents: write`. |
 | SSH deploy key: `RDK_COMPONENT_BRANCH_DEPLOY_KEY` | Hub only | Push only `bot/component-upgrade/*`; repository rules reject `main` and tag refs. |
-| Job-scoped `GITHUB_TOKEN` | Protected Hub `release` Environment publish job only | `contents: write` solely for the approved Hub annotated tag and GitHub Release. |
+| Release App: `RDK_HUB_RELEASE_APP_ID` / `RDK_HUB_RELEASE_APP_PRIVATE_KEY` | Both values only on protected Hub Environment `release`; App installed only on Hub | `Contents: write` on exactly `D-Robotics/rdk-skills`; after approval, mint a short-lived token used only for the annotated-tag push and matching GitHub Release. Sole bypass actor for the all-tag creation ruleset. |
+| Job-scoped `GITHUB_TOKEN` | Hub workflows | `contents: read` for Hub/source evidence and destination-state queries; never pushes a tag or creates a Release. |
 
-Neither App receives `Contents: write`, administration, approval/bypass, merge, or release-publication capability. The PR App and deploy key are unavailable to all source repositories. Configure `RDK_RELEASE_DISPATCHER_ACTOR` in Hub to the exact dispatcher bot login. Never use a personal access token.
+The dispatcher and PR Apps receive no `Contents: write`; the Release App receives no Actions, Pull requests, Issues, administration, approval, or merge capability. The PR App, Release App, and deploy key are unavailable to all source repositories. Configure `RDK_RELEASE_DISPATCHER_ACTOR` in Hub to the exact dispatcher bot login. Never use a personal access token.
+
+The Release App is not a bypass actor for any branch ruleset, and protected `main` rejects its pushes. Its `Contents: write` permission is repository-wide and can create an otherwise unprotected branch, so tag-only workflow commands, exact-repository installation, Environment-only private-key storage, and branch protections are compensating controls rather than a claim that the permission is ref-scoped.
+
+Two active rulesets overlap every Hub tag. The creation ruleset has exactly one `always` bypass actor: the Release App integration. The update-and-deletion ruleset has no bypass actors. Layering permits the Release App to create an approved new tag while preventing every actor, including the Release App, from updating or deleting an existing tag. Because an integration bypass cannot be constrained to a specific Environment, exact-repository App installation plus Environment-only private-key storage is a required compensating boundary.
 
 ## Idempotency and failures
 
@@ -175,7 +180,7 @@ Neither App receives `Contents: write`, administration, approval/bypass, merge, 
 
 ## Rollout sequence
 
-1. Register the two Hub-only Apps and branch-only SSH deploy key; configure exact repository scopes, repository rules, secrets/variables, Hub branch protection, Auto-merge, and the protected Environment.
+1. Register the three Hub-only Apps and branch-only SSH deploy key; configure exact repository scopes, the overlapping tag rulesets, secrets/variables, Hub branch protection, Auto-merge, and a protected `release` Environment with required approval, self-review prevention, and deployments restricted to `main`.
 2. Add and test the Hub component-upgrade workflow in dry-run mode.
 3. Add the source notification workflow to one pilot repository (BSP Skills).
 4. Exercise the event-to-PR path in a non-production repository or with dry-run before enabling real PR writes.
