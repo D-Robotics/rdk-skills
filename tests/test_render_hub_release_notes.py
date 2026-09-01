@@ -223,6 +223,27 @@ class HubReleaseNoteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Source SHA does not match"):
             self.renderer.verify_formal_upgrade_releases([metadata], facts)
 
+    def test_upgrade_body_rejects_repeated_security_fields_instead_of_using_the_first(self):
+        """Appending an assertion must not let a parser silently trust the first table row."""
+        body = """| Component | BSP Skills (`bsp-skills`) |
+| Previous tag | `v1.0.0` |
+| New tag | `v1.0.1` |
+| Source Release | https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1 |
+| Source SHA | `5555555555555555555555555555555555555555` |"""
+        common = {"number": 42, "merged_at": "2026-09-01T00:00:00Z"}
+        duplicate_cases = (
+            ("same SHA", body + "\n| Source SHA | `5555555555555555555555555555555555555555` |"),
+            ("mismatched SHA", body + "\n| Source SHA | `bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb` |"),
+            ("invalid SHA", body + "\n| Source SHA | `not-a-sha` |"),
+        )
+        for name, repeated_body in duplicate_cases:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "Source SHA"):
+                self.renderer.parse_merged_upgrade_metadata({**common, "body": repeated_body})
+        with self.assertRaisesRegex(ValueError, "Component"):
+            self.renderer.parse_merged_upgrade_metadata(
+                {**common, "body": body + "\n| Component | BSP Skills (`bsp-skills`) |"}
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

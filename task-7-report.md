@@ -52,3 +52,37 @@ not changed locally.
   including dedicated missing, malformed, and mismatched upgrade-SHA cases.
   `tests/test_component_release.py` passed 28 tests. Python compilation,
   workflow YAML/shell syntax, and `git diff --check` also passed.
+
+## Final review round 3
+
+- Merged component-upgrade metadata parsing is now fail-closed for every
+  required table field: `Component`, `Previous tag`, `New tag`, `Source
+  Release`, and `Source SHA` must each occur exactly once. Zero, duplicate,
+  conflicting, or malformed assertions are rejected before API comparison.
+- `Source SHA` remains constrained to 40 hexadecimal characters and must match
+  the GitHub API annotated-tag dereference case-insensitively.
+- Focused evidence: `tests/test_render_hub_release_notes.py` passed 8 tests,
+  including duplicate same-SHA, later mismatched-SHA, later invalid-SHA, and
+  repeated Component cases. Workflow syntax and diff checks are recorded with
+  this change before the DCO commit.
+
+## Final review
+
+### P1 — component-upgrade PR Source SHA evidence: NOT ADDRESSED
+
+The ordinary missing, malformed, and single mismatched-field cases are now
+rejected before the publish job can tag, push, or create a Release.  However,
+the parser uses `pattern.search()` once per field and does not enforce that
+the PR body contains exactly one `Source SHA` row.  A body with a first valid
+and matching 40-hex `Source SHA` row followed by a second malformed or
+mismatched `Source SHA` row is accepted: the parser silently consumes only
+the first value.  This does not satisfy the strict requirement that a PR
+body's Source SHA be required, valid, and match the annotated-tag
+dereference; an ambiguous/malformed second assertion must fail closed before
+any mutation.
+
+The focused unit suite passes, but it tests one Source SHA row only and does
+not cover duplicate or conflicting Source SHA rows.  The fix should require
+exactly one occurrence of every security-relevant table field (especially
+`Source SHA`) and add regression cases for duplicate valid, duplicate
+malformed, and duplicate mismatched rows.

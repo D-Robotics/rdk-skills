@@ -35,11 +35,6 @@ COMPONENT_NAME_ALIASES = {
     "OE Tool Chain (S)": "OE Skills S",
 }
 COMPONENT_REPOSITORIES = {name: repo for repo, name in COMPONENTS.items()}
-UPGRADE_COMPONENT = re.compile(r"^\| Component \| (.+?) \(`[^`]+`\) \|$", re.M)
-UPGRADE_PREVIOUS_TAG = re.compile(r"^\| Previous tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
-UPGRADE_NEW_TAG = re.compile(r"^\| New tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
-UPGRADE_RELEASE_URL = re.compile(r"^\| Source Release \| (https://github\.com/[^\s|]+/releases/tag/v\d+\.\d+\.\d+) \|$", re.M)
-UPGRADE_SOURCE_SHA = re.compile(r"^\| Source SHA \| `([0-9a-fA-F]{40})` \|$", re.M)
 
 
 @dataclass(frozen=True)
@@ -153,26 +148,43 @@ def parse_merged_upgrade_metadata(pull_request: dict[str, Any]) -> dict[str, Any
     body = pull_request.get("body")
     if not isinstance(number, int) or number <= 0 or not isinstance(body, str):
         raise ValueError("merged component-upgrade PR has invalid metadata")
-    fields = [
-        pattern.search(body)
-        for pattern in (
-            UPGRADE_COMPONENT,
-            UPGRADE_PREVIOUS_TAG,
-            UPGRADE_NEW_TAG,
-            UPGRADE_RELEASE_URL,
-            UPGRADE_SOURCE_SHA,
-        )
-    ]
-    if any(field is None for field in fields):
-        raise ValueError(f"merged component-upgrade PR #{number} must include a valid Source SHA")
+    def require_single_table_value(field: str) -> str:
+        values = re.findall(rf"^\| {re.escape(field)} \| (.*?) \|$", body, re.M)
+        if len(values) != 1:
+            raise ValueError(
+                f"merged component-upgrade PR #{number} must contain {field} exactly once"
+            )
+        return values[0]
+
+    component = require_single_table_value("Component")
+    previous_tag = require_single_table_value("Previous tag")
+    new_tag = require_single_table_value("New tag")
+    release_url = require_single_table_value("Source Release")
+    source_sha = require_single_table_value("Source SHA")
+    component_match = re.fullmatch(r"(.+?) \(`[^`]+`\)", component)
+    previous_tag_match = re.fullmatch(r"`(v\d+\.\d+\.\d+)`", previous_tag)
+    new_tag_match = re.fullmatch(r"`(v\d+\.\d+\.\d+)`", new_tag)
+    release_url_match = re.fullmatch(
+        r"(https://github\.com/[^\s|]+/releases/tag/v\d+\.\d+\.\d+)", release_url
+    )
+    source_sha_match = re.fullmatch(r"`([0-9a-fA-F]{40})`", source_sha)
+    for field, match in (
+        ("Component", component_match),
+        ("Previous tag", previous_tag_match),
+        ("New tag", new_tag_match),
+        ("Source Release", release_url_match),
+        ("Source SHA", source_sha_match),
+    ):
+        if match is None:
+            raise ValueError(f"merged component-upgrade PR #{number} contains an invalid {field}")
     return {
         "number": number,
         "merged_at": pull_request.get("merged_at") or "",
-        "component": fields[0].group(1),
-        "from_tag": fields[1].group(1),
-        "to_tag": fields[2].group(1),
-        "release_url": fields[3].group(1),
-        "source_sha": fields[4].group(1).lower(),
+        "component": component_match.group(1),
+        "from_tag": previous_tag_match.group(1),
+        "to_tag": new_tag_match.group(1),
+        "release_url": release_url_match.group(1),
+        "source_sha": source_sha_match.group(1).lower(),
     }
 
 
