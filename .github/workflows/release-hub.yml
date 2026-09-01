@@ -1,0 +1,242 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+
+name: Publish Hub release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Hub semantic version without the v prefix (for example 1.0.1)
+        required: true
+        type: string
+      confirm:
+        description: Type PUBLISH to permit tag and Release publication
+        required: true
+        type: string
+      approved_note_additions:
+        description: Optional maintainer-approved English additions to the Release notes
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hub-release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the protected main candidate
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install release validation dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Validate confirmation, main, and destination availability
+        env:
+          VERSION: ${{ inputs.version }}
+          CONFIRM: ${{ inputs.confirm }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRM" == PUBLISH ]] || { echo "confirm must equal PUBLISH" >&2; exit 1; }
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "version must be MAJOR.MINOR.PATCH without v" >&2; exit 1;
+          };
+          tag="v$VERSION"
+          git fetch --tags origin main
+          git diff --quiet HEAD origin/main
+          git diff --quiet origin/main HEAD
+          test -z "$(git status --porcelain)" || { echo "main checkout is not clean" >&2; exit 1; }
+          remote_tag=$(git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}")
+          [[ -z "$remote_tag" ]] || { echo "destination tag already exists: $tag" >&2; exit 1; }
+          set +e
+          release_response=$(gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$tag" 2>&1)
+          release_status=$?
+          set -e
+          if [[ "$release_status" -eq 0 ]]; then
+            echo "destination GitHub Release already exists: $tag" >&2
+            exit 1
+          fi
+          [[ "$release_response" == *"HTTP/2 404"* || "$release_response" == *"HTTP/1.1 404"* ]] || {
+            echo "could not prove the destination GitHub Release is absent" >&2; exit 1;
+          };
+
+      - name: Verify every pinned component has a formal source Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          components_file=$(mktemp)
+          verified_file=$(mktemp)
+          cleanup() { rm -f "$components_file" "$verified_file"; }
+          trap cleanup EXIT
+          python3 - <<'PY' > "$components_file"
+          import json
+          from pathlib import Path
+          import yaml
+
+          rows = []
+          for path in sorted(Path("components.d").glob("*.yml")):
+              data = yaml.safe_load(path.read_text(encoding="utf-8"))
+              rows.append({"name": data["name"], "repo": data["repo"], "ref": data["ref"]})
+          print(json.dumps(rows))
+          PY
+          while IFS= read -r component; do
+            repo=$(jq -r '.repo' <<<"$component")
+            ref=$(jq -r '.ref' <<<"$component")
+            [[ "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid component ref: $repo $ref" >&2; exit 1; }
+            release=$(gh api "repos/$repo/releases/tags/$ref")
+            [[ "$(jq -r '.tag_name // empty' <<<"$release")" == "$ref" ]] || { echo "source Release tag mismatch: $repo" >&2; exit 1; }
+            [[ "$(jq -r '.draft' <<<"$release")" == false && "$(jq -r '.prerelease' <<<"$release")" == false ]] || {
+              echo "source Release is not formal: $repo $ref" >&2; exit 1;
+            };
+            [[ -n "$(jq -r '.published_at // empty' <<<"$release")" ]] || { echo "source Release is not published: $repo $ref" >&2; exit 1; }
+            release_url=$(jq -r '.html_url // empty' <<<"$release")
+            [[ "$release_url" == "https://github.com/$repo/releases/tag/$ref" ]] || { echo "source Release URL is not canonical: $repo" >&2; exit 1; }
+            tag_ref=$(gh api "repos/$repo/git/ref/tags/$ref")
+            [[ "$(jq -r '.object.type // empty' <<<"$tag_ref")" == tag ]] || { echo "source tag must be annotated: $repo $ref" >&2; exit 1; }
+            tag_object=$(jq -r '.object.sha // empty' <<<"$tag_ref")
+            target=$(gh api "repos/$repo/git/tags/$tag_object")
+            [[ "$(jq -r '.object.type // empty' <<<"$target")" == commit ]] || { echo "annotated tag must resolve to a commit: $repo $ref" >&2; exit 1; }
+            jq --arg url "$release_url" '. + {release_url: $url, formal_release: true}' <<<"$component" >> "$verified_file"
+          done < <(jq -c '.[]' "$components_file")
+          jq -s . "$verified_file" > "$RUNNER_TEMP/release-components.json"
+
+      - name: Collect merged component-upgrade metadata since the previous Hub tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          previous_tag=$(git tag --merged HEAD --list 'v[0-9]*' --sort=-version:refname | head -n 1 || true)
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls?state=closed&base=main&per_page=100" |
+            jq '[.[][] | select(.merged_at != null and ([.labels[].name] | index("component-upgrade"))) |
+              {number: .number, mergedAt: .merged_at, mergeCommit: {oid: .merge_commit_sha}, body: .body}]' \
+              > "$RUNNER_TEMP/merged-prs.json"
+          python3 - "$previous_tag" "$RUNNER_TEMP/merged-prs.json" "$RUNNER_TEMP/release-upgrades.json" <<'PY'
+          import json
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          previous_tag, source, destination = sys.argv[1:]
+          rows = json.loads(Path(source).read_text(encoding="utf-8"))
+          component = re.compile(r"^\| Component \| (.+?) \(`[^`]+`\) \|$", re.M)
+          previous = re.compile(r"^\| Previous tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
+          current = re.compile(r"^\| New tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
+          release = re.compile(r"^\| Source Release \| (https://github\.com/[^\s|]+/releases/tag/v\d+\.\d+\.\d+) \|$", re.M)
+          upgrades = []
+          for row in rows:
+              sha = ((row.get("mergeCommit") or {}).get("oid"))
+              if not sha:
+                  continue
+              if previous_tag and subprocess.run(["git", "merge-base", "--is-ancestor", sha, previous_tag]).returncode == 0:
+                  continue
+              body = row.get("body") or ""
+              fields = [pattern.search(body) for pattern in (component, previous, current, release)]
+              if any(field is None for field in fields):
+                  raise SystemExit(f"merged component-upgrade PR #{row['number']} has invalid metadata")
+              upgrades.append({
+                  "number": row["number"], "merged_at": row.get("mergedAt") or "",
+                  "component": fields[0].group(1), "from_tag": fields[1].group(1),
+                  "to_tag": fields[2].group(1), "release_url": fields[3].group(1),
+                  "formal_release": True,
+              })
+          Path(destination).write_text(json.dumps(upgrades), encoding="utf-8")
+          PY
+
+      - name: Run Hub tests and isolated clean-clone smoke checks
+        run: |
+          set -euo pipefail
+          python3 -B -m unittest discover -s tests -v
+          smoke_root=$(mktemp -d)
+          cleanup() { rm -rf "$smoke_root"; }
+          trap cleanup EXIT
+          git clone --no-local "$GITHUB_WORKSPACE" "$smoke_root/hub"
+          test -f "$smoke_root/hub/skills/rdk-skill-finder/SKILL.md"
+          mkdir "$smoke_root/x5-project" "$smoke_root/s-project"
+          bash "$smoke_root/hub/skills/oe-skills-x5/setup.sh" --ref "smoke" "$smoke_root/x5-project"
+          bash "$smoke_root/hub/skills/oe-skills-s/setup.sh" --ref "smoke" "$smoke_root/s-project"
+          test "$(cat "$smoke_root/x5-project/.drobotics/INSTALLED_REF")" = smoke
+          test "$(cat "$smoke_root/s-project/.horizon/INSTALLED_REF")" = smoke
+
+      - name: Render validated English Release notes
+        env:
+          VERSION: ${{ inputs.version }}
+          ADDITIONS: ${{ inputs.approved_note_additions }}
+        run: |
+          set -euo pipefail
+          additions_file=$(mktemp)
+          trap 'rm -f "$additions_file"' EXIT
+          printf '%s' "$ADDITIONS" > "$additions_file"
+          python3 -B .github/scripts/render_hub_release_notes.py \
+            --version "$VERSION" \
+            --components-json "$RUNNER_TEMP/release-components.json" \
+            --upgrades-json "$RUNNER_TEMP/release-upgrades.json" \
+            --additions-file "$additions_file" \
+            --output "$RUNNER_TEMP/release-notes.md"
+
+      - name: Store validated Release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
+
+  publish:
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Checkout the verified main candidate
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download validated Release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}
+
+      - name: Recheck destination and publish the immutable tag and Release
+        env:
+          VERSION: ${{ inputs.version }}
+          CONFIRM: ${{ inputs.confirm }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRM" == PUBLISH && "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          tag="v$VERSION"
+          git fetch --tags origin main
+          git diff --quiet HEAD origin/main
+          test -z "$(git status --porcelain)" || exit 1
+          test -z "$(git ls-remote --tags origin "refs/tags/$tag" "refs/tags/$tag^{}")" || {
+            echo "destination tag appeared after preflight" >&2; exit 1;
+          };
+          set +e
+          release_response=$(gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$tag" 2>&1)
+          release_status=$?
+          set -e
+          [[ "$release_status" -ne 0 && ( "$release_response" == *"HTTP/2 404"* || "$release_response" == *"HTTP/1.1 404"* ) ]] || {
+            echo "destination GitHub Release appeared after preflight or could not be checked" >&2; exit 1;
+          };
+          notes_file="$RUNNER_TEMP/release-notes.md"
+          test -s "$notes_file" || { echo "validated Release notes are missing" >&2; exit 1; }
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git tag -a "$tag" -m "RDK Skills $tag"
+          git push origin "$tag"
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+            --title "RDK Skills v$VERSION" --notes-file "$notes_file"

@@ -38,22 +38,23 @@ not a reason to expand the App's privileges.
 
 ## Release procedure
 
-1. Choose the next version and create a release branch or otherwise isolate the release work.
-2. Normalize every current `SKILL.md` frontmatter version and applicable `VERSION` resource to the selected version.
-3. Update source repositories first. Run their release contracts and create annotated `vX.Y.Z` tags.
-4. Update the Hub component files in `components.d/` so every source `ref` is `vX.Y.Z`; synchronize mirrors, regenerate catalog files and plugins, and run Hub contracts.
-5. Perform a clean-clone smoke test from the candidate Hub tag. Verify flat-skill discovery and each workspace-pack installation anchor.
-6. Publish the source repositories, then the Hub `main` branch and annotated Hub tag. Confirm the remote dereferenced tag equals the intended commit in every repository.
-7. Copy [`.github/RELEASE_TEMPLATE.md`](../.github/RELEASE_TEMPLATE.md), replace every placeholder, and create the public GitHub Release only after all previous checks pass:
+1. A product-source repository publishes an annotated stable source tag and a formal GitHub Release. A formal source Release is published, non-draft, non-prerelease, and has the canonical URL for that tag.
+2. The component-upgrade automation creates or updates a reviewable Hub PR. Maintainers review and merge it through the protected `main` branch; it is never merged by the release bot.
+3. Choose the independent Hub version. It does not need to equal any component version. Verify every `components.d/*.yml` ref points to a published, annotated formal source Release.
+4. Manually dispatch **Publish Hub release** from `main` with `version` in `MAJOR.MINOR.PATCH` form (without `v`), `confirm` exactly `PUBLISH`, and optional maintainer-approved additions written in English ASCII text.
+5. The workflow runs Hub contracts, artifact-currentness checks, and a clean-clone workspace-pack smoke test. It renders the English Release body from [`.github/RELEASE_TEMPLATE.md`](../.github/RELEASE_TEMPLATE.md), the merged `component-upgrade` PR metadata since the previous Hub tag, and the approved additions.
+6. Only after these checks pass does the `release` Environment approval allow publication. The workflow rechecks that both remote `vX.Y.Z` and its GitHub Release are absent, creates one annotated tag, pushes it without force, and runs `gh release create` with title `RDK Skills vX.Y.Z`.
+7. Re-open the public Release page and verify the exact English title/body, tag target, publication state, and generated source-code links.
 
-   ```bash
-   gh release create vX.Y.Z \
-     --repo D-Robotics/rdk-skills \
-     --title "RDK Skills vX.Y.Z" \
-     --notes-file /path/to/final-release-notes.md
-   ```
+## Release Environment and safeguards
 
-8. Re-open the public Release page and verify the title, English body, tag target, publication state, and generated source-code links.
+The GitHub `release` Environment must require an authorized maintainer review before the `publish` job can run. The workflow has no scheduled, push, pull-request, or repository-dispatch trigger; release publication is possible only through the manual dispatch above.
+
+All remote tag and GitHub Release collision checks, formal source Release checks, Hub tests, smoke checks, and note rendering run before the workflow creates a local or remote tag. A failed check therefore cannot write a tag or a GitHub Release. Published tags remain immutable: do not force-push, delete, or recreate them.
+
+## Mixed component versions
+
+The Hub is an assembler, not a version mirror. Its four component refs can legitimately differ, for example BSP at `v1.0.1`, Device Skills at `v1.2.0`, OE Skills X5 at `v1.0.0`, and OE Skills S at `v1.3.4`. The Hub Release notes list those exact pinned tags and identify merged component-upgrade PRs; never rewrite rows to match the Hub version.
 
 ## Required evidence
 
@@ -66,12 +67,12 @@ Record the following in the pull request, release issue, or release log:
 
 ## Release checklist
 
-- [ ] All current Skill frontmatters use the release version.
-- [ ] Source resource `VERSION` files and Hub registry references match the release version and tag.
-- [ ] Every component source is pinned to an annotated `vX.Y.Z` tag.
+- [ ] Hub-owned Skill frontmatters use the selected Hub release version where applicable.
+- [ ] Source resource `VERSION` files match their own source release versions.
+- [ ] Every component source is pinned to its own annotated, published formal release tag.
 - [ ] Source and Hub release contracts pass.
 - [ ] Generated catalogs and plugin copies are deterministic and current.
 - [ ] Clean-clone installation smoke tests pass.
-- [ ] The Hub and source `main` refs match their published dereferenced tags.
+- [ ] The Hub tag is annotated and immutable; every component ref resolves to its published formal source Release.
 - [ ] The GitHub Release title is `RDK Skills vX.Y.Z` and its English body follows the template.
 - [ ] No published tag was force-moved.
