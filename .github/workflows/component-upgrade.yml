@@ -1,0 +1,220 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 D-Robotics. All rights reserved.
+
+name: Create component upgrade PR
+
+on:
+  repository_dispatch:
+    types: [rdk-component-release]
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: Source repository, for example D-Robotics/bsp-skills
+        required: true
+        type: string
+      tag:
+        description: Published stable source Release tag
+        required: true
+        type: string
+      dry_run:
+        description: Validate without creating a branch or pull request
+        required: true
+        default: true
+        type: boolean
+
+# The GitHub-provided token is deliberately read-only. All mutation below uses
+# the short-lived, least-privilege rdk-release-bot installation token instead.
+permissions:
+  contents: read
+
+concurrency:
+  group: component-upgrade-${{ github.event.client_payload.source_repo || inputs.source_repo }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      component_id: ${{ steps.validate.outputs.component_id }}
+      action: ${{ steps.validate.outputs.action }}
+      dry_run: ${{ steps.event.outputs.dry_run }}
+      source_repo: ${{ steps.validate.outputs.source_repo }}
+      tag: ${{ steps.validate.outputs.tag }}
+      release_url: ${{ steps.validate.outputs.release_url }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+    steps:
+      - name: Require the expected dispatcher
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_ACTOR: ${{ github.event.sender.login }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == repository_dispatch && "$DISPATCH_ACTOR" != 'rdk-release-bot[bot]' ]]; then
+            echo "::error::repository dispatch must be sent by rdk-release-bot[bot]"
+            exit 1
+          fi
+
+      - name: Normalize and validate event input
+        id: event
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_SOURCE_REPO: ${{ inputs.source_repo }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          PAYLOAD_SCHEMA_VERSION: ${{ github.event.client_payload.schema_version }}
+          PAYLOAD_SOURCE_REPO: ${{ github.event.client_payload.source_repo }}
+          PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          PAYLOAD_RELEASE_URL: ${{ github.event.client_payload.release_url }}
+          PAYLOAD_TARGET_SHA: ${{ github.event.client_payload.target_sha }}
+          PAYLOAD_PUBLISHED_AT: ${{ github.event.client_payload.published_at }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == repository_dispatch ]]; then
+            [[ "$PAYLOAD_SCHEMA_VERSION" == 1 ]] || { echo "invalid dispatch schema" >&2; exit 1; }
+            source_repo=$PAYLOAD_SOURCE_REPO
+            tag=$PAYLOAD_TAG
+            dry_run=false
+          else
+            source_repo=$INPUT_SOURCE_REPO
+            tag=$INPUT_TAG
+            dry_run=$INPUT_DRY_RUN
+            [[ "$dry_run" == true || "$dry_run" == false ]] || { echo "invalid dry_run input" >&2; exit 1; }
+          fi
+          [[ "$source_repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo "invalid source repository" >&2; exit 1; }
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid source tag" >&2; exit 1; }
+          printf 'source_repo=%s\ntag=%s\ndry_run=%s\n' "$source_repo" "$tag" "$dry_run" >> "$GITHUB_OUTPUT"
+
+      - name: Create release bot token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RDK_RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RDK_RELEASE_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: read
+
+      - name: Checkout Hub validation code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - name: Install validation dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Verify the source Release against GitHub
+        id: validate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_REPO: ${{ steps.event.outputs.source_repo }}
+          TAG: ${{ steps.event.outputs.tag }}
+          PAYLOAD_RELEASE_URL: ${{ github.event.client_payload.release_url }}
+          PAYLOAD_TARGET_SHA: ${{ github.event.client_payload.target_sha }}
+          PAYLOAD_PUBLISHED_AT: ${{ github.event.client_payload.published_at }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/$SOURCE_REPO/releases/tags/$TAG")
+          api_tag=$(jq -r '.tag_name // empty' <<<"$release")
+          api_url=$(jq -r '.html_url // empty' <<<"$release")
+          api_published_at=$(jq -r '.published_at // empty' <<<"$release")
+          api_draft=$(jq -r '.draft' <<<"$release")
+          api_prerelease=$(jq -r '.prerelease' <<<"$release")
+          [[ "$api_tag" == "$TAG" && "$api_draft" == false && "$api_prerelease" == false && -n "$api_published_at" ]] || {
+            echo "source Release is not published, stable, and tag-consistent" >&2; exit 1;
+          }
+          [[ "$api_url" == "https://github.com/$SOURCE_REPO/releases/tag/$TAG" ]] || {
+            echo "source Release URL is not canonical" >&2; exit 1;
+          }
+          tag_ref=$(gh api "repos/$SOURCE_REPO/git/ref/tags/$TAG")
+          [[ "$(jq -r '.object.type // empty' <<<"$tag_ref")" == tag ]] || {
+            echo "source tag must be annotated" >&2; exit 1;
+          }
+          tag_object=$(jq -r '.object.sha // empty' <<<"$tag_ref")
+          target=$(gh api "repos/$SOURCE_REPO/git/tags/$tag_object")
+          [[ "$(jq -r '.object.type // empty' <<<"$target")" == commit ]] || {
+            echo "annotated tag does not dereference to a commit" >&2; exit 1;
+          }
+          source_sha=$(jq -r '.object.sha // empty' <<<"$target")
+          [[ "$source_sha" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "invalid dereferenced source SHA" >&2; exit 1; }
+          if [[ "$EVENT_NAME" == repository_dispatch ]]; then
+            [[ "$PAYLOAD_RELEASE_URL" == "$api_url" && "${PAYLOAD_TARGET_SHA,,}" == "${source_sha,,}" && "$PAYLOAD_PUBLISHED_AT" == "$api_published_at" ]] || {
+              echo "dispatch payload does not match the published source Release" >&2; exit 1;
+            }
+          fi
+          python3 - "$SOURCE_REPO" "$TAG" "$source_sha" "$api_url" "$api_published_at" >> "$GITHUB_OUTPUT" <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          module_path = Path(".github/scripts/component_release.py")
+          spec = importlib.util.spec_from_file_location("component_release", module_path)
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          source_repo, tag, source_sha, release_url, published_at = sys.argv[1:]
+          components = module.load_components(Path("."))
+          matches = [component for component in components if component.repo == source_repo]
+          if len(matches) != 1:
+              raise SystemExit("source repository must match exactly one component")
+          event = module.ComponentReleaseEvent(
+              source_repo, tag, source_sha, release_url, published_at,
+              is_draft=False, is_prerelease=False,
+          )
+          decision = module.decide_upgrade(matches[0], event, verified_target_sha=source_sha)
+          print(f"component_id={matches[0].component_id}")
+          print(f"action={decision.action}")
+          print(f"source_repo={source_repo}")
+          print(f"tag={tag}")
+          print(f"release_url={release_url}")
+          print(f"source_sha={source_sha}")
+          PY
+
+  upsert-pr:
+    needs: validate
+    if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.action == 'upgrade'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release bot token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RDK_RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RDK_RELEASE_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      - name: Checkout Hub main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - name: Install synchronization dependencies
+        run: python3 -m pip install -r .github/requirements.txt
+
+      - name: Configure authenticated bot remote
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Synchronize and upsert the component PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          bash .github/scripts/upsert-component-pr.sh \
+            --component '${{ needs.validate.outputs.component_id }}' \
+            --tag '${{ needs.validate.outputs.tag }}' \
+            --release-url '${{ needs.validate.outputs.release_url }}' \
+            --source-sha '${{ needs.validate.outputs.source_sha }}' \
+            --summary-file /tmp/component-upgrade-result.json

@@ -13,6 +13,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / ".github" / "scripts" / "component_release.py"
 
+
+def read_workflow(relative_path: str) -> str:
+    """Return a workflow contract as UTF-8 text."""
+    return (ROOT / relative_path).read_text(encoding="utf-8")
+
+
+def branch_for(component_id: str) -> str:
+    """Return the one stable upgrade branch for a component."""
+    return f"bot/component-upgrade/{component_id}"
+
+
 spec = importlib.util.spec_from_file_location("component_release", MODULE_PATH)
 assert spec is not None and spec.loader is not None
 component_release = importlib.util.module_from_spec(spec)
@@ -208,6 +219,36 @@ class ComponentReleaseTests(unittest.TestCase):
             event.tag = "v1.0.2"
         with self.assertRaises((AttributeError, TypeError)):
             decision.action = "noop"
+
+
+class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
+    def test_upgrade_workflow_is_dispatch_driven_and_dry_run_safe(self):
+        workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        self.assertIn("rdk-component-release", workflow)
+        self.assertIn("dry_run", workflow)
+        self.assertNotIn("git push origin main", workflow)
+
+    def test_branch_is_stable_per_component(self):
+        self.assertEqual(
+            branch_for("bsp-skills"), "bot/component-upgrade/bsp-skills"
+        )
+
+    def test_upgrade_workflow_validates_dispatches_before_pr_mutation(self):
+        workflow = read_workflow(".github/workflows/component-upgrade.yml")
+        self.assertIn("actions/create-github-app-token@v2", workflow)
+        self.assertIn("github.event.sender.login", workflow)
+        self.assertIn("rdk-release-bot[bot]", workflow)
+        self.assertIn("gh api", workflow)
+        self.assertIn("component_release.py", workflow)
+        self.assertIn("component-upgrade-", workflow)
+
+    def test_pr_upsert_preserves_main_and_applies_component_labels(self):
+        script = read_workflow(".github/scripts/upsert-component-pr.sh")
+        self.assertIn('branch="bot/component-upgrade/${component_id}"', script)
+        self.assertIn("component-upgrade", script)
+        self.assertIn('source:${component_id}', script)
+        self.assertNotIn("gh pr merge", script)
+        self.assertNotIn("refs/heads/main", script)
 
 
 if __name__ == "__main__":
