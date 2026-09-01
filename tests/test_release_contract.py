@@ -34,6 +34,11 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn("christophebedard/dco-check@0.5.1", workflow)
         self.assertNotIn("christophebedard/dco-check@v0.5.2", workflow)
 
+    def test_dco_action_receives_the_builtin_github_token(self):
+        workflow = (ROOT / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
+
+        self.assertIn("GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}", workflow)
+
     def test_plugin_builder_is_executable_for_the_sync_workflow(self):
         """The workflow invokes this script directly, so its Git mode must be executable."""
         output = subprocess.check_output(
