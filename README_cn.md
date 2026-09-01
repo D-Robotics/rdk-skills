@@ -22,7 +22,7 @@
 | RDK X3 / X3 Module | Bernoulli | 5 TOPS |
 | RDK X5 / X5 Module | Bayes-e | 10 TOPS |
 | RDK Ultra | Bayes | 96 TOPS |
-| RDK S100 / S100P | Nash-e | 80 / 128 TOPS |
+| RDK S100 / S100P | Nash-e / Nash-m | 80 / 128 TOPS |
 | RDK S600 | Nash-p（4× Nash core） | 最高 560 TOPS |
 
 板卡参数取自官方文档仓库 [rdk_x_doc](https://github.com/D-Robotics/rdk_x_doc) 和 [rdk_s_doc](https://github.com/D-Robotics/rdk_s_doc)。X 系列模型格式为 `.bin`，S 系列为 `.hbm`。

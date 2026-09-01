@@ -22,7 +22,7 @@ This repository is the **central catalog (Hub)**: each Skill Pack maintains its 
 | RDK X3 / X3 Module | Bernoulli | 5 TOPS |
 | RDK X5 / X5 Module | Bayes-e | 10 TOPS |
 | RDK Ultra | Bayes | 96 TOPS |
-| RDK S100 / S100P | Nash-e | 80 / 128 TOPS |
+| RDK S100 / S100P | Nash-e / Nash-m | 80 / 128 TOPS |
 | RDK S600 | Nash-p (4x Nash core) | up to 560 TOPS |
 
 Board parameters follow official documentation repositories [rdk_x_doc](https://github.com/D-Robotics/rdk_x_doc) and [rdk_s_doc](https://github.com/D-Robotics/rdk_s_doc). Model format is `.bin` on X series and `.hbm` on S series.
