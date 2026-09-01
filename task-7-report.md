@@ -38,3 +38,17 @@ The repository still needs a real protected `release` Environment approval and
 branch-protection configuration, plus a non-production GitHub Actions exercise
 with read access to all four source repositories. Those external controls were
 not changed locally.
+
+## Re-review round 2
+
+- Component-upgrade PR bodies now publish `Source SHA` as a 40-character
+  hexadecimal value. The Hub release workflow parses that exact field from
+  every merged upgrade PR.
+- Missing or malformed `Source SHA` fields fail note generation. The parsed
+  SHA is compared case-insensitively and exactly with the corresponding GitHub
+  API annotated-tag dereference; any mismatch fails before rendering, tagging,
+  pushing, or Release creation.
+- Focused evidence: `tests/test_render_hub_release_notes.py` passed 7 tests,
+  including dedicated missing, malformed, and mismatched upgrade-SHA cases.
+  `tests/test_component_release.py` passed 28 tests. Python compilation,
+  workflow YAML/shell syntax, and `git diff --check` also passed.

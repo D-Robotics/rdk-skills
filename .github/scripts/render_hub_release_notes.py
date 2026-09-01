@@ -35,6 +35,11 @@ COMPONENT_NAME_ALIASES = {
     "OE Tool Chain (S)": "OE Skills S",
 }
 COMPONENT_REPOSITORIES = {name: repo for repo, name in COMPONENTS.items()}
+UPGRADE_COMPONENT = re.compile(r"^\| Component \| (.+?) \(`[^`]+`\) \|$", re.M)
+UPGRADE_PREVIOUS_TAG = re.compile(r"^\| Previous tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
+UPGRADE_NEW_TAG = re.compile(r"^\| New tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
+UPGRADE_RELEASE_URL = re.compile(r"^\| Source Release \| (https://github\.com/[^\s|]+/releases/tag/v\d+\.\d+\.\d+) \|$", re.M)
+UPGRADE_SOURCE_SHA = re.compile(r"^\| Source SHA \| `([0-9a-fA-F]{40})` \|$", re.M)
 
 
 @dataclass(frozen=True)
@@ -141,6 +146,36 @@ def verify_formal_source_releases(
     return _verify_release_records(_validate_component_rows(rows), facts)
 
 
+def parse_merged_upgrade_metadata(pull_request: dict[str, Any]) -> dict[str, Any]:
+    """Parse the security-relevant fields from one merged component-upgrade PR body."""
+    pull_request = _require_mapping(pull_request, "merged component-upgrade PR")
+    number = pull_request.get("number")
+    body = pull_request.get("body")
+    if not isinstance(number, int) or number <= 0 or not isinstance(body, str):
+        raise ValueError("merged component-upgrade PR has invalid metadata")
+    fields = [
+        pattern.search(body)
+        for pattern in (
+            UPGRADE_COMPONENT,
+            UPGRADE_PREVIOUS_TAG,
+            UPGRADE_NEW_TAG,
+            UPGRADE_RELEASE_URL,
+            UPGRADE_SOURCE_SHA,
+        )
+    ]
+    if any(field is None for field in fields):
+        raise ValueError(f"merged component-upgrade PR #{number} must include a valid Source SHA")
+    return {
+        "number": number,
+        "merged_at": pull_request.get("merged_at") or "",
+        "component": fields[0].group(1),
+        "from_tag": fields[1].group(1),
+        "to_tag": fields[2].group(1),
+        "release_url": fields[3].group(1),
+        "source_sha": fields[4].group(1).lower(),
+    }
+
+
 def _validate_upgrade_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     validated = []
     numbers = set()
@@ -151,6 +186,7 @@ def _validate_upgrade_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any
         from_tag = row.get("from_tag")
         to_tag = row.get("to_tag")
         release_url = row.get("release_url")
+        source_sha = row.get("source_sha")
         canonical_component = COMPONENT_NAME_ALIASES.get(component)
         if canonical_component is None:
             raise ValueError("component-upgrade metadata has an unknown component")
@@ -160,6 +196,8 @@ def _validate_upgrade_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any
             raise ValueError("component-upgrade metadata has an invalid new tag")
         if not isinstance(release_url, str) or not release_url.startswith("https://github.com/"):
             raise ValueError("component-upgrade metadata has an invalid Release URL")
+        if not isinstance(source_sha, str) or SHA.fullmatch(source_sha) is None:
+            raise ValueError("component-upgrade metadata has an invalid Source SHA")
         number = row.get("number")
         if not isinstance(number, int) or number <= 0:
             raise ValueError("component-upgrade metadata has an invalid pull request number")
@@ -168,7 +206,7 @@ def _validate_upgrade_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any
             raise ValueError("duplicate component-upgrade metadata entry")
         numbers.add(number)
         transitions.add(transition)
-        validated.append({**row, "component": canonical_component})
+        validated.append({**row, "component": canonical_component, "source_sha": source_sha.lower()})
     return validated
 
 
@@ -186,7 +224,9 @@ def verify_formal_upgrade_releases(
     for row, source in zip(upgrades, verified, strict=True):
         if row["release_url"] != source["release_url"]:
             raise ValueError("component-upgrade metadata Release URL does not match verified source Release")
-        output.append({**row, "source_sha": source["source_sha"]})
+        if row["source_sha"].lower() != source["source_sha"].lower():
+            raise ValueError("component-upgrade metadata Source SHA does not match the verified source Release")
+        output.append(row)
     return output
 
 

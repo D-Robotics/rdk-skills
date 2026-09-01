@@ -108,17 +108,19 @@ jobs:
               > "$RUNNER_TEMP/merged-prs.json"
           python3 - "$previous_tag" "$RUNNER_TEMP/merged-prs.json" "$RUNNER_TEMP/release-upgrades.json" <<'PY'
           import json
+          import importlib.util
           from pathlib import Path
-          import re
           import subprocess
           import sys
 
           previous_tag, source, destination = sys.argv[1:]
           rows = json.loads(Path(source).read_text(encoding="utf-8"))
-          component = re.compile(r"^\| Component \| (.+?) \(`[^`]+`\) \|$", re.M)
-          previous = re.compile(r"^\| Previous tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
-          current = re.compile(r"^\| New tag \| `(v\d+\.\d+\.\d+)` \|$", re.M)
-          release = re.compile(r"^\| Source Release \| (https://github\.com/[^\s|]+/releases/tag/v\d+\.\d+\.\d+) \|$", re.M)
+          module_path = Path(".github/scripts/render_hub_release_notes.py")
+          spec = importlib.util.spec_from_file_location("release_notes", module_path)
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
           upgrades = []
           for row in rows:
               sha = ((row.get("mergeCommit") or {}).get("oid"))
@@ -126,15 +128,13 @@ jobs:
                   continue
               if previous_tag and subprocess.run(["git", "merge-base", "--is-ancestor", sha, previous_tag]).returncode == 0:
                   continue
-              body = row.get("body") or ""
-              fields = [pattern.search(body) for pattern in (component, previous, current, release)]
-              if any(field is None for field in fields):
-                  raise SystemExit(f"merged component-upgrade PR #{row['number']} has invalid metadata")
-              upgrades.append({
-                  "number": row["number"], "merged_at": row.get("mergedAt") or "",
-                  "component": fields[0].group(1), "from_tag": fields[1].group(1),
-                  "to_tag": fields[2].group(1), "release_url": fields[3].group(1),
-              })
+              try:
+                  upgrades.append(module.parse_merged_upgrade_metadata({
+                      "number": row["number"], "merged_at": row.get("mergedAt") or "",
+                      "body": row.get("body") or "",
+                  }))
+              except ValueError as error:
+                  raise SystemExit(str(error)) from error
           Path(destination).write_text(json.dumps(upgrades), encoding="utf-8")
           PY
 

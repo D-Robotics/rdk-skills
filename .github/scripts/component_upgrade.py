@@ -59,7 +59,7 @@ def render_pr_body(
 | Previous tag | `{previous_tag}` |
 | New tag | `{new_tag}` |
 | Source Release | {release_url} |
-| Dereferenced source SHA | `{source_sha}` |
+| Source SHA | `{source_sha}` |
 
 ### Mirrored directories
 

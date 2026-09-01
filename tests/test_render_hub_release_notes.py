@@ -62,7 +62,7 @@ def upgrades():
             "from_tag": "v1.0.0",
             "to_tag": "v1.0.1",
             "release_url": "https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1",
-            "formal_release": True,
+            "source_sha": "5" * 40,
         }
     ]
 
@@ -145,6 +145,7 @@ class HubReleaseNoteTests(unittest.TestCase):
                 "from_tag": "v0.9.9",
                 "to_tag": "v1.0.0",
                 "release_url": "https://github.com/D-Robotics/oe-skills-x5/releases/tag/v1.0.0",
+                "source_sha": "7" * 40,
             }
         )
 
@@ -190,6 +191,37 @@ class HubReleaseNoteTests(unittest.TestCase):
             self.renderer.render_notes(
                 "1.0.1", components, upgrades() + upgrades(), release_facts=release_facts(components)
             )
+
+    def test_upgrade_body_requires_source_sha_and_matches_the_verified_tag_target(self):
+        """A PR body SHA must be present, valid, and equal the dereferenced formal Release tag."""
+        components = mixed_components()
+        facts = release_facts(components)
+        body = """| Component | BSP Skills (`bsp-skills`) |
+| Previous tag | `v1.0.0` |
+| New tag | `v1.0.1` |
+| Source Release | https://github.com/D-Robotics/bsp-skills/releases/tag/v1.0.1 |
+| Source SHA | `5555555555555555555555555555555555555555` |"""
+        metadata = self.renderer.parse_merged_upgrade_metadata(
+            {"number": 42, "merged_at": "2026-09-01T00:00:00Z", "body": body}
+        )
+        verified = self.renderer.verify_formal_upgrade_releases([metadata], facts)
+        self.assertEqual(verified[0]["source_sha"], "5" * 40)
+
+        with self.assertRaisesRegex(ValueError, "Source SHA"):
+            self.renderer.parse_merged_upgrade_metadata(
+                {"number": 42, "merged_at": "2026-09-01T00:00:00Z", "body": body.replace("\n| Source SHA | `5555555555555555555555555555555555555555` |", "")}
+            )
+        invalid = body.replace("5555555555555555555555555555555555555555", "not-a-sha")
+        with self.assertRaisesRegex(ValueError, "Source SHA"):
+            self.renderer.parse_merged_upgrade_metadata(
+                {"number": 42, "merged_at": "2026-09-01T00:00:00Z", "body": invalid}
+            )
+        mismatched = body.replace("5555555555555555555555555555555555555555", "b" * 40)
+        metadata = self.renderer.parse_merged_upgrade_metadata(
+            {"number": 42, "merged_at": "2026-09-01T00:00:00Z", "body": mismatched}
+        )
+        with self.assertRaisesRegex(ValueError, "Source SHA does not match"):
+            self.renderer.verify_formal_upgrade_releases([metadata], facts)
 
 
 if __name__ == "__main__":
