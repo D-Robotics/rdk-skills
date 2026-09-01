@@ -189,6 +189,7 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertIn("invalid summary destination", result.stderr)
         self.assertEqual(hash_tree(target), before)
 
+    @requires_local_bare_sparse
     def test_rolls_back_all_catalog_dirs_when_replacement_fails(self):
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/bsp-skills\nref: main\nskills:\n"
@@ -205,9 +206,11 @@ class SelectiveSyncTests(unittest.TestCase):
         result = self.run_sync("bsp-skills", fail_after=1)
 
         self.assertNotEqual(result.returncode, 0, (result.stdout, result.stderr))
+        self.assertIn("injected replacement failure", result.stderr)
         self.assertEqual(hash_tree(self.hub_root / "skills" / "bsp-env-setup"), first_before)
         self.assertEqual(hash_tree(second.parent), second_before)
 
+    @requires_local_bare_sparse
     def test_compare_failure_rolls_back_prior_catalog_dir(self):
         (self.components_dir / "bsp-skills.yml").write_text(
             "repo: acme/bsp-skills\nref: main\nskills:\n"
