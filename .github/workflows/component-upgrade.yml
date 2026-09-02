@@ -52,7 +52,7 @@ jobs:
     if: inputs.schema_version == 'review-handoff-pr-7-06178a1'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: read
     steps:
       - name: Verify the fixed maintainer-author handoff
@@ -71,27 +71,19 @@ jobs:
           [[ "$(jq -r '.base.ref' <<<"$source_pr")" == main ]]
           [[ "$(jq -r '.user.login' <<<"$source_pr")" == maxma615 ]]
           current_head=$(jq -r '.head.sha' <<<"$source_pr")
-          helper_parent=$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$current_head" --jq '.parents[0].sha')
-          [[ "$helper_parent" == "$SOURCE_SHA" ]] || {
-            echo "the source PR is not exactly one helper commit above the reviewed candidate" >&2
+          comparison=$(gh api "repos/$GITHUB_REPOSITORY/compare/$SOURCE_SHA...$current_head")
+          [[ "$(jq -r '.status' <<<"$comparison")" == ahead ]]
+          [[ "$(jq -r '.behind_by' <<<"$comparison")" == 0 ]]
+          [[ "$(jq -r '.files | length' <<<"$comparison")" == 1 ]]
+          [[ "$(jq -r '.files[0].filename' <<<"$comparison")" == .github/workflows/component-upgrade.yml ]] || {
+            echo "the source PR differs from the reviewed candidate outside the one-time helper" >&2
             exit 1
           }
           printf '%s\n' "$source_pr" > "$RUNNER_TEMP/source-pr.json"
 
-      - name: Create exact-repository handoff token
-        id: handoff-app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
-        with:
-          app-id: ${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}
-          private-key: ${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}
-          owner: D-Robotics
-          repositories: rdk-skills
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Recreate the pull request under the component bot
+      - name: Create the fixed Actions-owned handoff branch
         env:
-          GH_TOKEN: ${{ steps.handoff-app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: 06178a102b0f18ed10a1655ffe9157d028f88565
           TARGET_BRANCH: bot/component-upgrade/release-hardening-review
         run: |
@@ -102,6 +94,24 @@ jobs:
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
             -f ref="refs/heads/$TARGET_BRANCH" -f sha="$SOURCE_SHA" >/dev/null
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_BRANCH" --jq '.object.sha')" == "$SOURCE_SHA" ]]
+
+      - name: Create exact-repository handoff token
+        id: handoff-app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}
+          private-key: ${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}
+          owner: D-Robotics
+          repositories: rdk-skills
+          permission-pull-requests: write
+
+      - name: Recreate the pull request under the component bot
+        env:
+          GH_TOKEN: ${{ steps.handoff-app-token.outputs.token }}
+          TARGET_BRANCH: bot/component-upgrade/release-hardening-review
+        run: |
+          set -euo pipefail
           jq -n \
             --arg title "$(jq -r '.title' "$RUNNER_TEMP/source-pr.json")" \
             --arg body "$(jq -r '.body // \"\"' "$RUNNER_TEMP/source-pr.json")" \
