@@ -49,7 +49,16 @@ concurrency:
 
 jobs:
   review-handoff:
-    if: inputs.schema_version == 'review-handoff-pr-7-06178a1'
+    if: >-
+      ${{
+        inputs.schema_version == 'review-handoff-pr-7-06178a1' &&
+        github.event_name == 'workflow_dispatch' &&
+        github.repository == 'D-Robotics/rdk-skills' &&
+        github.ref == 'refs/heads/fix/release-app-tag-protection' &&
+        github.actor == 'maxma615' &&
+        github.triggering_actor == 'maxma615' &&
+        github.run_attempt == 1
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,17 +69,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SOURCE_PR: '7'
           SOURCE_SHA: 06178a102b0f18ed10a1655ffe9157d028f88565
+          TARGET_BRANCH: bot/component-upgrade/release-hardening-review
+          DISPATCH_SCHEMA: ${{ inputs.schema_version }}
+          DISPATCH_SOURCE_REPO: ${{ inputs.source_repo }}
+          DISPATCH_TAG: ${{ inputs.tag }}
+          DISPATCH_DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          [[ "$GITHUB_ACTOR" == maxma615 ]] || {
-            echo "only maxma615 may run this one-time handoff" >&2
-            exit 1
-          }
+          [[ "$GITHUB_ACTOR" == maxma615 ]]
+          [[ "$GITHUB_TRIGGERING_ACTOR" == maxma615 ]]
+          [[ "$GITHUB_RUN_ATTEMPT" == 1 ]]
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
+          [[ "$GITHUB_REPOSITORY" == D-Robotics/rdk-skills ]]
+          [[ "$GITHUB_REF" == refs/heads/fix/release-app-tag-protection ]]
+          [[ "$DISPATCH_SCHEMA" == review-handoff-pr-7-06178a1 ]]
+          [[ "$DISPATCH_SOURCE_REPO" == D-Robotics/bsp-skills ]]
+          [[ "$DISPATCH_TAG" == v1.0.0 ]]
+          [[ "$DISPATCH_DRY_RUN" == true ]]
           source_pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$SOURCE_PR")
           [[ "$(jq -r '.state' <<<"$source_pr")" == open ]]
           [[ "$(jq -r '.base.ref' <<<"$source_pr")" == main ]]
           [[ "$(jq -r '.user.login' <<<"$source_pr")" == maxma615 ]]
           current_head=$(jq -r '.head.sha' <<<"$source_pr")
+          [[ "$current_head" == "$GITHUB_SHA" ]]
           comparison=$(gh api "repos/$GITHUB_REPOSITORY/compare/$SOURCE_SHA...$current_head")
           [[ "$(jq -r '.status' <<<"$comparison")" == ahead ]]
           [[ "$(jq -r '.behind_by' <<<"$comparison")" == 0 ]]
@@ -79,22 +100,38 @@ jobs:
             echo "the source PR differs from the reviewed candidate outside the one-time helper" >&2
             exit 1
           }
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_BRANCH" --jq '.object.sha')" == "$SOURCE_SHA" ]] || {
+            echo "the handoff branch must start at the reviewed candidate" >&2
+            exit 1
+          }
           printf '%s\n' "$source_pr" > "$RUNNER_TEMP/source-pr.json"
 
-      - name: Create the fixed Actions-owned handoff branch
+      - name: Checkout the fixed handoff branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: bot/component-upgrade/release-hardening-review
+          fetch-depth: 0
+
+      - name: Attribute the final identical-tree push to Actions
         env:
-          GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: 06178a102b0f18ed10a1655ffe9157d028f88565
           TARGET_BRANCH: bot/component-upgrade/release-hardening-review
         run: |
           set -euo pipefail
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
-            echo "the fixed handoff branch already exists; refusing to overwrite it" >&2
-            exit 1
-          fi
-          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f ref="refs/heads/$TARGET_BRANCH" -f sha="$SOURCE_SHA" >/dev/null
-          [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_BRANCH" --jq '.object.sha')" == "$SOURCE_SHA" ]]
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          marker='docs/.review-handoff-marker'
+          printf 'one-time review identity handoff\n' > "$marker"
+          git add "$marker"
+          git commit -s -m 'chore: attribute review handoff push to Actions'
+          git rm "$marker"
+          git commit -s -m 'chore: restore reviewed handoff tree'
+          [[ "$(git rev-parse 'HEAD^{tree}')" == "$(git rev-parse "$SOURCE_SHA^{tree}")" ]]
+          test -z "$(git status --porcelain)"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          remote_head=$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk 'NR == 1 { print $1 }')
+          [[ "$remote_head" == "$(git rev-parse HEAD)" ]]
 
       - name: Create exact-repository handoff token
         id: handoff-app-token
@@ -121,6 +158,10 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/pulls" \
             --input "$RUNNER_TEMP/replacement-pr.json" > "$RUNNER_TEMP/created-pr.json"
           number=$(jq -r '.number' "$RUNNER_TEMP/created-pr.json")
+          [[ "$(jq -r '.user.login' "$RUNNER_TEMP/created-pr.json")" == 'd-robotics-rdk-component-pr-bot[bot]' ]]
+          [[ "$(jq -r '.user.type' "$RUNNER_TEMP/created-pr.json")" == Bot ]]
+          [[ "$(jq -r '.base.ref' "$RUNNER_TEMP/created-pr.json")" == main ]]
+          [[ "$(jq -r '.head.ref' "$RUNNER_TEMP/created-pr.json")" == "$TARGET_BRANCH" ]]
           jq -n '{reviewers: ["maxma615"]}' |
             gh api --method POST "repos/$GITHUB_REPOSITORY/pulls/$number/requested_reviewers" \
               --input - >/dev/null
