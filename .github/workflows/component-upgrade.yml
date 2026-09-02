@@ -48,7 +48,77 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  review-handoff:
+    if: inputs.schema_version == 'review-handoff-pr-7-06178a1'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Verify the fixed maintainer-author handoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_PR: '7'
+          SOURCE_SHA: 06178a102b0f18ed10a1655ffe9157d028f88565
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_ACTOR" == maxma615 ]] || {
+            echo "only maxma615 may run this one-time handoff" >&2
+            exit 1
+          }
+          source_pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$SOURCE_PR")
+          [[ "$(jq -r '.state' <<<"$source_pr")" == open ]]
+          [[ "$(jq -r '.base.ref' <<<"$source_pr")" == main ]]
+          [[ "$(jq -r '.user.login' <<<"$source_pr")" == maxma615 ]]
+          current_head=$(jq -r '.head.sha' <<<"$source_pr")
+          helper_parent=$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$current_head" --jq '.parents[0].sha')
+          [[ "$helper_parent" == "$SOURCE_SHA" ]] || {
+            echo "the source PR is not exactly one helper commit above the reviewed candidate" >&2
+            exit 1
+          }
+          printf '%s\n' "$source_pr" > "$RUNNER_TEMP/source-pr.json"
+
+      - name: Create exact-repository handoff token
+        id: handoff-app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}
+          private-key: ${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}
+          owner: D-Robotics
+          repositories: rdk-skills
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Recreate the pull request under the component bot
+        env:
+          GH_TOKEN: ${{ steps.handoff-app-token.outputs.token }}
+          SOURCE_SHA: 06178a102b0f18ed10a1655ffe9157d028f88565
+          TARGET_BRANCH: bot/component-upgrade/release-hardening-review
+        run: |
+          set -euo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
+            echo "the fixed handoff branch already exists; refusing to overwrite it" >&2
+            exit 1
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/heads/$TARGET_BRANCH" -f sha="$SOURCE_SHA" >/dev/null
+          jq -n \
+            --arg title "$(jq -r '.title' "$RUNNER_TEMP/source-pr.json")" \
+            --arg body "$(jq -r '.body // \"\"' "$RUNNER_TEMP/source-pr.json")" \
+            --arg head "$TARGET_BRANCH" \
+            '{title: $title, body: ($body + "\n\n---\nRecreated by the component PR bot so the repository owner can provide the required independent approval."), head: $head, base: "main"}' \
+            > "$RUNNER_TEMP/replacement-pr.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pulls" \
+            --input "$RUNNER_TEMP/replacement-pr.json" > "$RUNNER_TEMP/created-pr.json"
+          number=$(jq -r '.number' "$RUNNER_TEMP/created-pr.json")
+          jq -n '{reviewers: ["maxma615"]}' |
+            gh api --method POST "repos/$GITHUB_REPOSITORY/pulls/$number/requested_reviewers" \
+              --input - >/dev/null
+          url=$(jq -r '.html_url' "$RUNNER_TEMP/created-pr.json")
+          printf 'Created replacement PR: %s\n' "$url" | tee -a "$GITHUB_STEP_SUMMARY"
+
   validate:
+    if: inputs.schema_version != 'review-handoff-pr-7-06178a1'
     runs-on: ubuntu-latest
     permissions:
       contents: read
