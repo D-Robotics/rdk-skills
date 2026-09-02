@@ -17,6 +17,9 @@ REPOSITORY_SLUG = re.compile(
     r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/"
     r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?"
 )
+STABLE_TAG = re.compile(
+    r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$"
+)
 
 
 def require_repository_slug(value: object) -> str:
@@ -26,6 +29,12 @@ def require_repository_slug(value: object) -> str:
         or REPOSITORY_SLUG.fullmatch(value) is None
     ):
         raise CatalogError(f"repo must use exact owner/repo syntax: {value!r}")
+    return value
+
+
+def require_stable_tag(value: object) -> str:
+    if not isinstance(value, str) or STABLE_TAG.fullmatch(value) is None:
+        raise CatalogError(f"ref must be a canonical stable tag: {value!r}")
     return value
 
 
@@ -50,6 +59,7 @@ def load_components(repo_root: Path) -> list[dict]:
             component = yaml.safe_load(component_file)
         if not isinstance(component, dict):
             raise CatalogError(f"component must be a mapping: {component_path}")
+        component["ref"] = require_stable_tag(component.get("ref"))
         components.append(component)
     return components
 
@@ -69,6 +79,7 @@ def build_pack_registry(repo_root: Path, components: list[dict]) -> dict:
             raise CatalogError("verify_paths must be a non-empty list for workspace components")
 
         repo = require_repository_slug(component.get("repo"))
+        ref = require_stable_tag(component.get("ref"))
         safe_workspace_dir = require_safe_relative(workspace_dir, "workspace_dir")
         safe_verify_paths = [require_safe_relative(path, "verify_paths") for path in verify_paths]
 
@@ -87,7 +98,7 @@ def build_pack_registry(repo_root: Path, components: list[dict]) -> dict:
             {
                 "name": component["name"],
                 "repo": repo,
-                "ref": component.get("ref", "main"),
+                "ref": ref,
                 "install_type": "workspace",
                 "install_script": component["install_script"],
                 "catalog_dir": require_safe_relative(catalog_dir, "catalog_dir"),
@@ -95,7 +106,10 @@ def build_pack_registry(repo_root: Path, components: list[dict]) -> dict:
                 "verify_paths": safe_verify_paths,
             }
         )
-    return {"schema_version": 1, "packs": sorted(packs, key=lambda pack: pack["repo"])}
+    # Preserve the deterministic components.d order.  Repository/ref entries
+    # are ordered data: keep duplicates and cardinality intact so the catalog
+    # remains a faithful projection of the workspace registry.
+    return {"schema_version": 1, "packs": packs}
 
 
 def build_skill_index(repo_root: Path, components: list[dict], exceptions: list[dict]) -> dict:

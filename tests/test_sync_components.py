@@ -70,10 +70,11 @@ class SelectiveSyncTests(unittest.TestCase):
         self._git("config", "user.name", "Test Runner", cwd=self.source_root)
         self._git("add", ".", cwd=self.source_root)
         self._git("commit", "-qm", "fixture", cwd=self.source_root)
+        self._git("tag", "v1.0.0", cwd=self.source_root)
         self._git("clone", "--bare", "-q", str(self.source_root), str(self.source_root) + ".git")
 
         (self.components_dir / "bsp-skills.yml").write_text(
-            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "repo: acme/bsp-skills\nref: v1.0.0\nskills:\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n",
             encoding="utf-8",
         )
@@ -128,7 +129,7 @@ class SelectiveSyncTests(unittest.TestCase):
         summary = json.loads((self.root / "sync-summary.json").read_text())
         component_summary = summary["components"][0]
         self.assertEqual(component_summary["component_id"], "bsp-skills")
-        self.assertEqual(component_summary["source_ref"], "main")
+        self.assertEqual(component_summary["source_ref"], "v1.0.0")
         self.assertRegex(component_summary["source_sha"], r"^[0-9a-f]{40}$")
         self.assertEqual(component_summary["catalog_dirs"], ["bsp-env-setup"])
         self.assertTrue(component_summary["changed"])
@@ -235,10 +236,35 @@ class SelectiveSyncTests(unittest.TestCase):
         self.assertNotEqual(unknown.returncode, 0)
         self.assertIn("unknown component", unknown.stderr)
 
+    def test_rejects_missing_or_noncanonical_component_refs_before_clone(self):
+        malformed_refs = {
+            "missing": "",
+            "branch": "ref: main\n",
+            "prerelease": "ref: v1.0.0-rc.1\n",
+            "leading-zero": "ref: v01.2.3\n",
+        }
+        component_path = self.components_dir / "bsp-skills.yml"
+        for name, ref_line in malformed_refs.items():
+            component_path.write_text(
+                "repo: acme/not-present\n"
+                f"{ref_line}"
+                "skills:\n"
+                "  - path: source/bsp-env-setup\n"
+                "    catalog_dir: bsp-env-setup\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_sync("bsp-skills")
+
+            with self.subTest(name=name):
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("component ref must be a canonical stable tag", result.stderr)
+                self.assertNotIn("could not clone", result.stderr)
+
     @requires_local_bare_sparse
     def test_rejects_empty_source(self):
         (self.components_dir / "bsp-skills.yml").write_text(
-            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "repo: acme/bsp-skills\nref: v1.0.0\nskills:\n"
             "  - path: source/missing\n    catalog_dir: bsp-env-setup\n",
             encoding="utf-8",
         )
@@ -249,7 +275,7 @@ class SelectiveSyncTests(unittest.TestCase):
     @requires_local_bare_sparse
     def test_rejects_clone_failure(self):
         (self.components_dir / "bsp-skills.yml").write_text(
-            "repo: acme/missing\nref: main\nskills:\n"
+            "repo: acme/missing\nref: v1.0.0\nskills:\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n",
             encoding="utf-8",
         )
@@ -274,7 +300,7 @@ class SelectiveSyncTests(unittest.TestCase):
     @requires_local_bare_sparse
     def test_rolls_back_all_catalog_dirs_when_replacement_fails(self):
         (self.components_dir / "bsp-skills.yml").write_text(
-            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "repo: acme/bsp-skills\nref: v1.0.0\nskills:\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-second\n",
             encoding="utf-8",
@@ -295,7 +321,7 @@ class SelectiveSyncTests(unittest.TestCase):
     @requires_local_bare_sparse
     def test_compare_failure_rolls_back_prior_catalog_dir(self):
         (self.components_dir / "bsp-skills.yml").write_text(
-            "repo: acme/bsp-skills\nref: main\nskills:\n"
+            "repo: acme/bsp-skills\nref: v1.0.0\nskills:\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-setup\n"
             "  - path: source/bsp-env-setup\n    catalog_dir: bsp-env-second\n",
             encoding="utf-8",

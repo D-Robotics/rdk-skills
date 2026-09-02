@@ -17,6 +17,7 @@
 |------|------|------|
 | `name` | string | README 中显示的产品名（如 `RDK Device Skills`） |
 | `repo` | string | GitHub 仓库（`owner/repo`） |
+| `ref` | string | 不可变的规范稳定发布 tag，必须匹配 `vMAJOR.MINOR.PATCH`（例如 `v1.0.0`）；不允许分支、预发布版本或数字前导零 |
 | `description` | string | README 技能表中的一行说明 |
 | `skills` | list | Skill 源头位置列表，每个 entry 指向一个含 `SKILL.md` 的目录（workspace Pack 指向整个资源树根目录） |
 
@@ -31,7 +32,6 @@
 
 | 字段 | 默认值 | 说明 |
 |------|--------|------|
-| `ref` | `main` | 同步分支或发布 tag；**workspace 集成型 Pack 必须显式 pin 到不可变 tag**（如 `v1.0.0`），发新版时打新 tag 并移动 ref |
 | `links.contributing` | `CONTRIBUTING.md` | 源头仓库的贡献指南路径，设为 `false` 表示无 |
 | `links.discussions` | `true` | 设为 `false` 表示仓库无 Discussions |
 
@@ -53,7 +53,7 @@ workspace Pack 的 `skills` 必须有且只有一个 entry，其 `path` 指向�
 1. **完整资源树**（`docs/`、`platforms/`、`scripts/`、`skill-index.json`、`VERSION` 以及 `skills/` 子树）rsync 到 `skills/<catalog_dir>/`；
 2. Pack 根目录的 `install_script`（`setup.sh`）**覆盖层**到同一目录（rsync 看不到仓库根级文件，故用稀疏检出的附加文件单独覆盖）。
 
-此外 workspace Pack 必须把 `ref` 显式 pin 到不可变 tag：Pack 仓库打 tag → 本条目 `ref` 移至新 tag → 合并触发同步在该 tag 处快照。tag 只增不改、不 force-move，回滚即把 `ref` 改回旧 tag。
+所有 Pack 都必须把 `ref` 显式 pin 到规范稳定的不可变 tag；workspace Pack 同样遵守这一必填契约：Pack 仓库打 tag → 本条目 `ref` 移至新 tag → 合并触发同步在该 tag 处快照。tag 只增不改、不 force-move，回滚即把 `ref` 改回旧 tag。
 
 因此只需 clone 一次 Hub 目录，`bash skills/<catalog_dir>/setup.sh <project-root>` 即可完整安装该 Pack；Pack 自有的 `setup.sh` 需要同时兼容两种资源位置（仓库根布局 `./x5/` 与 Hub 平铺布局），Hub 镜像检测不到 `<资源根>/*` 子目录时自行平铺。Pack 仓库仍保留为权威上游与降级安装源。
 
@@ -78,6 +78,7 @@ CC-BY-4.0。为兼容当前 Skill 生态，顶层 Skill frontmatter 仍填写
 # components.d/your-product.yml
 name: Your Product
 repo: D-Robotics/your-product-skills
+ref: v1.0.0
 description: 一句话说明这组 Skill 做什么。
 skills:
   - path: skills/your-product-install/

@@ -5,6 +5,13 @@
 # Synchronize one registered component without touching other catalog trees.
 set -euo pipefail
 
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+release_contract_path="$script_dir/release_contract.py"
+[[ -f "$release_contract_path" ]] || {
+  echo "release contract helper is missing: $release_contract_path" >&2
+  exit 2
+}
+
 usage() {
   echo "usage: $0 --components-dir DIR --component ID --repo-base-url URL --work-root DIR --summary-file FILE" >&2
   exit 2
@@ -64,15 +71,19 @@ esac
 component_file="$components_dir/$component_id.yml"
 [[ -f "$component_file" ]] || { echo "unknown component: $component_id" >&2; exit 2; }
 
-config=$($python_bin - "$component_file" <<'PY'
+config=$($python_bin - "$component_file" "$release_contract_path" <<'PY'
 import json
 import re
 import sys
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 import yaml
 
 path = sys.argv[1]
+release_contract_path = Path(sys.argv[2])
+sys.path.insert(0, str(release_contract_path.parent))
+from release_contract import semver_key
+
 try:
     data = yaml.safe_load(open(path, encoding="utf-8"))
 except (OSError, yaml.YAMLError) as error:
@@ -123,9 +134,14 @@ elif install_type:
 repo = text("repo")
 if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo) is None:
     raise SystemExit(f"unsafe component repository: {repo}")
+ref = data.get("ref")
+try:
+    semver_key(ref)
+except ValueError as error:
+    raise SystemExit(f"component ref must be a canonical stable tag: {ref!r}") from error
 
 print(json.dumps({
-    "repo": repo, "ref": text("ref", "main"), "skills": entries,
+    "repo": repo, "ref": ref, "skills": entries,
     "install_type": install_type, "install_script": install_script,
 }))
 PY
