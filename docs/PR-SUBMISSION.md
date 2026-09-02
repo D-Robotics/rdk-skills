@@ -60,6 +60,7 @@ CC-BY-4.0。为兼容当前 Skill 生态，顶层 Skill frontmatter 仍填写
 # components.d/bsp-skills.yml
 name: BSP Skills
 repo: D-Robotics/bsp-skills
+ref: v1.0.0
 description: 一句话说明这组 Skill 做什么。
 skills:
   - path: skills/board-flash/
@@ -74,11 +75,12 @@ skills:
 |---|---|
 | `name` | README 中显示的产品名 |
 | `repo` | GitHub 仓库（`owner/repo`） |
+| `ref` | 不可变、规范稳定 source tag，必须匹配 `vMAJOR.MINOR.PATCH`；不允许分支、预发布或数字前导零 |
 | `description` | README 技能表中的一行说明 |
 | `skills[].path` | 源头仓库中含 `SKILL.md` 的目录路径 |
 | `skills[].catalog_dir` | 本仓库 `skills/` 下的顶层目录名（全局唯一） |
 
-选填：`ref`（同步分支，默认 main）、`links.contributing`、`links.discussions`。
+必填：`ref`，必须是不可变的规范稳定 source tag，且匹配 `vMAJOR.MINOR.PATCH`；不得填写分支、预发布版本或带数字前导零的版本。选填：`links.contributing`、`links.discussions`。
 
 提交 PR 后，同步流水线在合并到 main 时自动拉取。
 

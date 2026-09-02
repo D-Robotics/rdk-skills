@@ -76,8 +76,12 @@ def load_components(root: Path) -> list[ComponentRef]:
         ref = data.get("ref")
         if not isinstance(repo, str) or not repo:
             raise ValidationError(f"component repo is required: {path}")
-        if not isinstance(ref, str) or not ref:
-            raise ValidationError(f"component ref is required: {path}")
+        try:
+            canonical_semver_key(ref)
+        except ValueError as error:
+            raise ValidationError(
+                f"component ref must be a canonical stable tag: {path}"
+            ) from error
         components.append(ComponentRef(path.stem, repo, ref, path.relative_to(root)))
 
     repositories = [component.repo for component in components]

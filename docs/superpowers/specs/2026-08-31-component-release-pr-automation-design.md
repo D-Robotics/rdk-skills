@@ -34,12 +34,18 @@ The four sources are:
 
 Each source repository receives `.github/workflows/notify-hub-release.yml`.
 
-Trigger:
+Trigger (the recovery input remains on the source default branch):
 
 ```yaml
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Historical stable Release tag
+        required: true
+        type: string
 ```
 
 The workflow obtains a short-lived token from the Hub-only dispatcher App, scoped to the exact Hub repository with `Actions: write`, and calls the Hub `component-upgrade.yml` `workflow_dispatch` endpoint on `main`.
@@ -62,6 +68,12 @@ Payload contract:
 ```
 
 The source workflow emits no event for an invalid tag, draft, or prerelease. It logs only non-secret identifiers.
+
+Automatic source notification remains `release.published`. For a historical source Release, the source default-branch `workflow_dispatch` accepts exactly one required string input, entered as `tag=vMAJOR.MINOR.PATCH`; it is retained on the source default branch so it can recover a Release whose tag predates the notifier workflow. The caller supplies no Release URL, publication time, target SHA, draft, prerelease, or status facts. The six verified source Release fact fields are exactly `schema_version`, `source_repo`, `tag`, `release_url`, `target_sha`, and `published_at`; `dry_run=false` is a separate Hub dispatch control and is not a source fact. A direct manual non-dry Hub dispatch is forbidden; a maintainer's direct Hub dispatch is dry-run only.
+
+The source recovery workflow uses read-only `github.token` to query its exact Release API. It requires a matching canonical stable tag, nonempty canonical URL, nonempty `published_at`, `draft=false`, and `prerelease=false`; resolves the tag to a 40-character commit SHA; and dispatches the same six verified facts with the exact-Hub `Actions: write` dispatcher App. Recovery never creates, moves, deletes, or edits a source tag or Release. It is safe to repeat: an already-current Hub is a verified no-op with no branch or PR.
+
+Task 8 acceptance requires the historical `v1.0.0` recovery/no-op pilot and repeat/no-duplicate evidence.
 
 ### 2. Hub component-upgrade workflow
 
@@ -120,9 +132,11 @@ The existing hourly job is replaced by a read-only reconciliation/audit job. It 
 
 ### 4. Review and merge controls
 
-`main` branch protection requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`. The latter runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check. One branch ruleset covers every branch ref except `bot/component-upgrade/*`. Human repository roles `write`, `maintain`, and `admin` may bypass it, but the component proposal App Integration is not a bypass actor. Its exact-repository token can therefore push the excluded stable bot branch and open/update its PR, while protected `main` and other non-bot branches reject that Integration.
+The broad branch ruleset includes `refs/heads/*` and excludes both `refs/heads/main` and `refs/heads/bot/component-upgrade/*`; its create, update, and delete controls continue on every other matching branch ref. `main` is excluded from the broad restrict-update ruleset so GitHub native Auto-merge can complete after all classic-protection gates pass.
 
-Maintainers approve the PR in GitHub. With the required checks, conversation resolution, and last-push approval satisfied, GitHub Auto-merge may perform the merge. The automation never submits a review, approval, merge, or Auto-merge request. Both content-writing Apps remain outside every branch-ruleset bypass list, so their broad API permissions do not bypass protected `main`.
+The classic branch protection is authoritative for `main` and enforced for administrators. It requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`, one maintainer approval, stale-review dismissal, approval after the last reviewable push, conversation resolution, and blocks force-pushes and deletions. The latter check runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check; any new reviewable head push triggers the last-push approval boundary again.
+
+The component proposal App has no branch-ruleset bypass and no exemption from classic `main` protection. It authors or updates `refs/heads/bot/component-upgrade/*` and the matching PR, and it makes the final head push. `maxma615` approves after that push; GitHub native Auto-merge, rather than an App or workflow call, performs the merge after every gate passes. GitHub `Contents: write` includes the merge API, and `Pull requests: write` permits submitting reviews, but the trusted workflows and policy never invoke review, approval, merge, or Auto-merge APIs.
 
 ### 5. Hub release workflow
 
@@ -181,11 +195,11 @@ The component proposal App is not a bypass actor for either tag ruleset. Despite
 2. Add contract tests ensuring every `components.d` ref used by an upgrade resolves to an approved source release.
 3. Add workflow-level dry-run support that validates a real release without pushing a branch or opening a PR.
 4. Test a real non-production source release event against a protected test Hub repository before enabling the App on production repositories.
-5. Verify production rollout with one component patch release, one generated PR, maintainer approval, Auto-merge, and a manually initiated Hub patch release.
+5. Verify production rollout with one component patch release, one generated PR, maintainer approval, Auto-merge, and a manually initiated Hub patch release. Task 8 also records the historical `v1.0.0` recovery/no-op pilot and repeat/no-duplicate evidence.
 
 ## Rollout sequence
 
-1. Register the three Hub-only Apps; configure their exact repository scopes, the bot-branch exclusion and non-bypassing component proposal Integration, the overlapping tag rulesets, secrets/variables, Hub branch protection, and Auto-merge. Configure the protected `release` Environment in single-reviewer mode with required designated maintainer approval. When the sole reviewer is also the workflow dispatcher, self-review prevention is disabled; administrator bypass must remain disabled. Restrict deployments to protected `main` only; the protected-main-only deployment rule and Environment-only Release App key are compensating controls for this deliberate tradeoff.
+1. Register the three Hub-only Apps; configure their exact repository scopes, the broad ruleset's `main` and bot-branch exclusions, the non-bypassing component proposal Integration, the overlapping tag rulesets, secrets/variables, classic `main` branch protection, and Auto-merge. Configure the protected `release` Environment in single-reviewer mode with required designated maintainer approval. When the sole reviewer is also the workflow dispatcher, self-review prevention is disabled; administrator bypass must remain disabled. Restrict deployments to protected `main` only; the protected-main-only deployment rule and Environment-only Release App key are compensating controls for this deliberate tradeoff.
 2. Add and test the Hub component-upgrade workflow in dry-run mode.
 3. Add the source notification workflow to one pilot repository (BSP Skills).
 4. Exercise the event-to-PR path in a non-production repository or with dry-run before enabling real PR writes.

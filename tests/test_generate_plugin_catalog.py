@@ -94,19 +94,25 @@ skills:
             },
         )
 
-    def test_pack_registry_defaults_missing_ref_to_main(self):
-        component = {
-            "name": "Unpinned Workspace",
-            "repo": "D-Robotics/unpinned-workspace",
-            "install_type": "workspace",
-            "install_script": "setup.sh",
-            "workspace_dir": ".workspace",
-            "verify_paths": [".workspace/VERSION"],
-            "skills": [{"catalog_dir": "unpinned"}],
-        }
-        registry = catalog.build_pack_registry(Path("."), [component])
+    def test_pack_registry_rejects_missing_or_noncanonical_ref(self):
+        invalid_refs = (None, "main", "v01.2.3", "v1.2.3-rc.1")
+        for invalid_ref in invalid_refs:
+            component = {
+                "name": "Unpinned Workspace",
+                "repo": "D-Robotics/unpinned-workspace",
+                "install_type": "workspace",
+                "install_script": "setup.sh",
+                "workspace_dir": ".workspace",
+                "verify_paths": [".workspace/VERSION"],
+                "skills": [{"catalog_dir": "unpinned"}],
+            }
+            if invalid_ref is not None:
+                component["ref"] = invalid_ref
 
-        self.assertEqual(registry["packs"][0]["ref"], "main")
+            with self.subTest(ref=invalid_ref), self.assertRaisesRegex(
+                catalog.CatalogError, "canonical stable tag"
+            ):
+                catalog.build_pack_registry(Path("."), [component])
 
 
 class SkillIndexTests(unittest.TestCase):
@@ -119,6 +125,7 @@ class SkillIndexTests(unittest.TestCase):
             """\
 name: RDK Device Skills
 repo: D-Robotics/rdk-device-skills
+ref: v1.0.0
 skills:
   - catalog_dir: rdk-diagnostic
 """,
@@ -128,6 +135,7 @@ skills:
             """\
 name: OE Tool Chain (X5)
 repo: D-Robotics/oe-skills-x5
+ref: v1.0.0
 install_type: workspace
 skills:
   - catalog_dir: oe-skills-x5
@@ -190,6 +198,7 @@ exceptions:
             """\
 name: Other Skills
 repo: D-Robotics/other-skills
+ref: v1.0.0
 skills:
   - catalog_dir: other-skill
 """,
@@ -205,6 +214,7 @@ skills:
             """\
 name: Duplicate Catalog Directory
 repo: D-Robotics/duplicate-skills
+ref: v1.0.0
 skills:
   - catalog_dir: rdk-diagnostic
 """,
@@ -219,6 +229,74 @@ skills:
 
 
 class CatalogValidationTests(unittest.TestCase):
+    def test_workspace_registry_preserves_repo_ref_order_and_duplicate_cardinality(self):
+        components = [
+            {
+                "name": "Zeta Workspace",
+                "repo": "D-Robotics/zeta-workspace",
+                "ref": "v1.0.0",
+                "install_type": "workspace",
+                "install_script": "setup.sh",
+                "workspace_dir": ".zeta",
+                "verify_paths": [".zeta/VERSION"],
+                "skills": [{"catalog_dir": "zeta-workspace"}],
+            },
+            {
+                "name": "Alpha Workspace",
+                "repo": "D-Robotics/alpha-workspace",
+                "ref": "v2.0.0",
+                "install_type": "workspace",
+                "install_script": "setup.sh",
+                "workspace_dir": ".alpha",
+                "verify_paths": [".alpha/VERSION"],
+                "skills": [{"catalog_dir": "alpha-workspace"}],
+            },
+            {
+                "name": "Zeta Workspace Copy",
+                "repo": "D-Robotics/zeta-workspace",
+                "ref": "v1.0.0",
+                "install_type": "workspace",
+                "install_script": "setup.sh",
+                "workspace_dir": ".zeta-copy",
+                "verify_paths": [".zeta-copy/VERSION"],
+                "skills": [{"catalog_dir": "zeta-workspace-copy"}],
+            },
+        ]
+
+        registry = catalog.build_pack_registry(Path("."), components)
+
+        self.assertEqual(
+            [
+                (pack["repo"], pack["ref"])
+                for pack in registry["packs"]
+            ],
+            [
+                ("D-Robotics/zeta-workspace", "v1.0.0"),
+                ("D-Robotics/alpha-workspace", "v2.0.0"),
+                ("D-Robotics/zeta-workspace", "v1.0.0"),
+            ],
+        )
+
+    def test_component_schema_requires_a_canonical_stable_ref(self):
+        document = (REPO_ROOT / "components.d" / "README.md").read_text(
+            encoding="utf-8"
+        )
+        required_fields = document.split("## 必填字段", maxsplit=1)[1].split(
+            "## 选填字段", maxsplit=1
+        )[0]
+        optional_fields = document.split("## 选填字段", maxsplit=1)[1].split(
+            "## Workspace Pack 安装契约", maxsplit=1
+        )[0]
+        onboarding_example = document.split("## 示例", maxsplit=1)[1].split(
+            "## 批量布局", maxsplit=1
+        )[0]
+
+        self.assertIn("| `ref` | string |", required_fields)
+        self.assertIn("`vMAJOR.MINOR.PATCH`", required_fields)
+        self.assertNotIn("| `ref` |", optional_fields)
+        self.assertNotIn("| `ref` | `main` |", document)
+        self.assertIn("ref: v1.0.0", onboarding_example)
+
     def test_rejects_unsafe_repository_slugs(self):
         unsafe_repositories = (
             "",
@@ -239,6 +317,7 @@ class CatalogValidationTests(unittest.TestCase):
                 component = {
                     "name": "Unsafe Repository",
                     "repo": repository,
+                    "ref": "v1.0.0",
                     "install_type": "workspace",
                     "install_script": "setup.sh",
                     "workspace_dir": ".workspace",
@@ -255,6 +334,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Missing Workspace Directory",
             "repo": "D-Robotics/missing-workspace-dir",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "verify_paths": [".workspace/VERSION"],
@@ -270,6 +350,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Empty Verification Paths",
             "repo": "D-Robotics/empty-verify-paths",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "workspace_dir": ".workspace",
@@ -286,6 +367,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Missing Skills Entry",
             "repo": "D-Robotics/missing-skills-entry",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "workspace_dir": ".workspace",
@@ -302,6 +384,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Split Workspace",
             "repo": "D-Robotics/split-workspace",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "workspace_dir": ".workspace",
@@ -322,6 +405,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Missing Catalog Dir",
             "repo": "D-Robotics/missing-catalog-dir",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "workspace_dir": ".workspace",
@@ -341,6 +425,7 @@ class CatalogValidationTests(unittest.TestCase):
                 component = {
                     "name": "Unsafe Catalog Dir",
                     "repo": "D-Robotics/unsafe-catalog-dir",
+                    "ref": "v1.0.0",
                     "install_type": "workspace",
                     "install_script": "setup.sh",
                     "workspace_dir": ".workspace",
@@ -360,6 +445,7 @@ class CatalogValidationTests(unittest.TestCase):
                 component = {
                     "name": "Unsafe Workspace Directory",
                     "repo": "D-Robotics/unsafe-workspace-dir",
+                    "ref": "v1.0.0",
                     "install_type": "workspace",
                     "install_script": "setup.sh",
                     "workspace_dir": workspace_dir,
@@ -376,6 +462,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Windows Drive Workspace Directory",
             "repo": "D-Robotics/windows-drive-workspace-dir",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "workspace_dir": "C:/outside",
@@ -392,6 +479,7 @@ class CatalogValidationTests(unittest.TestCase):
         component = {
             "name": "Unsafe Verification Path",
             "repo": "D-Robotics/unsafe-verify-path",
+            "ref": "v1.0.0",
             "install_type": "workspace",
             "install_script": "setup.sh",
             "workspace_dir": ".workspace",
@@ -447,6 +535,7 @@ class GenerationTests(unittest.TestCase):
             """\
 name: OE Tool Chain (X5)
 repo: D-Robotics/oe-skills-x5
+ref: v1.0.0
 install_type: workspace
 install_script: setup.sh
 workspace_dir: .drobotics

@@ -87,6 +87,30 @@ class ComponentReleaseTests(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
+    def test_load_components_accepts_a_canonical_stable_ref(self):
+        self.assertEqual(self.component.ref, "v1.0.0")
+
+    def test_load_components_rejects_missing_or_noncanonical_refs(self):
+        malformed_refs = {
+            "missing": "",
+            "branch": "ref: main\n",
+            "prerelease": "ref: v1.0.0-rc.1\n",
+            "leading-zero": "ref: v01.2.3\n",
+        }
+        component_path = self.root / "components.d" / "bsp-skills.yml"
+        for name, ref_line in malformed_refs.items():
+            component_path.write_text(
+                "name: BSP Skills\n"
+                "repo: D-Robotics/bsp-skills\n"
+                f"{ref_line}",
+                encoding="utf-8",
+            )
+
+            with self.subTest(name=name), self.assertRaisesRegex(
+                ValidationError, "canonical stable tag"
+            ):
+                load_components(self.root)
+
     def test_accepts_registered_published_stable_release(self):
         event = ComponentReleaseEvent(
             "D-Robotics/bsp-skills",
@@ -433,27 +457,215 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("deploy key", publisher.lower())
         self.assertNotIn("RDK_RELEASE_BOT_", workflow)
 
-        policy_docs = "\n".join(
-            read_workflow(path)
-            for path in (
-                "docs/RELEASING.md",
-                "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
-                "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
-            )
+    def _document_section(self, path: str, start: str, end: str) -> tuple[str, str]:
+        document = read_workflow(path)
+        self.assertIn(start, document)
+        self.assertIn(end, document)
+        return document, document.split(start, maxsplit=1)[1].split(end, maxsplit=1)[0]
+
+    def _assert_live_branch_control_contract(
+        self, document: str, section: str, broad_ruleset_contract: str
+    ) -> None:
+        self.assertIn(broad_ruleset_contract, section)
+        self.assertIn(
+            "The classic branch protection is authoritative for `main` and enforced for "
+            "administrators. It requires exactly `DCO Check / dco` and "
+            "`Verify committed skills catalog / verify`, one maintainer approval, "
+            "stale-review dismissal, approval after the last reviewable push, "
+            "conversation resolution, and blocks force-pushes and deletions.",
+            section,
         )
-        for required in (
-            "`Contents: write` includes the merge API",
-            "`Pull requests: write` permits submitting reviews",
-            "never invoke review, approval, merge, or Auto-merge APIs",
-            "last-push approval",
-        ):
-            self.assertIn(required, policy_docs)
-        for stale_claim in (
+        self.assertIn(
+            "The component proposal App has no branch-ruleset bypass and no exemption "
+            "from classic `main` protection. It authors or updates "
+            "`refs/heads/bot/component-upgrade/*` and the matching PR, and it makes the "
+            "final head push. `maxma615` approves after that push; GitHub native Auto-merge",
+            section,
+        )
+        self.assertIn("`Contents: write` includes the merge API", section)
+        self.assertIn("`Pull requests: write` permits submitting reviews", section)
+        self.assertIn(
+            "never invoke review, approval, merge, or Auto-merge APIs", section
+        )
+        stale_claims = (
             "has no permission to approve, merge",
             "approval, or merge capability",
             "none of the three Apps can approve or merge",
-        ):
-            self.assertNotIn(stale_claim, policy_docs)
+            "bot/component-upgrade/*` is the only excluded branch pattern",
+            "every branch ref except `bot/component-upgrade/*`",
+            "all branch refs except `bot/component-upgrade/*`",
+            "all Hub branch refs other than `bot/component-upgrade/*`",
+        )
+        for stale_claim in stale_claims:
+            self.assertNotIn(stale_claim, document)
+
+    def test_release_runbook_scopes_the_live_branch_control_contract(self):
+        document, section = self._document_section(
+            "docs/RELEASING.md",
+            "## Component-upgrade automation prerequisites",
+            "## Release procedure",
+        )
+        self._assert_live_branch_control_contract(
+            document,
+            section,
+            "The live broad branch ruleset `22007124` includes `refs/heads/*` and "
+            "excludes both `refs/heads/main` and "
+            "`refs/heads/bot/component-upgrade/*`. Its create, update, and delete "
+            "controls continue on every other matching branch ref. `main` is excluded "
+            "from the broad restrict-update ruleset so GitHub native Auto-merge can "
+            "complete after all classic-protection gates pass.",
+        )
+
+    def test_release_design_scopes_the_live_branch_control_contract(self):
+        document, section = self._document_section(
+            "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
+            "### 4. Review and merge controls",
+            "### 5. Hub release workflow",
+        )
+        self._assert_live_branch_control_contract(
+            document,
+            section,
+            "The broad branch ruleset includes `refs/heads/*` and excludes both "
+            "`refs/heads/main` and `refs/heads/bot/component-upgrade/*`; its create, "
+            "update, and delete controls continue on every other matching branch ref. "
+            "`main` is excluded from the broad restrict-update ruleset so GitHub native "
+            "Auto-merge can complete after all classic-protection gates pass.",
+        )
+
+    def test_release_plan_scopes_the_live_branch_control_contract(self):
+        document, section = self._document_section(
+            "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
+            "- [ ] **Step 3: Configure merge and release boundaries**",
+            "- [ ] **Step 4: Verify the App boundary**",
+        )
+        self._assert_live_branch_control_contract(
+            document,
+            section,
+            "The broad branch ruleset includes `refs/heads/*` and excludes both "
+            "`refs/heads/main` and `refs/heads/bot/component-upgrade/*`; its create, "
+            "update, and delete controls continue on every other matching branch ref. "
+            "`main` is excluded from the broad restrict-update ruleset so GitHub native "
+            "Auto-merge can complete after all classic-protection gates pass.",
+        )
+
+    def _assert_tag_only_source_recovery_contract(self, section: str) -> None:
+        self.assertIn("Automatic source notification remains `release.published`.", section)
+        self.assertIn(
+            "source default-branch `workflow_dispatch` accepts exactly one required "
+            "string input, entered as `tag=vMAJOR.MINOR.PATCH`",
+            section,
+        )
+        self.assertIn(
+            "The six verified source Release fact fields are exactly `schema_version`, "
+            "`source_repo`, `tag`, `release_url`, `target_sha`, and `published_at`; "
+            "`dry_run=false` is a separate Hub dispatch control and is not a source fact.",
+            section,
+        )
+        self.assertIn(
+            "A direct manual non-dry Hub dispatch is forbidden; a maintainer's direct "
+            "Hub dispatch is dry-run only.",
+            section,
+        )
+        self.assertIn(
+            "The source recovery workflow uses read-only `github.token` to query its "
+            "exact Release API. It requires a matching canonical stable tag, nonempty "
+            "canonical URL, nonempty `published_at`, `draft=false`, and "
+            "`prerelease=false`; resolves the tag to a 40-character commit SHA; and "
+            "dispatches the same six verified facts with the exact-Hub `Actions: write` "
+            "dispatcher App. Recovery never creates, moves, deletes, or edits a source "
+            "tag or Release. It is safe to repeat: an already-current Hub is a verified "
+            "no-op with no branch or PR.",
+            section,
+        )
+        self.assertIn(
+            "Task 8 acceptance requires the historical `v1.0.0` recovery/no-op pilot "
+            "and repeat/no-duplicate evidence.",
+            section,
+        )
+
+    def test_release_runbook_scopes_tag_only_source_recovery(self):
+        _, section = self._document_section(
+            "docs/RELEASING.md",
+            "## Historical source Release recovery",
+            "## Exact-tag Release recovery",
+        )
+        self._assert_tag_only_source_recovery_contract(section)
+
+    def test_release_design_scopes_tag_only_source_recovery(self):
+        _, section = self._document_section(
+            "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
+            "### 1. Source notification workflows",
+            "### 2. Hub component-upgrade workflow",
+        )
+        self._assert_tag_only_source_recovery_contract(section)
+
+    def test_release_plan_scopes_tag_only_source_recovery(self):
+        _, section = self._document_section(
+            "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
+            "## Task 5: Add source Release notifiers",
+            "## Task 6: Replace scheduled direct writes with reconciliation",
+        )
+        self._assert_tag_only_source_recovery_contract(section)
+
+    def _assert_pr_submission_ref_contract(self, document: str) -> None:
+        self.assertIn(
+            "| `ref` | 不可变、规范稳定 source tag，必须匹配 `vMAJOR.MINOR.PATCH`",
+            document,
+        )
+        self.assertIn("ref: v1.0.0", document)
+        self.assertNotIn("`ref`（同步分支，默认 main）", document)
+
+    def test_pr_submission_schema_requires_a_canonical_stable_ref(self):
+        self._assert_pr_submission_ref_contract(
+            read_workflow("docs/PR-SUBMISSION.md")
+        )
+
+    def _assert_source_trigger_and_fact_contract(self, section: str) -> None:
+        self.assertIn(
+            "```yaml\n"
+            "on:\n"
+            "  release:\n"
+            "    types: [published]\n"
+            "  workflow_dispatch:\n"
+            "    inputs:\n"
+            "      tag:\n"
+            "        description: Historical stable Release tag\n"
+            "        required: true\n"
+            "        type: string\n"
+            "```",
+            section,
+        )
+        self.assertIn(
+            "The six verified source Release fact fields are exactly "
+            "`schema_version`, `source_repo`, `tag`, `release_url`, `target_sha`, "
+            "and `published_at`; `dry_run=false` is a separate Hub dispatch control "
+            "and is not a source fact.",
+            section,
+        )
+
+    def test_release_runbook_scopes_source_triggers_and_fact_fields(self):
+        _, section = self._document_section(
+            "docs/RELEASING.md",
+            "## Historical source Release recovery",
+            "## Exact-tag Release recovery",
+        )
+        self._assert_source_trigger_and_fact_contract(section)
+
+    def test_release_design_scopes_source_triggers_and_fact_fields(self):
+        _, section = self._document_section(
+            "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
+            "### 1. Source notification workflows",
+            "### 2. Hub component-upgrade workflow",
+        )
+        self._assert_source_trigger_and_fact_contract(section)
+
+    def test_release_plan_scopes_source_triggers_and_fact_fields(self):
+        _, section = self._document_section(
+            "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
+            "## Task 5: Add source Release notifiers",
+            "## Task 6: Replace scheduled direct writes with reconciliation",
+        )
+        self._assert_source_trigger_and_fact_contract(section)
 
     def test_source_derived_build_job_has_no_repository_write_credential(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")

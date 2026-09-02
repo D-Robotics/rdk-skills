@@ -1,7 +1,8 @@
-"""Release-level invariants for the unified v1.0.0 Hub assembly."""
+"""Release-level invariants for upgrade-safe Hub assembly."""
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -13,12 +14,12 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR_PATH = ROOT / ".github" / "scripts" / "generate_plugin_catalog.py"
-EXPECTED_REFS = {
-    "bsp-skills.yml": "v1.0.0",
-    "rdk-device.yml": "v1.0.0",
-    "oe-tool-chain-x5.yml": "v1.0.0",
-    "oe-tool-chain-s.yml": "v1.0.0",
-}
+CANONICAL_STABLE_TAG = re.compile(
+    r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$"
+)
+CANONICAL_SEMVER = re.compile(
+    r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$"
+)
 
 spec = importlib.util.spec_from_file_location("release_catalog_generator", GENERATOR_PATH)
 assert spec is not None and spec.loader is not None
@@ -28,6 +29,11 @@ spec.loader.exec_module(catalog)
 
 
 class ReleaseContractTests(unittest.TestCase):
+    def assert_skill_version_is_canonical(self, path: Path) -> None:
+        version = catalog._read_frontmatter(path).get("version")
+        self.assertIsInstance(version, str)
+        self.assertIsNotNone(CANONICAL_SEMVER.fullmatch(version))
+
     def test_dco_workflow_uses_resolvable_action_ref(self):
         workflow = (ROOT / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
 
@@ -48,19 +54,113 @@ class ReleaseContractTests(unittest.TestCase):
         )
         self.assertEqual(output.split(maxsplit=1)[0], "100755")
 
-    def test_components_pin_every_release_source_to_v1(self):
-        for filename, expected_ref in EXPECTED_REFS.items():
-            with self.subTest(filename=filename):
-                data = yaml.safe_load((ROOT / "components.d" / filename).read_text(encoding="utf-8"))
-                self.assertEqual(data["ref"], expected_ref)
+    def test_every_component_ref_is_a_canonical_stable_tag(self):
+        components = catalog.load_components(ROOT)
 
-    def test_every_current_skill_uses_v1_frontmatter(self):
+        self.assertTrue(components)
+        for component in components:
+            with self.subTest(component=component.get("name")):
+                self.assertIsInstance(component.get("ref"), str)
+                self.assertRegex(component["ref"], CANONICAL_STABLE_TAG)
+
+    def test_catalog_loader_rejects_noncanonical_or_nonstable_component_refs(self):
+        invalid_refs = (
+            "v01.2.3",
+            "v1.02.3",
+            "v1.2.03",
+            "v1.2.3-rc.1",
+            "v1.2",
+            "1.2.3",
+            "main",
+        )
+        for invalid_ref in invalid_refs:
+            with self.subTest(ref=invalid_ref), tempfile.TemporaryDirectory() as temp_dir:
+                repo_root = Path(temp_dir)
+                components_dir = repo_root / "components.d"
+                components_dir.mkdir()
+                (components_dir / "component.yml").write_text(
+                    yaml.safe_dump(
+                        {
+                            "name": "Test Component",
+                            "repo": "D-Robotics/test-component",
+                            "ref": invalid_ref,
+                            "skills": [],
+                        },
+                        sort_keys=False,
+                    ),
+                    encoding="utf-8",
+                )
+
+                with self.assertRaisesRegex(
+                    catalog.CatalogError, "canonical stable tag"
+                ):
+                    catalog.load_components(repo_root)
+
+    def test_catalog_loader_accepts_mixed_canonical_stable_component_refs(self):
+        expected_refs = {
+            "component-a.yml": "v0.0.0",
+            "component-b.yml": "v1.2.3",
+            "component-c.yml": "v10.20.30",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            components_dir = repo_root / "components.d"
+            components_dir.mkdir()
+            for index, (filename, ref) in enumerate(expected_refs.items()):
+                (components_dir / filename).write_text(
+                    yaml.safe_dump(
+                        {
+                            "name": f"Test Component {index}",
+                            "repo": f"D-Robotics/test-component-{index}",
+                            "ref": ref,
+                            "skills": [],
+                        },
+                        sort_keys=False,
+                    ),
+                    encoding="utf-8",
+                )
+
+            components = catalog.load_components(repo_root)
+
+        self.assertEqual(
+            {component["ref"] for component in components}, set(expected_refs.values())
+        )
+
+    def test_every_current_skill_uses_canonical_semver_frontmatter(self):
         paths = sorted((ROOT / "skills").rglob("SKILL.md"))
         self.assertTrue(paths)
         for path in paths:
             with self.subTest(path=path):
-                text = path.read_text(encoding="utf-8")
-                self.assertRegex(text, r"(?m)^version:\s*1\.0\.0\s*$")
+                self.assert_skill_version_is_canonical(path)
+
+    def test_rejects_malformed_skill_frontmatter_versions(self):
+        malformed_versions = {
+            "terminal-newline-block-scalar": "version: |\n  1.2.3\n\n",
+            "leading-zero": "version: 01.2.3\n",
+            "v-prefix": "version: v1.2.3\n",
+            "prerelease": "version: 1.2.3-rc.1\n",
+            "wrong-type": "version: 123\n",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            for name, version_yaml in malformed_versions.items():
+                skill_path = temp_root / name / "SKILL.md"
+                skill_path.parent.mkdir()
+                skill_path.write_text(
+                    "---\n"
+                    f"name: {name}\n"
+                    "description: Invalid version fixture.\n"
+                    f"{version_yaml}"
+                    "---\n",
+                    encoding="utf-8",
+                )
+                if name == "terminal-newline-block-scalar":
+                    self.assertEqual(
+                        catalog._read_frontmatter(skill_path)["version"], "1.2.3\n"
+                    )
+
+                with self.subTest(name=name), self.assertRaises(AssertionError):
+                    self.assert_skill_version_is_canonical(skill_path)
 
     def test_generated_catalogs_match_component_inputs_and_plugin_copies(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -92,11 +192,23 @@ class ReleaseContractTests(unittest.TestCase):
             (ROOT / "skills/rdk-skill-finder/references/skill-index.json").read_bytes(),
             (plugin_root / "rdk-skill-finder/references/skill-index.json").read_bytes(),
         )
+        components = catalog.load_components(ROOT)
+        expected_workspace_refs = [
+            (component["repo"], component["ref"])
+            for component in components
+            if component.get("install_type") == "workspace"
+        ]
+        committed_pack_registry = json.loads(
+            (ROOT / "skills/rdk-pack-installer/references/pack-registry.json").read_text(
+                encoding="utf-8"
+            )
+        )
         self.assertEqual(
-            {item["ref"] for item in json.loads(
-                (ROOT / "skills/rdk-pack-installer/references/pack-registry.json").read_text(encoding="utf-8")
-            )["packs"]},
-            {"v1.0.0"},
+            [
+                (pack["repo"], pack["ref"])
+                for pack in committed_pack_registry["packs"]
+            ],
+            expected_workspace_refs,
         )
 
 
