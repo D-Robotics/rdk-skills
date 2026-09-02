@@ -42,7 +42,7 @@ jobs:
       destination_action: ${{ steps.candidate.outputs.destination_action }}
     steps:
       - name: Checkout the protected main candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           fetch-depth: 0
@@ -254,7 +254,7 @@ jobs:
             --tag-object-file "$tag_object_file" --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Store validated Release evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-evidence
           path: |
@@ -271,22 +271,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout the verified main candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.preflight.outputs.candidate_sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Download validated Release evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: release-evidence
           path: ${{ runner.temp }}/release-evidence
 
-      - name: Revalidate sources and publish the immutable destination
+      - name: Revalidate approved Release evidence
+        id: approved
         env:
           VERSION: ${{ inputs.version }}
           CONFIRM: ${{ inputs.confirm }}
@@ -360,18 +361,48 @@ jobs:
             echo "release destination changed during Environment approval" >&2; exit 1;
           }
 
-          if [[ "$destination_action" == create-tag ]]; then
-            notes_sha=$(python3 -B .github/scripts/release_contract.py notes-sha --notes-file "$notes_file")
-            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-            git tag -a "$tag" "$CANDIDATE_SHA" -m "RDK Skills $tag" \
-              -m "Release-Notes-SHA256: $notes_sha"
-            git push origin "$tag"
-          elif [[ "$destination_action" == release-only ]]; then
+          if [[ "$destination_action" == release-only ]]; then
             git cat-file tag "$tag" > "$tag_object_file"
             python3 -B .github/scripts/release_contract.py verify-notes-hash \
               --tag-object-file "$tag_object_file" --notes-file "$notes_file"
-          else
-            exit 1
           fi
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+          notes_sha=$(python3 -B .github/scripts/release_contract.py notes-sha --notes-file "$notes_file")
+          printf 'destination_action=%s\nnotes_sha=%s\n' \
+            "$destination_action" "$notes_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Create the exact-repository Hub release token
+        id: release-app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RDK_HUB_RELEASE_APP_ID }}
+          private-key: ${{ secrets.RDK_HUB_RELEASE_APP_PRIVATE_KEY }}
+          owner: D-Robotics
+          repositories: rdk-skills
+          permission-contents: write
+
+      - name: Publish the immutable destination
+        env:
+          VERSION: ${{ inputs.version }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          DESTINATION_ACTION: ${{ steps.approved.outputs.destination_action }}
+          APPROVED_NOTES_SHA: ${{ steps.approved.outputs.notes_sha }}
+          RDK_HUB_RELEASE_TOKEN: ${{ steps.release-app.outputs.token }}
+        run: |
+          set -euo pipefail
+          [[ "$DESTINATION_ACTION" == create-tag || "$DESTINATION_ACTION" == release-only ]] || exit 1
+          destination_action="$DESTINATION_ACTION"
+          tag="v$VERSION"
+          notes_file="$RUNNER_TEMP/release-evidence/release-notes.md"
+          test -s "$notes_file" || exit 1
+          [[ "$APPROVED_NOTES_SHA" =~ ^[0-9a-f]{64}$ ]] || exit 1
+          notes_sha=$(python3 -B .github/scripts/release_contract.py notes-sha --notes-file "$notes_file")
+          [[ "$notes_sha" == "$APPROVED_NOTES_SHA" ]] || {
+            echo "validated Release notes changed before publication" >&2; exit 1;
+          }
+          if [[ "$destination_action" == create-tag ]]; then
+            git -c user.name=rdk-hub-release -c user.email=rdk-hub-release@users.noreply.github.com tag -a "$tag" "$CANDIDATE_SHA" -m "RDK Skills $tag" \
+              -m "Release-Notes-SHA256: $notes_sha"
+            git push "https://x-access-token:${RDK_HUB_RELEASE_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$tag:refs/tags/$tag"
+          fi
+          GH_TOKEN="$RDK_HUB_RELEASE_TOKEN" gh release create "$tag" --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "RDK Skills v$VERSION" --notes-file "$notes_file"

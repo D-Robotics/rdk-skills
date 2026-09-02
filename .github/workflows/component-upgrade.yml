@@ -65,7 +65,7 @@ jobs:
       source_sha: ${{ steps.validate.outputs.source_sha }}
     steps:
       - name: Checkout trusted Hub validation code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           fetch-depth: 0
@@ -232,7 +232,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the exact trusted main candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.validate.outputs.candidate_sha }}
           fetch-depth: 0
@@ -265,7 +265,7 @@ jobs:
           bash "${args[@]}"
 
       - name: Store the validated proposal
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: component-upgrade-proposal
           path: ${{ runner.temp }}/component-upgrade-artifact
@@ -279,7 +279,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the exact trusted main candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.validate.outputs.candidate_sha }}
           fetch-depth: 0
@@ -289,32 +289,31 @@ jobs:
         run: python3 -m pip install -r .github/requirements.txt
 
       - name: Download the validated proposal
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: component-upgrade-proposal
           path: ${{ runner.temp }}/component-upgrade-artifact
 
-      - name: Create Hub-only Pull-requests token
-        id: pr-token
-        uses: actions/create-github-app-token@v2
+      - name: Create exact-repository component proposal token
+        id: proposal-app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
         with:
           app-id: ${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}
           private-key: ${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
+          owner: D-Robotics
+          repositories: rdk-skills
+          permission-contents: write
           permission-pull-requests: write
 
-      - name: Load the branch-only SSH deploy key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.RDK_COMPONENT_BRANCH_DEPLOY_KEY }}
-
-      - name: Configure SSH-only branch transport
-        run: git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+      - name: Configure exact public Hub transport
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://github.com/D-Robotics/rdk-skills.git"
+          [[ "$(git remote get-url origin)" == "https://github.com/D-Robotics/rdk-skills.git" ]]
 
       - name: Push the bot branch and upsert its PR
         env:
-          GH_TOKEN: ${{ steps.pr-token.outputs.token }}
+          GH_TOKEN: ${{ steps.proposal-app-token.outputs.token }}
         run: |
           set -euo pipefail
           bash .github/scripts/publish-component-pr.sh \
@@ -335,7 +334,7 @@ jobs:
       issues: write
     steps:
       - name: Checkout trusted Issue-rendering code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           persist-credentials: false

@@ -4,7 +4,7 @@
 
 **Goal:** Convert each published source Release into one reviewable Hub component-upgrade PR, then publish the Hub only through a protected manual workflow.
 
-**Architecture:** Four source workflows use a Hub-only `Actions: write` dispatcher App to invoke the Hub's `component-upgrade.yml` through `workflow_dispatch`. The Hub builds and validates source-derived artifacts without write credentials, uses a branch-only SSH deploy key for proposal branches, and uses a separate `Pull requests: write` App for PR metadata. A protected workflow alone creates immutable Hub tags and English Releases after approved PRs merge.
+**Architecture:** Four source workflows use a Hub-only `Actions: write` dispatcher App to invoke the Hub's `component-upgrade.yml` through `workflow_dispatch`. The Hub builds and validates source-derived artifacts without write credentials, then uses an exact-repository component proposal App with `Contents: write` plus `Pull requests: write` to publish stable bot branches and PR metadata. After protected Environment approval, a separate Hub-only Release App with only `Contents: write` creates immutable Hub tags and English Releases.
 
 **Tech Stack:** GitHub Actions, GitHub App tokens, GitHub CLI, Bash, Python 3, PyYAML, yq, git, unittest.
 
@@ -13,8 +13,8 @@
 ## Global Constraints
 
 - Only published, non-draft, non-prerelease source Releases with tags matching `vMAJOR.MINOR.PATCH` are eligible.
-- Use two Hub-only Apps and one Hub-only branch deploy key; never use a personal access token and never grant an App `Contents: write`.
-- The dispatcher App has only `Actions: write`; the PR App has only `Pull requests: write`; repository rules restrict the deploy key to `bot/component-upgrade/*` and reject `main` and tag refs.
+- Use three Hub-only Apps; never use a personal access token or a write-capable repository deploy credential.
+- The dispatcher App has only `Actions: write`; the component proposal App has only `Contents: write` plus `Pull requests: write`; the Release App has only `Contents: write`. The component proposal Integration is not a branch-ruleset bypass actor, and `bot/component-upgrade/*` is the only excluded branch pattern.
 - A component has one stable branch: `bot/component-upgrade/<component-id>`.
 - Source component tags and Hub versions are independent; all published tags are immutable.
 - No workflow may push directly to Hub `main`.
@@ -28,7 +28,7 @@
 | `.github/scripts/release_contract.py` | Canonical SemVer, Release facts, destination-state, and approval revalidation. |
 | `.github/scripts/sync-components.sh` | Synchronize only selected components at their pinned refs and write a summary JSON file. |
 | `.github/scripts/upsert-component-pr.sh` | Build/test an allowlisted proposal artifact without write credentials. |
-| `.github/scripts/publish-component-pr.sh` | Apply the validated artifact, push with SSH, and upsert PR metadata with the PR App token. |
+| `.github/scripts/publish-component-pr.sh` | Apply the validated artifact, then use the exact-repository component proposal App token to push the bot branch and upsert PR metadata. |
 | `.github/scripts/regenerate_readme.py` | Render README tables from parsed YAML and paths as inert structured data. |
 | `.github/scripts/render_hub_release_notes.py` | Render English Hub notes from the template and merged upgrade metadata. |
 | `.github/workflows/component-upgrade.yml` | Receive source dispatches and build component PRs. |
@@ -42,23 +42,23 @@
 
 **Systems:** GitHub organization; four source repositories; Hub repository.
 
-**Produces:** Two least-privilege Apps, a branch-only SSH deploy key and rules, protected Hub `main`, Auto-merge, and a protected `release` Environment.
+**Produces:** Three least-privilege Apps, protected Hub branch and tag rulesets, Auto-merge, and a protected `release` Environment.
 
 - [ ] **Step 1: Register the isolated Apps**
 
-Create a dispatcher App installed only on `D-Robotics/rdk-skills` with `Actions: write`, and a PR App installed only on that same Hub with `Pull requests: write`. Grant neither App `Contents: write` or any administration, merge, approval, bypass, or Issues capability.
+Create a dispatcher App installed only on `D-Robotics/rdk-skills` with `Actions: write`, a component proposal App installed only on that same Hub with `Contents: write` plus `Pull requests: write`, and a Release App installed only on that Hub with `Contents: write`. Grant the dispatcher no content permission. Grant the component proposal App no Actions, Issues, or administration permission, and grant the Release App no Actions, Pull requests, Issues, or administration permission; its sole ruleset bypass is tag creation. Record explicitly that `Contents: write` includes the merge API and `Pull requests: write` permits submitting reviews, so these permissions do not technically prevent approval or merge operations.
 
 - [ ] **Step 2: Configure scoped credentials**
 
-Expose `RDK_RELEASE_DISPATCHER_APP_ID` and `RDK_RELEASE_DISPATCHER_PRIVATE_KEY` only to the four source notifier workflows. Expose `RDK_COMPONENT_PR_BOT_APP_ID` and `RDK_COMPONENT_PR_BOT_PRIVATE_KEY` only to Hub. Configure Hub `RDK_RELEASE_DISPATCHER_ACTOR` to the exact dispatcher bot login. Confirm forked pull requests cannot access any key.
+Expose `RDK_RELEASE_DISPATCHER_APP_ID` and `RDK_RELEASE_DISPATCHER_PRIVATE_KEY` only to the four source notifier workflows. Expose `RDK_COMPONENT_PR_BOT_APP_ID` and `RDK_COMPONENT_PR_BOT_PRIVATE_KEY` only to the trusted Hub component publication job. Configure `RDK_HUB_RELEASE_APP_ID` and `RDK_HUB_RELEASE_APP_PRIVATE_KEY` only on the protected Hub `release` Environment. Configure Hub `RDK_RELEASE_DISPATCHER_ACTOR` to the exact dispatcher bot login. Confirm forked pull requests and source repositories cannot access the component proposal or Release App credentials.
 
 - [ ] **Step 3: Configure merge and release boundaries**
 
-Create a Hub-only SSH deploy key secret `RDK_COMPONENT_BRANCH_DEPLOY_KEY`. Add repository rules that allow this key only on `bot/component-upgrade/*` and reject `main` and tag refs. Require maintainer approval and Hub CI checks on `main`; enable GitHub Auto-merge. Create Environment `release` with required maintainer approval.
+Add one branch ruleset covering all branch refs except `bot/component-upgrade/*`. Give human repository roles `write`, `maintain`, and `admin` bypass, but do not add the component proposal App Integration as a bypass actor. Add two overlapping all-tag rulesets: creation with only the Release App integration as an `always` bypass actor, and update plus deletion with no bypass actors. Require maintainer approval and Hub CI checks on `main`; enable GitHub Auto-merge. Configure Environment `release` in single-reviewer mode with required designated maintainer approval. When the sole reviewer is also the workflow dispatcher, self-review prevention is disabled; administrator bypass must remain disabled. Restrict deployments to protected `main` only before storing credentials there; the protected-main-only deployment rule and Environment-only Release App key are compensating controls for this deliberate tradeoff.
 
 - [ ] **Step 4: Verify the App boundary**
 
-Use the deploy key to push a temporary `bot/component-upgrade/*` branch. Prove the same key cannot push protected `main` or any tag. Prove neither App token can write contents or publish a Release, and the source repositories cannot access the PR App or deploy key. Delete the temporary branch after recording the result.
+Use the component proposal App token to push a temporary `bot/component-upgrade/*` branch and open its PR. Prove the same token cannot push protected `main`, another non-bot branch, or any tag. Prove the dispatcher token cannot write contents. Inspect and audit every trusted workflow to confirm they never invoke review, approval, merge, Auto-merge, or Release APIs from the component proposal path, while explicitly recording that `Pull requests: write` permits reviews and GitHub `Contents: write` covers merge and Release APIs and therefore cannot provide a permission-level denial proof. Confirm both content-writing Apps are absent from every branch-ruleset bypass list and that protected `main` requires human approval, required checks, conversation resolution, and last-push approval. Confirm the Release App token cannot push protected `main`; record that branch/tag rulesets constrain ref writes rather than making `Contents: write` intrinsically ref-scoped. In a protection-equivalent non-production Hub, prove the exact-repository Release App token can create a new tag and matching Release but cannot update or delete a tag; alternatively, bind the positive production proof to the first planned formal Release and never create an undeletable disposable production tag. Prove the component proposal credentials are available only to its trusted Hub publication job and the Release App credentials are unavailable before Environment approval and to every source repository. Delete only the temporary branch after recording the result.
 
 ## Task 2: Implement component-release validation
 
@@ -186,7 +186,7 @@ Require the configured dispatcher bot actor and all six verified inputs for non-
 
 - [ ] **Step 4: Implement PR upsert**
 
-In an unprivileged job, reconstruct from the exact trusted `main`, change only the component ref, invoke `sync-components.sh`, regenerate README through structured data, build artifacts, run tests, force-stage additions/ignored files, and validate the path allowlist. Pass only a binary patch and structured metadata to the publication job. Apply it to trusted `main`, push `bot/component-upgrade/<component-id>` using only the SSH deploy key, and create/edit its PR using only the PR App token. Apply labels `component-upgrade` and `source:<component-id>`. Never execute existing bot-branch content and do not use `gh pr merge`.
+In an unprivileged job, reconstruct from the exact trusted `main`, change only the component ref, invoke `sync-components.sh`, regenerate README through structured data, build artifacts, run tests, force-stage additions/ignored files, and validate the path allowlist. Pass only a binary patch and structured metadata to the publication job. Apply it to trusted `main`; mint one short-lived component proposal App token scoped to exactly `D-Robotics/rdk-skills` with only `contents: write` and `pull_requests: write`; then push `bot/component-upgrade/<component-id>` and create/edit its PR with that token. Use the public HTTPS origin and command-scoped `GIT_CONFIG_*` authorization only for `git push`, without persisting credentials. Apply labels `component-upgrade` and `source:<component-id>`. Never execute existing bot-branch content and do not use `gh pr merge`.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -287,7 +287,7 @@ Run `python -B -m unittest tests/test_render_hub_release_notes.py -v`. Expected:
 
 - [ ] **Step 3: Implement renderer and protected workflow**
 
-Render `.github/RELEASE_TEMPLATE.md` with mixed component refs and merged `component-upgrade` PR metadata; reject CJK text, unresolved markers, invalid versions, duplicate rows, and missing source formal Releases. Use only `workflow_dispatch` and Environment `release`. Carry the validated requests/facts/notes as evidence, re-fetch and compare every source fact after approval, and use a protocol-independent destination state machine. Normal publication creates one annotated tag containing the validated notes SHA-256, then the Release. Explicit recovery accepts only an exact existing annotated tag resolving to the approved candidate with no Release and the same notes digest, preserves the tag, and creates only the missing Release.
+Render `.github/RELEASE_TEMPLATE.md` with mixed component refs and merged `component-upgrade` PR metadata; reject CJK text, unresolved markers, invalid versions, duplicate rows, and missing source formal Releases. Use only `workflow_dispatch` and Environment `release`. Keep every job's `GITHUB_TOKEN` at `contents: read`; after Environment approval and post-approval evidence revalidation, invoke the Release App token action at a reviewed full commit SHA and mint an exact-`D-Robotics/rdk-skills` token with only `Contents: write`. Carry the validated requests/facts/notes as evidence, re-fetch and compare every source fact with `github.token`, bind the approved notes digest across token creation, and use the Release App token only for the tag push and `gh release create --verify-tag`. Normal publication creates one annotated tag containing the validated notes SHA-256, then the Release. Explicit recovery accepts only an exact existing annotated tag resolving to the approved candidate with no Release and the same notes digest, preserves the tag, and creates only the missing Release.
 
 - [ ] **Step 4: Update policy, verify, and commit**
 
@@ -308,7 +308,7 @@ Publish a designated BSP patch Release or target a protected non-production Hub.
 
 - [ ] **Step 3: Verify idempotency and Auto-merge boundary**
 
-Repeat the same dispatch and verify the existing PR is updated rather than duplicated. Confirm neither App nor the deploy key can approve/merge; maintainer approval plus required checks enables Auto-merge.
+Repeat the same dispatch and verify the existing PR is updated rather than duplicated. Confirm the workflows and policy never invoke review, approval, merge, or Auto-merge APIs. Verify neither content-writing App is a branch-ruleset bypass actor and that maintainer approval, required checks, conversation resolution, and last-push approval gate GitHub Auto-merge; do not claim the Apps' broad GitHub permissions make review or merge calls impossible.
 
 - [ ] **Step 4: Verify manual Release safeguards**
 
@@ -316,7 +316,7 @@ In a non-production repository or dry-run mode, prove the Hub workflow rejects t
 
 - [ ] **Step 5: Record operations and commit**
 
-Add both App locations, exact repository scopes, deploy-key rules, required checks, branch/label conventions, recovery dispatch procedure, and pilot results to `docs/RELEASING.md`. Commit with `docs: record component release automation runbook`.
+Add all three App locations, exact repository scopes, branch and tag rulesets, required checks, branch/label conventions, release Environment controls, recovery dispatch procedure, and pilot results to `docs/RELEASING.md`. Commit with `docs: record component release automation runbook`.
 
 ## Plan Self-Review
 

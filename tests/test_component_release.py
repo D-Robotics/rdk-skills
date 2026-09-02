@@ -20,6 +20,22 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / ".github" / "scripts" / "component_release.py"
 UPGRADE_MODULE_PATH = ROOT / ".github" / "scripts" / "component_upgrade.py"
+COMPONENT_PROPOSAL_TOKEN_ACTION = (
+    "actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349"
+)
+CHECKOUT_ACTION = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+UPLOAD_ARTIFACT_ACTION = (
+    "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+)
+DOWNLOAD_ARTIFACT_ACTION = (
+    "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
+)
+PINNED_COMPONENT_ACTIONS = {
+    CHECKOUT_ACTION,
+    UPLOAD_ARTIFACT_ACTION,
+    DOWNLOAD_ARTIFACT_ACTION,
+    COMPONENT_PROPOSAL_TOKEN_ACTION,
+}
 
 
 def read_workflow(relative_path: str) -> str:
@@ -321,30 +337,123 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("gh pr merge", script)
         self.assertNotIn("refs/heads/main", script)
 
-    def test_workflow_splits_pr_and_branch_credentials_without_app_contents_write(self):
+    def test_workflow_uses_one_exact_repo_app_for_branch_and_pr_writes(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
         document = yaml.load(workflow, Loader=yaml.BaseLoader)
         upsert = document["jobs"]["upsert-pr"]
-        token_step = next(
+        for job_name, job in document["jobs"].items():
+            for step in job["steps"]:
+                action = step.get("uses")
+                if action:
+                    self.assertRegex(
+                        action,
+                        r"^[^@\s]+@[0-9a-f]{40}$",
+                        f"{job_name}: {action}",
+                    )
+                    self.assertIn(action, PINNED_COMPONENT_ACTIONS)
+        self.assertEqual(upsert["permissions"], {"contents": "read"})
+        checkout = next(
             step
             for step in upsert["steps"]
-            if step.get("uses") == "actions/create-github-app-token@v2"
+            if step.get("uses") == CHECKOUT_ACTION
         )
+        self.assertEqual(checkout["with"]["persist-credentials"], "false")
+
+        token_steps = [
+            step
+            for step in upsert["steps"]
+            if (step.get("uses") or "").startswith("actions/create-github-app-token@")
+        ]
+        self.assertEqual(len(token_steps), 1)
+        token_step = token_steps[0]
+        self.assertEqual(token_step["id"], "proposal-app-token")
+        self.assertEqual(token_step["uses"], COMPONENT_PROPOSAL_TOKEN_ACTION)
 
         self.assertEqual(
-            token_step["with"]["app-id"],
-            "${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}",
+            token_step["with"],
+            {
+                "app-id": "${{ vars.RDK_COMPONENT_PR_BOT_APP_ID }}",
+                "private-key": "${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}",
+                "owner": "D-Robotics",
+                "repositories": "rdk-skills",
+                "permission-contents": "write",
+                "permission-pull-requests": "write",
+            },
+        )
+        configure_step = next(
+            step
+            for step in upsert["steps"]
+            if step.get("name") == "Configure exact public Hub transport"
+        )
+        self.assertIn(
+            'git remote set-url origin "https://github.com/D-Robotics/rdk-skills.git"',
+            configure_step["run"],
+        )
+        publish_step = next(
+            step
+            for step in upsert["steps"]
+            if step.get("name") == "Push the bot branch and upsert its PR"
         )
         self.assertEqual(
-            token_step["with"]["private-key"],
-            "${{ secrets.RDK_COMPONENT_PR_BOT_PRIVATE_KEY }}",
+            publish_step["env"]["GH_TOKEN"],
+            "${{ steps.proposal-app-token.outputs.token }}",
         )
-        self.assertIn("repositories: ${{ github.event.repository.name }}", workflow)
-        self.assertEqual(token_step["with"]["permission-pull-requests"], "write")
-        self.assertNotIn("permission-contents", token_step["with"])
-        self.assertIn("RDK_COMPONENT_BRANCH_DEPLOY_KEY", workflow)
-        self.assertNotIn("permission-contents: write", workflow)
+        script = publish_step["run"]
+        self.assertNotIn("basic_auth", script)
+        self.assertNotIn("GIT_CONFIG_", script)
+        for forbidden in (
+            "COMPONENT_BRANCH_",
+            "ssh-agent",
+            "ssh-private-key",
+            "git@github.com",
+            "https://x-access-token:",
+            "git config http.",
+        ):
+            self.assertNotIn(forbidden, workflow)
+        publisher = read_workflow(".github/scripts/publish-component-pr.sh")
+        self.assertIn('echo "::add-mask::$basic_auth"', publisher)
+        self.assertEqual(publisher.count("GIT_CONFIG_COUNT=1"), 1)
+        self.assertEqual(
+            publisher.count("GIT_CONFIG_KEY_0=http.https://github.com/.extraheader"),
+            1,
+        )
+        self.assertEqual(
+            publisher.count(
+                'GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $basic_auth"'
+            ),
+            1,
+        )
+        self.assertIn("push_with_app_token()", publisher)
+        self.assertEqual(publisher.count("git push"), 1)
+        self.assertEqual(publisher.count("push_with_app_token --force-with-lease="), 2)
+        self.assertNotIn("git remote set-url", publisher)
+        self.assertNotIn("git config credential", publisher.lower())
+        self.assertNotIn("git config http.", publisher.lower())
+        self.assertNotIn("SSH", publisher)
+        self.assertNotIn("deploy key", publisher.lower())
         self.assertNotIn("RDK_RELEASE_BOT_", workflow)
+
+        policy_docs = "\n".join(
+            read_workflow(path)
+            for path in (
+                "docs/RELEASING.md",
+                "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
+                "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
+            )
+        )
+        for required in (
+            "`Contents: write` includes the merge API",
+            "`Pull requests: write` permits submitting reviews",
+            "never invoke review, approval, merge, or Auto-merge APIs",
+            "last-push approval",
+        ):
+            self.assertIn(required, policy_docs)
+        for stale_claim in (
+            "has no permission to approve, merge",
+            "approval, or merge capability",
+            "none of the three Apps can approve or merge",
+        ):
+            self.assertNotIn(stale_claim, policy_docs)
 
     def test_source_derived_build_job_has_no_repository_write_credential(self):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
@@ -355,7 +464,7 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         self.assertIn("contents: read", build_job)
         for forbidden in (
             "create-github-app-token",
-            "RDK_COMPONENT_BRANCH_DEPLOY_KEY",
+            "ssh-agent",
             "RDK_COMPONENT_PR_BOT_PRIVATE_KEY",
             "permission-contents: write",
             "git push",

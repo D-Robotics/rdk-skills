@@ -14,6 +14,22 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 RENDERER_PATH = ROOT / ".github" / "scripts" / "render_hub_release_notes.py"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "release-hub.yml"
+RELEASE_APP_TOKEN_ACTION = (
+    "actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349"
+)
+CHECKOUT_ACTION = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+UPLOAD_ARTIFACT_ACTION = (
+    "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+)
+DOWNLOAD_ARTIFACT_ACTION = (
+    "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
+)
+PINNED_RELEASE_ACTIONS = {
+    CHECKOUT_ACTION,
+    UPLOAD_ARTIFACT_ACTION,
+    DOWNLOAD_ARTIFACT_ACTION,
+    RELEASE_APP_TOKEN_ACTION,
+}
 
 
 def load_renderer():
@@ -285,14 +301,46 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
 
     def test_recovery_is_explicit_environment_protected_and_exact_tag_only(self):
         """A half-release retry may create only the missing Release for the exact tag."""
+        self.assertEqual(set(self.workflow["on"]), {"workflow_dispatch"})
+        self.assertEqual(self.workflow["permissions"], {"contents": "read"})
         inputs = self.workflow["on"]["workflow_dispatch"]["inputs"]
         self.assertEqual(inputs["recover_existing_tag"]["type"], "boolean")
         self.assertEqual(inputs["recover_existing_tag"]["default"], "false")
         self.assertEqual(self.jobs["publish"]["environment"], "release")
-        self.assertEqual(self.jobs["publish"]["permissions"], {"contents": "write"})
+        self.assertEqual(self.jobs["publish"]["permissions"], {"contents": "read"})
+        environment_policies = {
+            path: (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                "docs/RELEASING.md",
+                "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
+                "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
+            )
+        }
+        for path, policy in environment_policies.items():
+            for required in (
+                "required designated maintainer approval",
+                "single-reviewer mode",
+                "self-review prevention is disabled",
+                "administrator bypass must remain disabled",
+                "protected `main` only",
+                "Environment-only Release App key",
+            ):
+                self.assertIn(required, policy, f"{path}: {required}")
+            self.assertNotIn("self-review prevention,", policy, path)
+            self.assertNotIn("prevent the initiating actor", policy, path)
         for name, job in self.jobs.items():
-            if name != "publish":
-                self.assertNotEqual((job.get("permissions") or {}).get("contents"), "write")
+            self.assertNotEqual((job.get("permissions") or {}).get("contents"), "write", name)
+            for step in job["steps"]:
+                action = step.get("uses")
+                if action:
+                    self.assertRegex(
+                        action,
+                        r"^[^@\s]+@[0-9a-f]{40}$",
+                        f"{name}: {action}",
+                    )
+                    self.assertIn(action, PINNED_RELEASE_ACTIONS)
+                if action == CHECKOUT_ACTION:
+                    self.assertEqual(step["with"].get("persist-credentials"), "false", name)
 
         script = self.script(self.jobs["publish"])
         self.assertIn("destination-state", script)
@@ -300,7 +348,7 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         self.assertIn("verify-notes-hash", script)
         self.assertIn("Release-Notes-SHA256", script)
         self.assertIn('if [[ "$destination_action" == create-tag ]]', script)
-        self.assertLess(script.index("destination-state"), script.index("git remote set-url"))
+        self.assertLess(script.index("destination-state"), script.index("git push"))
 
         preflight = self.script(self.jobs["preflight"])
         self.assertIn('recovered_sha=$(awk', preflight)
@@ -308,6 +356,91 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         self.assertIn('git merge-base --is-ancestor "$candidate_sha" origin/main', preflight)
         self.assertIn("release_contract.py previous-tag", preflight)
         self.assertIn('if [[ "$PREFLIGHT_ACTION" == create-tag ]]', script)
+
+    def test_publish_uses_an_environment_scoped_release_app_token_only_for_writes(self):
+        """Tag and Release writes require the exact Hub-only Release App capability."""
+        publish = self.jobs["publish"]
+        self.assertEqual(publish["environment"], "release")
+        self.assertEqual(publish["permissions"], {"contents": "read"})
+
+        token_steps = [
+            step
+            for step in publish["steps"]
+            if (step.get("uses") or "").startswith("actions/create-github-app-token@")
+        ]
+        self.assertEqual(len(token_steps), 1)
+        token_step = token_steps[0]
+        self.assertEqual(token_step["uses"], RELEASE_APP_TOKEN_ACTION)
+        self.assertEqual(token_step.get("id"), "release-app")
+        self.assertEqual(
+            token_step["with"],
+            {
+                "app-id": "${{ vars.RDK_HUB_RELEASE_APP_ID }}",
+                "private-key": "${{ secrets.RDK_HUB_RELEASE_APP_PRIVATE_KEY }}",
+                "owner": "D-Robotics",
+                "repositories": "rdk-skills",
+                "permission-contents": "write",
+            },
+        )
+
+        revalidate_steps = [
+            step
+            for step in publish["steps"]
+            if step.get("name") == "Revalidate approved Release evidence"
+        ]
+        publish_steps = [
+            step
+            for step in publish["steps"]
+            if step.get("name") == "Publish the immutable destination"
+        ]
+        self.assertEqual(len(revalidate_steps), 1)
+        self.assertEqual(len(publish_steps), 1)
+        revalidate_step = revalidate_steps[0]
+        publish_step = publish_steps[0]
+        self.assertLess(publish["steps"].index(revalidate_step), publish["steps"].index(token_step))
+        self.assertLess(publish["steps"].index(token_step), publish["steps"].index(publish_step))
+        self.assertEqual(revalidate_step["env"]["GH_TOKEN"], "${{ github.token }}")
+        self.assertNotIn("RDK_HUB_RELEASE_TOKEN", revalidate_step["env"])
+        self.assertIn("release_contract.py notes-sha", revalidate_step["run"])
+        self.assertEqual(
+            publish_step["env"]["RDK_HUB_RELEASE_TOKEN"],
+            "${{ steps.release-app.outputs.token }}",
+        )
+        self.assertEqual(
+            publish_step["env"]["APPROVED_NOTES_SHA"],
+            "${{ steps.approved.outputs.notes_sha }}",
+        )
+        self.assertNotIn("GH_TOKEN", publish_step["env"])
+        self.assertEqual(
+            sum(
+                (step.get("uses") or "").startswith("actions/create-github-app-token@")
+                for job in self.jobs.values()
+                for step in job["steps"]
+            ),
+            1,
+        )
+        self.assertEqual(self.text.count("secrets.RDK_HUB_RELEASE_APP_PRIVATE_KEY"), 1)
+
+        script = " ".join(publish_step["run"].split())
+        self.assertIn(
+            "git -c user.name=rdk-hub-release "
+            "-c user.email=rdk-hub-release@users.noreply.github.com tag -a",
+            script,
+        )
+        self.assertIn('[[ "$notes_sha" == "$APPROVED_NOTES_SHA" ]]', script)
+        self.assertLess(
+            script.index('[[ "$notes_sha" == "$APPROVED_NOTES_SHA" ]]'),
+            script.index("git -c user.name=rdk-hub-release"),
+        )
+        self.assertIn(
+            'git push "https://x-access-token:${RDK_HUB_RELEASE_TOKEN}'
+            '@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$tag:refs/tags/$tag"',
+            script,
+        )
+        self.assertIn('GH_TOKEN="$RDK_HUB_RELEASE_TOKEN" gh release create', script)
+        self.assertIn('gh release create "$tag" --repo "$GITHUB_REPOSITORY" --verify-tag', script)
+        self.assertNotIn("x-access-token:${GH_TOKEN}", script)
+        self.assertNotIn("git remote set-url", script)
 
     def test_publish_revalidates_every_source_release_fact_after_approval(self):
         """Environment approval must not freeze mutable source Release evidence."""
@@ -320,7 +453,7 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         self.assertIn("compare-facts", publish)
         first_write = min(
             publish.index(marker)
-            for marker in ("git remote set-url", "git tag -a", "git push origin", "gh release create")
+            for marker in ("tag -a", "git push", "gh release create")
         )
         self.assertLess(publish.index("compare-facts"), first_write)
 
@@ -335,7 +468,7 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
         upload = next(
             step
             for step in self.jobs["preflight"]["steps"]
-            if step.get("uses") == "actions/upload-artifact@v4"
+            if step.get("uses") == UPLOAD_ARTIFACT_ACTION
         )
         self.assertEqual(upload["with"]["name"], "release-evidence")
         for filename in (
