@@ -451,11 +451,59 @@
     },
     {
       "catalog_path": "skills/rdk-model-zoo",
-      "description": "Run a ready-made RDK Model Zoo BPU model — choose its board branch, download the matching .bin/.hbm, run its sample, and read benchmark latency/FPS/accuracy. Use for precompiled YOLO/classification/segmentation/OCR, Model Zoo samples, branches, downloads, and benchmarks. 触发词:Model Zoo、现成模型、预编译模型、官方转好的、有没有现成的 bin/hbm、模型仓、跑示例 sample、哪个分支、archive.d-robotics 下载、benchmark 帧率精度、YOLO11 哪块板能跑、模型性能对比。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); own .pt/.onnx conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; TROS/ROS2 node development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM chat → rdk-llm-deployment; board/model selection → rdk-ecosystem; ACT/VLA/Pi0 policies → rdk-embodied-lerobot.",
+      "description": "Use when asking about ready-made RDK Model Zoo models, matching branches, downloads, sample execution, or published benchmarks. 触发词：现成模型、跑示例、模型目录、帧率查询。Do not use as the primary skill for PR review, repository development, custom quantization, or fresh performance measurement.",
       "install_type": "flat",
       "name": "rdk-model-zoo",
-      "pack": "RDK Device Skills",
-      "repo": "D-Robotics/rdk-device-skills"
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo-develop",
+      "description": "Use when adding or modifying maintained RDK Model Zoo samples, shared utilities, sample docs, tests, or repository conventions, including bug fixes. 触发词：开发样例、新增模型、修复 sample、公共工具。Do not use as the primary skill for read-only review, ready-made use, or toolchain quantization.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo-develop",
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo-integrate",
+      "description": "Use when integrating a custom model artifact or changed I/O contract into an RDK Model Zoo sample, including class-count, shape, wrapper, or cross-platform adaptation. 触发词：自训练接入、替换权重、接口适配。Do not use to implement PTQ/QAT or to review an unchanged sample.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo-integrate",
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo-release",
+      "description": "Use when preparing or checking RDK Model Zoo model releases, Skills Pack releases, manifests, Hub registration migration, tags, or release isolation. 触发词：模型发版、Skills 发版、Hub 接入、Tag 兼容。Do not use for routine sample development, OE Pack releases, or publishing without explicit authorization.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo-release",
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo-repo",
+      "description": "Use to establish an RDK Model Zoo checkout's platform, version, layout, conventions, dirty or untracked files, affected samples, and development entrypoints. 触发词：仓库上下文、工作区盘点、开发入口、分支规范。Workspace inventory belongs here; assessing code correctness, standards compliance or delivery readiness belongs to review. Do not use as primary for ready-made model lookup or quantization.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo-repo",
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo-review",
+      "description": "Use to assess an RDK Model Zoo sample, PR, local changes, staged diff, or commit range for standards compliance, delivery completeness, technical correctness, and regressions. 触发词：PR review、样例审计、代码评审。Platform, version, directory or untracked-file inventory without a quality assessment belongs to rdk-model-zoo-repo. Do not use to modify code, run quantization, or silently execute board tests.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo-review",
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
+    },
+    {
+      "catalog_path": "skills/rdk-model-zoo-validate",
+      "description": "Use when planning or executing sample-scoped RDK Model Zoo smoke, numerical, accuracy, performance, or regression checks and preparing verification evidence. 触发词：样例验收、回归测试、数值一致性。Do not use as a PR verdict, a published-benchmark lookup, or a quantization implementation.",
+      "install_type": "flat",
+      "name": "rdk-model-zoo-validate",
+      "pack": "RDK Model Zoo Skills",
+      "repo": "D-Robotics/rdk_model_zoo"
     },
     {
       "catalog_path": "skills/rdk-multimedia",

@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+name: RDK Model Zoo Skills
+repo: D-Robotics/rdk_model_zoo
+ref: v1.0.0
+description: Cross-platform Model Zoo discovery, repository context, integration,
+  development, validation, review and release workflows for X5, S series, X3 and historical
+  layouts.
+skills:
+- path: skills/rdk-model-zoo/
+  catalog_dir: rdk-model-zoo
+- path: skills/rdk-model-zoo-develop/
+  catalog_dir: rdk-model-zoo-develop
+- path: skills/rdk-model-zoo-integrate/
+  catalog_dir: rdk-model-zoo-integrate
+- path: skills/rdk-model-zoo-release/
+  catalog_dir: rdk-model-zoo-release
+- path: skills/rdk-model-zoo-repo/
+  catalog_dir: rdk-model-zoo-repo
+- path: skills/rdk-model-zoo-review/
+  catalog_dir: rdk-model-zoo-review
+- path: skills/rdk-model-zoo-validate/
+  catalog_dir: rdk-model-zoo-validate
+links:
+  contributing: docs/Model_Zoo_Repository_Guidelines.md
+  discussions: false
