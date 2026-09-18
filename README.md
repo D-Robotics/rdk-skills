@@ -15,6 +15,60 @@ This repository is the **central catalog (Hub)**: each Skill Pack maintains its 
 
 ---
 
+## Find the skill for your task
+
+Choose a task area, then open its complete skill map. The catalog contains **97 skills**; OE toolchain skills require whole-pack setup.
+
+```mermaid
+flowchart TB
+    hub["RDK Skills · 97"]
+    hub --> device["Device · 25"]
+    click device "docs/SKILL-MAP.md#device" "Open skill map"
+    hub --> bsp["BSP · 8"]
+    click bsp "docs/SKILL-MAP.md#bsp" "Open skill map"
+    hub --> x5["X5 toolchain · 22"]
+    click x5 "docs/SKILL-MAP.md#x5" "Open skill map"
+    hub --> s["S toolchain · 33"]
+    click s "docs/SKILL-MAP.md#s" "Open skill map"
+    hub --> zoo["Model Zoo · 7"]
+    click zoo "docs/SKILL-MAP.md#zoo" "Open skill map"
+    hub --> discovery["Discovery & installation · 2"]
+    click discovery "docs/SKILL-MAP.md#hub" "Open skill map"
+```
+
+[Device](docs/SKILL-MAP.md#device) · [BSP](docs/SKILL-MAP.md#bsp) · [X5 toolchain](docs/SKILL-MAP.md#x5) · [S toolchain](docs/SKILL-MAP.md#s) · [Model Zoo](docs/SKILL-MAP.md#zoo) · [Discovery & installation](docs/SKILL-MAP.md#hub)
+
+## Installation layers: where does content go?
+
+A pack groups related skills; its type determines how it is installed. The Hub plugin provides discovery and installation assistance. OE X5 and OE S each require setup in the target project.
+
+```mermaid
+flowchart TB
+    entry["Choose a capability"]
+    entry --> plugin["Hub plugin"]
+    entry --> flat["Device / BSP / Model Zoo"]
+    entry --> packs["OE workspace packs"]
+    plugin --> helper["In the agent: finder, installer, docs"]
+    helper -. "Guides installation" .-> flat
+    helper -. "Runs the pack setup.sh" .-> packs
+    flat --> agent["Selected skills → agent skill directory"]
+    packs --> x5["OE X5: setup.sh TARGET_PROJECT"]
+    packs --> s["OE S: setup.sh TARGET_PROJECT"]
+    x5 --> xd["TARGET_PROJECT/.drobotics/"]
+    s --> sd["TARGET_PROJECT/.horizon/"]
+    xd --> xr["Skills + scripts + docs + platform configuration"]
+    sd --> sr["Module routers + sub-skills + shared resources"]
+```
+
+| Your task | What to install | Next step |
+|---|---|---|
+| Discover capabilities | Hub plugin | Use the finder, then install the selected skill or pack |
+| Device, BSP or Model Zoo tasks | Selected ordinary skills | Invoke in your agent; tasks may need additional SDKs or hardware |
+| X5 model toolchain | Complete OE X5 pack | Run its `setup.sh` for your target project |
+| S-series model toolchain | Complete OE S pack | Run its `setup.sh` for your target project |
+
+**Installing the Hub plugin does not initialize an OE pack. Installing skills or packs does not install all SDKs, compilers or board runtimes.** See the installation options below and the [user guide](docs/SKILL-USAGE.md).
+
 ## Supported Boards
 
 | Board | BPU Architecture | Compute |
@@ -31,107 +85,199 @@ Board parameters follow official documentation repositories [rdk_x_doc](https://
 
 ## Installation
 
-### Option 1: Ask your AI to install (recommended)
+Choose what to install: [ordinary skills](#install-skills), [OE toolchain packs](#install-packs), or [agent plugins](#install-plugins). Each includes an AI prompt. Replace the bracketed fields first; ask your agent to guide any UI or credential steps.
 
-Copy this prompt to your AI coding agent (Claude Code, Codex, Cursor, etc.):
+<a id="install-skills"></a>
 
+### 1. Ordinary skills: install what you need
+
+For Device, BSP and Model Zoo capabilities. Skills go into the selected agent's skill directory.
+
+**Copy to your AI:**
+
+```text
+Install ordinary skills from https://github.com/D-Robotics/rdk-skills for:
+Task: [for example, troubleshoot an RDK X5 camera]
+Target agent: [Claude Code / Codex / Cursor]
+Scope: [current project and its absolute path, or global]
+
+Read the repository instructions and skill index, identify the relevant skills,
+and install them with the skills CLI for my chosen agent and scope.
+Check the CLI's actual options; do not install every skill by default.
+If the capability belongs to an OE workspace pack, use whole-pack setup instead.
+Report skill names, actual installation paths, session reload requirements,
+and one usage example. Guide me through any interactive steps you cannot perform.
 ```
-Install D-Robotics RDK skills from the marketplace: run `npx skills add d-robotics/rdk-skills` and follow the interactive prompts to install the skills you need.
-```
 
-### Option 2: skills CLI
+**Manual installation:**
 
 ```bash
-npx skills add d-robotics/rdk-skills
+npx skills add d-robotics/rdk-skills --skill rdk-camera-setup
 ```
 
-The CLI lists all available skills and installs the selected one into the appropriate agent skill directory.
+Select the agent and scope when prompted. Replace the example skill with your selection from the map.
 
-> The CLI covers flat-layout skills (RDK Device Skills). Workspace-integrated packs (OE Tool Chain) are not individually installable — install those whole via [Option 6](#option-6-workspace-integrated-packs-oe-tool-chain-x5--s).
+The finder returns the command template `npx skills add d-robotics/rdk-skills --skill <skill-name>` for ordinary skills; substitute the selected skill name before running it.
 
-### Option 3: Claude Code plugin marketplace
+For installation from a source repository, use this Device example prompt:
 
+```text
+Read the installation instructions at https://github.com/D-Robotics/rdk-device-skills
+and install device skills for [target agent] in [installation scope].
+Check the supported install.sh targets and options first.
+Report the actual installation paths and verification results.
 ```
-/plugin marketplace add D-Robotics/rdk-skills
-```
 
-Run `/plugin`, browse the Discover tab, and install.
-
-The Hub plugin uses `rdk-skill-finder` to search the catalog. For a flat skill it returns exactly `npx skills add d-robotics/rdk-skills --skill <skill-name>`; for a workspace-integrated skill it hands the request to `rdk-pack-installer`.
-
-### Option 4: Clone a Pack repo directly
-
-Each Pack repo ships an `install.sh` supporting both symlink and copy modes across multiple agent runtimes:
+Manual entry point:
 
 ```bash
 git clone https://github.com/D-Robotics/rdk-device-skills.git
 cd rdk-device-skills
-./install.sh                          # default: symlink into ~/.claude/skills etc.
-./install.sh --copy                   # copy instead of symlink
-./install.sh --targets claude,cursor  # specific agents only
+./install.sh --help
 ```
 
-### Option 5: DeepSeek Harness (DSH) plugin
+Other source repositories may provide different installers and options.
 
-Install the whole RDK skill ecosystem into DeepSeek Harness as a native plugin bundle (npm package `dsh-plugin-rdk`, GitHub topic [`dsh-plugin`](https://github.com/topics/dsh-plugin)):
+<a id="install-packs"></a>
 
-```bash
-dsh plugin --profile <name> add dsh-plugin-rdk   # or: add github:<owner>/dsh-plugin-rdk
-dsh --profile <name>
+### 2. OE toolchain packs: initialize each project
+
+Choose the independent X5 or S pack for your target platform. Each contains shared skills, scripts and documentation that require whole-pack setup in the target project. These prompts do not require the Hub plugin; an agent with `rdk-pack-installer` can use it.
+
+#### OE X5 pack
+
+**Copy to your AI:**
+
+```text
+Install the complete OE X5 pack from https://github.com/D-Robotics/rdk-skills.
+Target project: [absolute project path]
+Target agent: [my agent]
+
+Read the installation instructions and
+skills/rdk-pack-installer/references/pack-registry.json.
+Initialize the target project using skills/oe-skills-x5/setup.sh from the Hub.
+Record a source ref matching the actual installed content.
+If already installed, compare versions first. Before rebuilding an existing
+directory, explain the impact on local edits and wait for my confirmation.
+Verify .drobotics/ using the registry verify_paths, check routing for my agent,
+report any additional configuration, and give an X5 quantization example.
+If Bash cannot run on this system, explain the required environment and next step.
 ```
 
-The bundle registers every skill in this catalog into the harness skill registry (so they load through the built-in `skill` tool), and adds two model tools: `rdk_skills` (browse/search the catalog) and `rdk_board_detect` (detect whether the host is an RDK board). See `.dsh-plugin/marketplace.json` and the plugin repo for details.
+**Result:** `project/.drobotics/`, containing X5 skills, scripts, docs and platform configuration.
 
-### Option 6: Workspace-integrated packs (OE Tool Chain X5 / S)
-
-Some packs require workspace initialization — they install scripts, docs, and platform configs into `.drobotics/` or `.horizon/` and inject routing rules into `CLAUDE.md`. The Hub mirrors each such pack as a **complete install source**: `skills/<catalog_dir>/` carries the full resource tree plus the pack's `setup.sh`, so a single Hub checkout installs any pack. Install the whole pack, not individual skills:
+**Manual installation** (in Bash; replace the path with your project's absolute path):
 
 ```bash
 git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git
 cd rdk-skills
-
-# X5 tool chain
-bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT
-
-# S-series tool chain (Horizon OE)
-bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
-
-# Upgrade an existing workspace: compares the installed VERSION, skips when
-# current, otherwise rebuilds .drobotics/ (no stale files). --ref records the
-# source tag into the workspace's INSTALLED_REF; omit it for a manual update.
-bash skills/oe-skills-x5/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
-# bash skills/oe-skills-s/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
+bash skills/oe-skills-x5/setup.sh "/absolute/path/to/project"
 ```
 
-The pack repos remain the authoritative upstreams and the documented fallback source:
+#### OE S pack
+
+**Copy to your AI:**
+
+```text
+Install the complete OE S pack from https://github.com/D-Robotics/rdk-skills.
+Target project: [absolute project path]
+Target agent: [my agent]
+
+Read the installation instructions and
+skills/rdk-pack-installer/references/pack-registry.json.
+Initialize the target project using skills/oe-skills-s/setup.sh from the Hub.
+Record a source ref matching the actual installed content.
+If already installed, compare versions first. Before rebuilding an existing
+directory, explain the impact on local edits and wait for my confirmation.
+Verify .horizon/ using the registry verify_paths, check routing for my agent,
+report any additional configuration, and give an S-series compilation example.
+If Bash cannot run on this system, explain the required environment and next step.
+```
+
+**Result:** `project/.horizon/`, containing module routers, sub-skills and shared resources.
+
+**Manual installation** (from the Hub checkout above):
 
 ```bash
-# Fallback: install straight from a pack repo
-git clone https://github.com/D-Robotics/oe-skills-x5.git
-cd oe-skills-x5
-bash setup.sh $PROJECT_ROOT
+bash skills/oe-skills-s/setup.sh "/absolute/path/to/project"
 ```
 
-Or tell your AI (works with the Hub plugin from Option 3, which ships `rdk-pack-installer`):
+Skill/pack setup does not imply the OE SDK, compilers or board runtime are ready; prepare those for the task separately. Source pack repositories remain authoritative. If the Hub mirror is unavailable, consult the registry and source instructions to install the matching version.
 
+<a id="install-plugins"></a>
+
+### 3. Agent plugin entry points
+
+#### Hub plugin: discovery and installation assistance
+
+Provides the finder, installer and documentation helper. Install ordinary skills or initialize OE packs as needed afterwards.
+
+**Copy to your AI:**
+
+```text
+Read the plugin instructions at https://github.com/D-Robotics/rdk-skills
+and install the d-robotics-skills Hub plugin for [target agent].
+Use that agent's supported plugin mechanism. If I must add a marketplace or
+click Install, give me the exact steps; do not run Claude Code slash commands
+as terminal commands.
+Verify that rdk-skill-finder, rdk-pack-installer and the documentation helper
+are available. Find capabilities for [my task] and explain what still needs
+separate installation or project initialization.
 ```
-Install D-Robotics OE-Skills-X5 into this project.
+
+**Manual entry point (inside Claude Code):**
+
+```text
+/plugin marketplace add D-Robotics/rdk-skills
 ```
 
-`rdk-pack-installer` reads its bundled pack registry, clones the Hub catalog, runs the pack's mirrored `setup.sh` (from `skills/<catalog_dir>/`) with your confirmed project root, and verifies the installed workspace — falling back to the pack repo only when the Hub mirror lags behind the registry. It supports every pack registered with `install_type: workspace` (OE Tool Chain X5 and S). For upgrade requests it compares the workspace's installed anchor (`INSTALLED_REF`, falling back to `VERSION`) with the registry's pinned `ref` (normalizing a leading `v`), reports "already up to date" when they match, and otherwise re-runs `setup.sh --update --ref <ref>` — which rebuilds the workspace from scratch, so local edits inside `.drobotics/`/`.horizon/` are lost; that rebuild requires an explicit confirmation.
+Open `/plugin` → Discover and install `d-robotics-skills`. Other agents use their own supported plugin interfaces.
 
-### Updating skills
+#### DSH plugin: DeepSeek Harness bundle
 
-- Flat skills: `npx skills update` (or re-run `npx skills add d-robotics/rdk-skills` and select again).
-- Hub plugin: `/plugin` → manage the `d-robotics-skills` plugin to update the finder and installer skills.
-- DSH bundle: `dsh plugin --profile <name> update dsh-plugin-rdk` (skill content refreshes with each bundle release).
-- The catalog itself refreshes automatically every hour (sync pipeline) — Hub-clone installs update with `git pull` in the Hub checkout, then `bash skills/oe-skills-x5/setup.sh --update $PROJECT_ROOT` (it exits cleanly when already current); pack-repo installs use `git pull` + `bash setup.sh --update $PROJECT_ROOT` inside the repo.
+For DeepSeek Harness; content follows the bundle's release version.
+
+**Copy to your AI:**
+
+```text
+Read the DSH plugin instructions at https://github.com/D-Robotics/rdk-skills
+and install dsh-plugin-rdk for DeepSeek Harness profile [profile name].
+Check the current dsh CLI options and plugin documentation, then verify that
+the profile loads the plugin and its skills.
+Report the package version, available capabilities and one usage example.
+For OE toolchain tasks, separately check project pack initialization.
+Guide any interactive steps that require my input.
+```
+
+**Manual installation:**
+
+```bash
+dsh plugin --profile <name> add dsh-plugin-rdk
+dsh --profile <name>
+```
+
+### Updating installed content
+
+**Copy to your AI:**
+
+```text
+Check and update my RDK skills, Hub plugin or OE packs for [agent / DSH profile]
+in [absolute project path or global scope] through their installation channels.
+Report installed and target versions first. For OE packs, compare the registry
+ref against INSTALLED_REF (falling back to VERSION).
+Before rebuilding .drobotics/ or .horizon/, explain the impact on local edits
+and wait for my confirmation. Verify and report the result afterwards.
+```
+
+Update ordinary skills through the skills CLI, the Hub plugin through your agent's plugin manager, and DSH through its plugin update command. For OE packs, obtain the target resources and run the appropriate `setup.sh --update`; any recorded `--ref` must match those resources.
+
+Hub content advances through source-Release upgrade PRs after merge. Installed user copies still require an update through their own channels.
 
 ---
 
 ## Skill Catalog
 
-Skills listed under a pack directory (`oe-skills-x5/`, `oe-skills-s/`) belong to workspace-integrated packs — browse them here, install the whole pack via [Option 6](#option-6-workspace-integrated-packs-oe-tool-chain-x5--s). All other skills install individually via Options 1–4.
+Explore the [complete skill map](docs/SKILL-MAP.md). Install Device, BSP and Model Zoo as [ordinary skills](#install-skills); initialize OE X5/S using [whole-pack setup](#install-packs).
 
 <!-- skills-table-start -->
 | Product | Description | Skills |
@@ -150,11 +296,14 @@ Skills listed under a pack directory (`oe-skills-x5/`, `oe-skills-s/`) belong to
 **Issue routing:**
 
 - **Skill content issues** (a skill has a bug or missing feature) — file in the source repo for that product, see table below
-- **Catalog repo issues** (README errors, sync pipeline failures, distribution channels) — [open an issue here](../../issues/new/choose)
-- **Questions or discussion** — [GitHub Discussions](../../discussions)
+- **Catalog repo issues** (README errors, sync pipeline failures, distribution channels) — [open an issue here](https://github.com/D-Robotics/rdk-skills/issues/new/choose)
+- **Questions, ideas and shared workflows** — [browse Discussions](https://github.com/D-Robotics/rdk-skills/discussions) or [start a discussion](https://github.com/D-Robotics/rdk-skills/discussions/new/choose). Choose the category that matches your topic; Announcements is for maintainer updates.
 - **Security vulnerabilities** — follow the disclosure process in [SECURITY.md](SECURITY.md); do not open a public issue
 
+When asking for help, include your board model, operating system, AI agent, skill or pack name, and relevant error messages. Remove credentials and sensitive information. Use Issues for reproducible bugs.
+
 **Guides:**
+
 - End-user install & usage — [docs/SKILL-USAGE.md](docs/SKILL-USAGE.md)
 - Registering a new pack / PR rules — [docs/PR-SUBMISSION.md](docs/PR-SUBMISSION.md) and [CONTRIBUTING.md](CONTRIBUTING.md)
 

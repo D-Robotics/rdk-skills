@@ -15,6 +15,60 @@
 
 ---
 
+## 找到你需要的 Skill
+
+先选任务领域，再点击进入完整技能图。当前目录共 **97 个 Skill**；OE 工具链内部技能需要整包安装。
+
+```mermaid
+flowchart TB
+    hub["RDK Skills · 97"]
+    hub --> device["设备使用 · 25"]
+    click device "docs/SKILL-MAP.md#device" "Open skill map"
+    hub --> bsp["BSP 开发 · 8"]
+    click bsp "docs/SKILL-MAP.md#bsp" "Open skill map"
+    hub --> x5["X5 模型工具链 · 22"]
+    click x5 "docs/SKILL-MAP.md#x5" "Open skill map"
+    hub --> s["S 系列模型工具链 · 33"]
+    click s "docs/SKILL-MAP.md#s" "Open skill map"
+    hub --> zoo["模型应用 · 7"]
+    click zoo "docs/SKILL-MAP.md#zoo" "Open skill map"
+    hub --> discovery["查找与安装 · 2"]
+    click discovery "docs/SKILL-MAP.md#hub" "Open skill map"
+```
+
+[设备使用](docs/SKILL-MAP.md#device) · [BSP 开发](docs/SKILL-MAP.md#bsp) · [X5 模型工具链](docs/SKILL-MAP.md#x5) · [S 系列模型工具链](docs/SKILL-MAP.md#s) · [模型应用](docs/SKILL-MAP.md#zoo) · [查找与安装](docs/SKILL-MAP.md#hub)
+
+## 安装层级：内容装到哪里？
+
+Pack 是技能的组织单位，安装方式取决于 Pack 类型。Hub 插件提供导航和安装助手；OE X5 与 OE S 需要分别在目标项目中初始化。
+
+```mermaid
+flowchart TB
+    entry["选择需要的能力"]
+    entry --> plugin["Hub plugin"]
+    entry --> flat["Device / BSP / Model Zoo"]
+    entry --> packs["OE workspace packs"]
+    plugin --> helper["Agent 内：finder、installer、文档助手"]
+    helper -. "引导按需安装" .-> flat
+    helper -. "调用独立 setup.sh" .-> packs
+    flat --> agent["选择 Skill → Agent 技能目录"]
+    packs --> x5["OE X5: setup.sh TARGET_PROJECT"]
+    packs --> s["OE S: setup.sh TARGET_PROJECT"]
+    x5 --> xd["TARGET_PROJECT/.drobotics/"]
+    s --> sd["TARGET_PROJECT/.horizon/"]
+    xd --> xr["Skill + 脚本 + 文档 + 平台配置"]
+    sd --> sr["模块路由 + 子 Skill + 共享资源"]
+```
+
+| 你要做什么 | 安装内容 | 后续操作 |
+|---|---|---|
+| 先查找合适的能力 | Hub 插件 | 通过 finder 查找；按结果安装 Skill 或 Pack |
+| 使用设备、BSP、Model Zoo 技能 | 按需选择普通 Skill | 在 Agent 中调用；任务可能另需 SDK 或设备环境 |
+| 使用 X5 模型工具链 | 完整 OE X5 Pack | 在目标项目执行 X5 的 `setup.sh` |
+| 使用 S 系列模型工具链 | 完整 OE S Pack | 在目标项目执行 S 的 `setup.sh` |
+
+**Hub 插件安装成功不代表 OE Pack 已初始化。Skill/Pack 安装也不包含全部 SDK、编译工具链或板端运行环境。** 下面的安装章节保留具体入口；完整说明见 [用户指南](docs/SKILL-USAGE.md)。
+
 ## 支持的板卡
 
 | 板卡 | BPU 架构 | 算力 |
@@ -23,7 +77,7 @@
 | RDK X5 / X5 Module | Bayes-e | 10 TOPS |
 | RDK Ultra | Bayes | 96 TOPS |
 | RDK S100 / S100P | Nash-e / Nash-m | 80 / 128 TOPS |
-| RDK S600 | Nash-p（4× Nash core） | 最高 560 TOPS |
+| RDK S600 | Nash-p（4× Nash core） | 560 TOPS |
 
 板卡参数取自官方文档仓库 [rdk_x_doc](https://github.com/D-Robotics/rdk_x_doc) 和 [rdk_s_doc](https://github.com/D-Robotics/rdk_s_doc)。X 系列模型格式为 `.bin`，S 系列为 `.hbm`。
 
@@ -31,95 +85,187 @@
 
 ## 安装
 
-### 方式一：让 AI 帮你装（推荐）
+先选择安装对象：[普通 Skill](#install-skills)、[OE 工具链 Pack](#install-packs) 或 [Agent 插件](#install-plugins)。每类都提供 AI Prompt；请先替换其中的方括号内容。需要点击菜单或输入凭据的步骤，由 AI 告诉你如何完成。
 
-把下面这句 prompt 复制给你的 AI 编程助手（Claude Code、Codex、Cursor 等）：
+<a id="install-skills"></a>
 
+### 1. 普通 Skill：按需安装
+
+适用于 Device、BSP、Model Zoo。安装到你选择的 Agent 技能目录。
+
+**复制给 AI：**
+
+```text
+请从 https://github.com/D-Robotics/rdk-skills 为我安装适合以下任务的普通 Skill：
+任务：[例如排查 RDK X5 摄像头问题]
+目标 Agent：[例如 Claude Code / Codex / Cursor]
+安装范围：[当前项目及其绝对路径，或全局]
+
+先读取仓库说明和 Skill 索引，找到对应 Skill，再通过 skills CLI 安装到指定 Agent
+和范围。检查 CLI 的实际选项，不要默认安装全部 Skill。
+如果选中的能力属于 OE workspace Pack，请转到整包初始化流程。
+安装后报告 Skill 名称、实际安装路径、是否需要重新加载会话，并给出一个使用示例。
+需要我完成交互步骤时，请提供具体操作。
 ```
-Install D-Robotics RDK skills from the marketplace: run `npx skills add d-robotics/rdk-skills` and follow the interactive prompts to install the skills you need.
-```
 
-### 方式二：skills CLI
+**手动安装：**
 
 ```bash
-npx skills add d-robotics/rdk-skills
+npx skills add d-robotics/rdk-skills --skill rdk-camera-setup
 ```
 
-CLI 会列出所有可用 Skill，选择后自动安装到对应 Agent 的 skills 目录。
+按 CLI 提示选择 Agent 和安装范围；将示例 Skill 名称替换为导航图中的目标名称。
 
-> CLI 覆盖扁平布局的 Skill（RDK Device Skills）。Workspace 集成型 Pack（OE 工具链）不支持逐个安装——请整包安装，见[方式五](#方式五workspace-集成型-packoe-工具链-x5--s)。
+Finder 对普通 Skill 返回命令模板 `npx skills add d-robotics/rdk-skills --skill <skill-name>`；执行前请替换为所选 Skill 名称。
 
-### 方式三：Claude Code 插件市场
+也可从源仓库安装。以 Device 为例，复制给 AI：
 
+```text
+请读取 https://github.com/D-Robotics/rdk-device-skills 的安装说明，
+为 [目标 Agent] 安装设备侧 Skill。先核对 install.sh 支持的安装范围、
+目标和参数，再按 [我的安装范围] 执行，并报告实际安装目录及验证结果。
 ```
-/plugin marketplace add D-Robotics/rdk-skills
-```
 
-运行 `/plugin`，在 Discover 标签页浏览安装。
-
-Hub 插件通过 `rdk-skill-finder` 搜索目录：扁平 Skill 会返回且只返回 `npx skills add d-robotics/rdk-skills --skill <skill-name>`；workspace 集成型 Skill 会交给 `rdk-pack-installer` 处理。
-
-### 方式四：直接克隆 Pack 仓库
-
-每个 Pack 仓库自带 `install.sh`，支持 symlink 和 copy 两种模式，可同时安装到多个 Agent 运行时：
+手动入口：
 
 ```bash
 git clone https://github.com/D-Robotics/rdk-device-skills.git
 cd rdk-device-skills
-./install.sh                          # 默认 symlink 到 ~/.claude/skills 等
-./install.sh --copy                   # 复制而非 symlink
-./install.sh --targets claude,cursor  # 只装到指定 Agent
+./install.sh --help
 ```
 
-### 方式五：Workspace 集成型 Pack（OE 工具链 X5 / S）
+其他源仓库的安装脚本和参数以各自文档为准。
 
-部分 Pack 需要 workspace 初始化——安装脚本会将脚本、文档、平台配置铺设到 `.drobotics/` 或 `.horizon/`，并注入路由规则到 `CLAUDE.md`。Hub 将每个此类 Pack 镜像为**完整安装源**：`skills/<catalog_dir>/` 携带完整资源树 + Pack 的 `setup.sh`，一次 Hub clone 即可安装任何 Pack。整包安装，不支持逐个 skill 安装：
+<a id="install-packs"></a>
+
+### 2. OE 工具链 Pack：按项目整包安装
+
+X5 和 S 是两套独立 Pack，按目标平台选择。它们包含相互依赖的 Skill、脚本和文档，需要在目标项目初始化完整资源树。安装 Hub 插件不是执行以下 Prompt 的前提；如果已有 `rdk-pack-installer`，AI 可以使用它。
+
+#### OE X5 Pack
+
+**复制给 AI：**
+
+```text
+请从 https://github.com/D-Robotics/rdk-skills 安装完整 OE X5 Pack。
+目标项目：[项目绝对路径]
+目标 Agent：[我使用的 Agent]
+
+读取仓库安装说明和 skills/rdk-pack-installer/references/pack-registry.json。
+使用 Hub 中 skills/oe-skills-x5/setup.sh 初始化目标项目；记录与安装内容一致的来源 ref。
+如果已安装，先比较版本并报告；需要重建目录时，说明本地修改的影响并等我确认。
+完成后按注册表 verify_paths 验证 .drobotics/，检查目标 Agent 的路由接入，
+说明是否需要额外配置，并给出一个 X5 模型量化任务示例。
+如果当前系统无法执行 Bash，请说明适用环境和下一步操作。
+```
+
+**安装结果：** `项目/.drobotics/`，包含 X5 Skill、脚本、文档和平台配置。
+
+**手动安装**（在 Bash 环境中，将路径替换为真实项目绝对路径）：
 
 ```bash
 git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git
 cd rdk-skills
-
-# X5 工具链
-bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT
-
-# S 系列工具链（Horizon OE）
-bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
-
-# 升级已装 workspace：先比 VERSION，已是最新则直接跳过；不同则重建
-# .drobotics/（不残留旧文件）。--ref 把来源 tag 记录进 INSTALLED_REF；
-# 手动更新可省略。
-bash skills/oe-skills-x5/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
-# bash skills/oe-skills-s/setup.sh --update --ref v1.0.0 $PROJECT_ROOT
+bash skills/oe-skills-x5/setup.sh "/absolute/path/to/project"
 ```
 
-Pack 仓库仍是权威上游与文档化的降级来源：
+#### OE S Pack
+
+**复制给 AI：**
+
+```text
+请从 https://github.com/D-Robotics/rdk-skills 安装完整 OE S Pack。
+目标项目：[项目绝对路径]
+目标 Agent：[我使用的 Agent]
+
+读取仓库安装说明和 skills/rdk-pack-installer/references/pack-registry.json。
+使用 Hub 中 skills/oe-skills-s/setup.sh 初始化目标项目；记录与安装内容一致的来源 ref。
+如果已安装，先比较版本并报告；需要重建目录时，说明本地修改的影响并等我确认。
+完成后按注册表 verify_paths 验证 .horizon/，检查目标 Agent 的路由接入，
+说明是否需要额外配置，并给出一个 S 系列模型编译任务示例。
+如果当前系统无法执行 Bash，请说明适用环境和下一步操作。
+```
+
+**安装结果：** `项目/.horizon/`，包含模块路由、子 Skill 和共享资源。
+
+**手动安装**（在上述 Hub checkout 中执行）：
 
 ```bash
-# 降级：直接从 Pack 仓库安装
-git clone https://github.com/D-Robotics/oe-skills-x5.git
-cd oe-skills-x5
-bash setup.sh $PROJECT_ROOT
+bash skills/oe-skills-s/setup.sh "/absolute/path/to/project"
 ```
 
-或者告诉你的 AI（需先按方式三装好 Hub 插件，插件内含 `rdk-pack-installer`）：
+Skill/Pack 初始化不代表 OE SDK、编译工具链或板端运行环境已经就绪；根据后续任务另行准备。源 Pack 仓库是权威上游，Hub 镜像不可用时按注册表和源仓库说明选择对应版本安装。
 
+<a id="install-plugins"></a>
+
+### 3. Agent 插件入口
+
+#### Hub 插件：查找与安装助手
+
+适合希望让 AI 帮忙选择 Skill 的用户。安装后可使用 finder、installer 和文档助手；普通 Skill 与 OE Pack 再按任务安装。
+
+**复制给 AI：**
+
+```text
+请读取 https://github.com/D-Robotics/rdk-skills 的插件安装说明，
+为 [目标 Agent] 安装 d-robotics-skills Hub 插件。
+使用该 Agent 实际支持的插件机制；如需我在界面添加市场或点击安装，
+请给出具体操作，不要把 Claude Code 的斜杠命令当成终端命令。
+完成后核对 rdk-skill-finder、rdk-pack-installer 和文档助手是否可用。
+先帮我查找 [目标任务] 所需的能力，并说明哪些还需单独安装或初始化。
 ```
-Install D-Robotics OE-Skills-X5 into this project.
+
+**手动入口（Claude Code 内执行）：**
+
+```text
+/plugin marketplace add D-Robotics/rdk-skills
 ```
 
-`rdk-pack-installer` 会读取随包注册表、克隆 Hub 目录、在你确认项目根目录后执行 Pack 的镜像 `setup.sh`（位于 `skills/<catalog_dir>/`）并校验安装结果；仅当 Hub 镜像落后于注册表时才降级到 Pack 仓库。支持所有 `install_type: workspace` 的 Pack（OE 工具链 X5 和 S）。升级请求会先把项目侧安装锚点（`INSTALLED_REF`，缺失时回退 `VERSION`）与注册表 pin 的 `ref` 归一化比对（去掉前导 `v`）：相同则报告「已是最新」并停下，不同才重跑 `setup.sh --update --ref <ref>` —— 该命令会整目录重建 workspace，`.drobotics/`/`.horizon/` 里的本地修改会丢失，因此升级必须另行经过用户确认。
+再打开 `/plugin` → Discover，安装 `d-robotics-skills`。其他 Agent 使用各自支持的插件入口。
 
-### 更新 Skill
+#### DSH 插件：DeepSeek Harness 分发包
 
-- 扁平 Skill：`npx skills update`（或重新 `npx skills add d-robotics/rdk-skills` 选择）
-- Hub 插件：`/plugin` 中管理 `d-robotics-skills` 插件即可更新 finder/installer
-- 目录本身每小时自动同步一次；Hub clone 安装的在 Hub 目录 `git pull` 后执行 `bash skills/oe-skills-x5/setup.sh --update $PROJECT_ROOT`（已是最新时直接跳过），Pack 仓库安装的在仓库内 `git pull` + `bash setup.sh --update $PROJECT_ROOT`
+适用于 DeepSeek Harness，内容随 DSH 分发包版本更新。
+
+**复制给 AI：**
+
+```text
+请读取 https://github.com/D-Robotics/rdk-skills 的 DSH 插件说明，
+为 DeepSeek Harness 的 [profile 名称] 安装 dsh-plugin-rdk。
+核对当前 dsh CLI 的参数和插件说明，安装后验证该 profile 能加载插件及其技能。
+报告包版本、可用能力和一个使用示例。
+如果我要使用 OE 工具链，请另行检查项目 Pack 是否已初始化。
+需要我完成交互步骤时，请提供具体操作。
+```
+
+**手动安装：**
+
+```bash
+dsh plugin --profile <name> add dsh-plugin-rdk
+dsh --profile <name>
+```
+
+### 更新已安装的内容
+
+**复制给 AI：**
+
+```text
+请检查我在 [目标 Agent / DSH profile]、[项目绝对路径或全局范围]
+安装的 RDK Skill、Hub 插件或 OE Pack，并按各自的安装渠道更新。
+先报告当前版本和目标版本。OE Pack 依据注册表 ref 与项目 INSTALLED_REF
+（缺失时参考 VERSION）比较；重建 .drobotics/ 或 .horizon/ 前，
+说明本地修改会受到的影响并等我确认。完成后验证并报告更新结果。
+```
+
+普通 Skill 使用 skills CLI 更新，Hub 插件通过 Agent 插件管理器更新，DSH 使用其插件更新命令。OE Pack 更新需获取目标版本资源，再运行相应 `setup.sh --update`；记录 `--ref` 时必须与实际资源版本一致。
+
+Hub 内容通过来源 Release 触发的升级 PR 更新，合入后才进入主分支；用户已安装的副本仍需按上述渠道更新。
 
 ---
 
 ## Skill 目录
 
-列在 Pack 目录（`oe-skills-x5/`、`oe-skills-s/`）下的 Skill 属于 workspace 集成型 Pack——可在此浏览，安装需整包走[方式五](#方式五workspace-集成型-packoe-工具链-x5--s)；其余 Skill 用方式一~四单独安装。
+完整技能关系见[全量导航图](docs/SKILL-MAP.md)。Device、BSP、Model Zoo 按[普通 Skill](#install-skills)安装；OE X5/S 内部技能按[整包初始化](#install-packs)安装。
 
 <!-- skills-table-start -->
 | 产品 | 说明 | Skills |
@@ -137,11 +283,14 @@ Install D-Robotics OE-Skills-X5 into this project.
 **问题分类与对应渠道：**
 
 - **Skill 内容问题**（某个 Skill 有 bug 或缺失功能）——到该产品的源头仓库提 Issue，见下表
-- **目录仓库问题**（README 错误、同步流水线故障、分发渠道）——[在这里提 Issue](../../issues/new/choose)
-- **提问或讨论**——[GitHub Discussions](../../discussions)
+- **目录仓库问题**（README 错误、同步流水线故障、分发渠道）——[在这里提 Issue](https://github.com/D-Robotics/rdk-skills/issues/new/choose)
+- **使用提问、功能建议与经验分享**——[浏览讨论区](https://github.com/D-Robotics/rdk-skills/discussions)或[发起新讨论](https://github.com/D-Robotics/rdk-skills/discussions/new/choose)。请选择适合话题的分类；Announcements 用于维护者公告。
 - **安全漏洞**——按 [SECURITY.md](SECURITY.md) 的流程私下报告，**不要**开公开 Issue
 
+提问时请附上板卡型号、操作系统、AI Agent、Skill 或 Pack 名称及相关报错，并移除凭据与敏感信息。可复现的缺陷请提交 Issue。
+
 **指南文档：**
+
 - 使用方安装与用法 — [docs/SKILL-USAGE.md](docs/SKILL-USAGE.md)
 - 注册新 Pack / PR 规范 — [docs/PR-SUBMISSION.md](docs/PR-SUBMISSION.md) 与 [CONTRIBUTING.md](CONTRIBUTING.md)
 
