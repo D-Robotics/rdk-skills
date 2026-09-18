@@ -116,6 +116,8 @@ npx skills add d-robotics/rdk-skills --skill rdk-camera-setup
 
 按 CLI 提示选择 Agent 和安装范围；将示例 Skill 名称替换为导航图中的目标名称。
 
+Finder 对普通 Skill 返回命令模板 `npx skills add d-robotics/rdk-skills --skill <skill-name>`；执行前请替换为所选 Skill 名称。
+
 也可从源仓库安装。以 Device 为例，复制给 AI：
 
 ```text

@@ -117,6 +117,8 @@ npx skills add d-robotics/rdk-skills --skill rdk-camera-setup
 
 Select the agent and scope when prompted. Replace the example skill with your selection from the map.
 
+The finder returns the command template `npx skills add d-robotics/rdk-skills --skill <skill-name>` for ordinary skills; substitute the selected skill name before running it.
+
 For installation from a source repository, use this Device example prompt:
 
 ```text
