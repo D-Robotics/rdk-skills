@@ -1,7 +1,7 @@
 ---
 name: rdk-source-map
 description: 'Map D-Robotics GitHub repositories — identify their layer and target board, choose a repository, or build an RDK OS image/TROS workspace from source. Use when a user cannot classify a D-Robotics repo, distinguish hobot- (hyphen, BSP) from hobot_ (underscore, ROS2 app), asks "which repo do I clone for X", or needs repo/manifest/rdk-gen/vcstool source-build flow. 触发词:这个仓库是干嘛的、属于哪一层、对应哪块板、该 clone 哪个仓、hobot- 和 hobot_ 区别、连字符 下划线、rdk-gen、manifest、repo sync、vcstool、ros2.repos、从源码构建镜像、定制内核、编译 TROS、x5-rdk-gen、s100-rdk-gen。Routing — doc-site chapter → rdk-docs-reference; ready-made model → rdk-model-zoo; TROS install, environment, commands, and running existing nodes/examples → rdk-tros-setup; writing or modifying a ROS node/application has no dedicated Skill: use rdk-docs-reference to search tros_doc; embodied/LLM deployment → rdk-embodied-lerobot / rdk-llm-deployment.'
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 

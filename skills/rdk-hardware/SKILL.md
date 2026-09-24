@@ -2,7 +2,7 @@
 name: rdk-hardware
 description: "Hardware facts for RDK boards: six-board specs (X3/X5/Ultra/S100/S100P/S600), 40PIN/GPIO and I2C/SPI/UART/PWM, power/LEDs, display, network/IP, CAN, TOPS/RAM, cooling, OS lines, and system paths. Use for board-specific pinouts, interfaces, voltage, credentials, model directories, IP, capacity, or hardware comparisons. 触发词:各板引脚一样吗、40PIN怎么接、IO电平、默认用户名密码、模型目录在哪、CAN口、网口默认IP、算力多少TOPS、BPU算力、TOPS对比、X3算力、X5算力、内存多大、供电几V、HDMI分辨率、TROS路径、板型怎么查。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); error-code/boot failure → rdk-board-knowledge; peripheral control → rdk-peripheral-cookbook; on-board inference → rdk-model-deploy; own-model conversion: X5 → x5-router, S-series → drobotics-router, X3/Ultra → rdk-docs-reference for official toolchain docs; camera bringup → rdk-camera-setup; board selection → rdk-ecosystem."
 trigger: 算力, TOPS, BPU算力, TOPS对比, 算力对比, 算力几T, X3算力, X5算力, compute TOPS, 算力多少TOPS, 内存多大, RAM, 引脚一样, 40PIN怎么接, IO电平, CAN口, ip link can0, 默认用户名密码, 供电几V, 电源灯, HDMI分辨率, TROS路径, 板型怎么查
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
