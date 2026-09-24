@@ -1,7 +1,7 @@
 ---
 name: x5-environment-install
 description: 按已审阅计划安装或配置 X5 OE Mapper、Plugin、Runtime 或本地离线制品；仅当 environment.json 为 blocked、制品来源与回滚路径已明确且用户已确认副作用时使用。禁止安装 HAT 或把在线下载当作默认方案。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -26,7 +26,7 @@ license: Apache-2.0
 
 ## 执行步骤
 
-1. 使用 `.drobotics/scripts/release_artifacts.py` 检查制品清单与哈希。
+1. 使用 `.drobotics-x5/scripts/release_artifacts.py` 检查制品清单与哈希。
 2. 记录安装前版本和恢复命令。
 3. 执行计划中的最小变更；每个命令和返回码写入运行日志。
 4. 不得在失败后切换到未经审阅的在线源。
@@ -48,5 +48,5 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `.drobotics/docs/offline-artifact-delivery.md`
-- `.drobotics/platforms/x5/policies/risk-policy.md`
+- `.drobotics-x5/docs/offline-artifact-delivery.md`
+- `.drobotics-x5/platforms/x5/policies/risk-policy.md`

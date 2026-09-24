@@ -1,7 +1,7 @@
 ---
 name: x5-ptq-config-authoring
 description: 生成并机器校验 X5 OE Mapper PTQ YAML；当模型预检通过、输入和校准合同已明确，需要得到 march=bayes-e 的可审阅配置时使用。拒绝 Plugin load/QAT 混用、HAT 和 S 系列字段。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -26,14 +26,14 @@ license: Apache-2.0
 ## 执行步骤
 
 ~~~bash
-python .drobotics/platforms/x5/scripts/generate_ptq_config.py \
+python .drobotics-x5/platforms/x5/scripts/generate_ptq_config.py \
   --model <model.onnx> --output <x5.yaml> --working-dir <new-output-dir> \
   --input-name <name> --input-shape <1x3xHxW> \
   --input-type-train rgb --input-layout-train NCHW \
   --input-type-rt nv12 --cal-data-dir <calib-dir> \
   --input-source <name>=pyramid --check-paths
 
-python .drobotics/platforms/x5/scripts/validate_ptq_config.py \
+python .drobotics-x5/platforms/x5/scripts/validate_ptq_config.py \
   <x5.yaml> --check-paths --report <config-report.json>
 ~~~
 
@@ -55,5 +55,5 @@ python .drobotics/platforms/x5/scripts/validate_ptq_config.py \
 
 ## 按需参考
 
-- `.drobotics/platforms/x5/schemas/ptq-config.schema.json`
+- `.drobotics-x5/platforms/x5/schemas/ptq-config.schema.json`
 - `_sources/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_makertbin.rst.txt`

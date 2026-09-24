@@ -1,7 +1,7 @@
 # OpenExplorer 代码仓库索引 (oe-mcp)
 
 > 本文件为 oe-mcp `search_code` 的路由入口。根据用户意图中的关键词，定位到对应仓库的详细索引文件。
-> 版本: J6 OpenExplorer v3.9.0 RC4 | BPU: Nash 系列 (NASH_B / NASH_P / NASH_E)
+> 版本: S OpenExplorer v3.9.0 RC4 | BPU: Nash 系列 (NASH_B / NASH_P / NASH_E)
 
 ## 仓库总览
 
@@ -15,7 +15,7 @@
 | [hmct_gpu](oe_code_chunk_hmct_gpu.md) | hmct-gpu | 2.8.3+cu128 | 模型转换 & PTQ 量化工具（GPU/CUDA 加速版） |
 | [horizon_plugin_profiler](oe_code_chunk_horizon_plugin_profiler.md) | horizon-plugin-profiler | 3.3.4 | QAT 分析插件：profiling、相似度、敏感度分析 |
 | [horizon_plugin_pytorch](oe_code_chunk_horizon_plugin_pytorch.md) | horizon-plugin-pytorch | 3.3.4 | PyTorch QAT 插件：量化训练、FX/Eager 模式 |
-| [horizon_tc_ui](oe_code_chunk_horizon_tc_ui.md) | horizon-tc-ui | 3.5.16 | 工具链 CLI & UI：hb_compile、可视化、报告 |
+| [horizon_tc_ui](oe_code_chunk_horizon_tc_ui.md) | s-tc-ui | 3.5.16 | 工具链 CLI & UI：hb_compile、可视化、报告 |
 | [ucp_tutorial](oe_code_chunk_samples_ucp_tutorial.md) | samples/ucp_tutorial | — | UCP C++ 教程：DNN/VP/HPL/DSP/GPU 推理示例 |
 | [llm_compression](oe_code_chunk_llm_compression.md) | llm_compression | 2.0.2 | LLM/VLM PTQ 量化 & 编译工具：校准 → 编译 → HBM |
 | [oellm_runtime](oe_code_chunk_oellm_runtime.md) | oellm_runtime | 2.0.2 | OE LLM 运行时 SDK：板端 VLM 推理（C++ API） |

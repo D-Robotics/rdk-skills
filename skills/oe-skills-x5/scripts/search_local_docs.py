@@ -55,7 +55,7 @@ def doc_root_candidates(value: str | None) -> list[Path]:
             (
                 anchor / DOC_DIRECTORY_NAME,
                 anchor / "docs" / DOC_DIRECTORY_NAME,
-                anchor / ".drobotics" / "manuals" / DOC_DIRECTORY_NAME,
+                anchor / ".drobotics-x5" / "manuals" / DOC_DIRECTORY_NAME,
             )
         )
 

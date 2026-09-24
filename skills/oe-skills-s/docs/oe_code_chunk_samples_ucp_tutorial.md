@@ -3,9 +3,9 @@
 ## 仓库概述
 
 - **名称**: UCP Tutorial Samples (ucp_tutorial)
-- **版本**: Horizon J6 Open Explorer SDK v3.9.0 RC4
+- **版本**: D Robotics S Open Explorer SDK v3.9.0 RC4
 - **路径**: `samples/ucp_tutorial/`
-- **用途**: 提供 C++ 示例程序，演示如何在 J6 (Journey 6) BPU SoC 上使用 Horizon UCP (Unified Computing Platform) 系列 API
+- **用途**: 提供 C++ 示例程序，演示如何在 S (Journey 6) BPU SoC 上使用 D Robotics UCP (Unified Computing Platform) 系列 API
 - **角色**: AI 工具链中的端侧部署参考实现，覆盖 DNN 推理、视觉处理 (VP)、高性能库 (HPL)、DSP/GPU 自定义算子、端到端感知流水线及模型执行工具
 - **目标平台**: aarch64 Linux / QNX / Android (RDK S 系列开发板)，x86 主机仿真
 
@@ -61,7 +61,7 @@ Step1: hbDNNInitializeFromFiles(&packed_handle, &modelFile, 1)
 Step2: hbDNNGetInputCount / hbDNNGetOutputCount
        → hbDNNGetInputTensorProperties / hbDNNGetOutputTensorProperties
        → hbUCPMallocCached(&tensor.sysMem, size, 0)  // 分配缓存一致内存
-Step3: 填充输入数据 (注意 stride 对齐: J6=32字节, RDK S600=64字节)
+Step3: 填充输入数据 (注意 stride 对齐: S=32字节, RDK S600=64字节)
        → hbUCPMemFlush(&sysMem, HB_SYS_MEM_CACHE_CLEAN)  // 写回缓存
 Step4: hbDNNInferV2(&task_handle, output, input, dnn_handle)
        → hbUCPSubmitTask(task_handle, &ctrl_param)  // ctrl_param.backend = HB_UCP_BPU_CORE_ANY
@@ -122,7 +122,7 @@ Step6: hbUCPReleaseTask → hbUCPFree → hbDNNRelease
 | Cache 一致性/刷新 | `hbUCPMemFlush`, `HB_SYS_MEM_CACHE_CLEAN`, `HB_SYS_MEM_CACHE_INVALIDATE` | 推理前 CLEAN, 推理后 INVALIDATE |
 | 任务提交与等待 | `hbUCPSubmitTask`, `hbUCPWaitTaskDone`, `hbUCPSchedParam` | ctrl_param.backend 可选 HB_UCP_BPU_CORE_ANY |
 | 资源释放 | `hbUCPReleaseTask`, `hbUCPFree`, `hbDNNRelease` | 按 task→mem→model 顺序释放 |
-| Stride 对齐 | `ALIGN_32`, `ALIGN_64`, `BPU_ALIGN`, `PLATFORM_J6P` | J6 对齐 32 字节, RDK S600 对齐 64 字节 |
+| Stride 对齐 | `ALIGN_32`, `ALIGN_64`, `BPU_ALIGN`, `PLATFORM_J6P` | S 对齐 32 字节, RDK S600 对齐 64 字节 |
 | 多模型/批量推理 | `multi_model_batch`, `hbDNNInferV2` | 02_advanced_samples/multi_model_batch |
 | ROI 推理 | `roi_infer`, `validShape` | 02_advanced_samples/roi_infer |
 | 量化参数查询 | `quanti_example`, `hbDNNGetInputTensorProperties` | 01_api_tutorial/quanti |
@@ -161,7 +161,7 @@ Step6: hbUCPReleaseTask → hbUCPFree → hbDNNRelease
 
 ### 常见陷阱
 - **必须保留** `-Wl,-unresolved-symbols=ignore-in-shared-libs` 链接标志 (UCP 共享库依赖板上系统库)
-- **Stride 对齐**: J6 用 32 字节, RDK S600 用 64 字节，不对齐会导致 BPU 推理结果错误
+- **Stride 对齐**: S 用 32 字节, RDK S600 用 64 字节，不对齐会导致 BPU 推理结果错误
 - **Cache 一致性**: 推理前必须 `HB_SYS_MEM_CACHE_CLEAN`, 推理后必须 `HB_SYS_MEM_CACHE_INVALIDATE`
 - **DSP 固件**: 执行 DSP 算子测试前必须先运行 `dsp_deploy.sh` 加载固件；DSP 挂起需重启固件
 - **模型文件**: `.hbm` 文件不包含在 tutorial 包中，需从 OE 工具包单独获取

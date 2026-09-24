@@ -2,14 +2,14 @@
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 name: OE Tool Chain (S)
 repo: D-Robotics/oe-skills-s
-ref: v1.0.0
+ref: v1.0.2
 # ^ Pinned release tag (immutable). Release flow: pack repo tags a new
 # version -> this ref moves -> merge triggers sync at that tag.
-description: Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization.
+description: D Robotics OpenExplorer (OE) tool chain for S-series — PTQ/QAT quantization, HBDK compilation, UCP on-board inference, performance and accuracy evaluation, and LLM compression. Workspace-integrated pack requiring setup.sh initialization.
 # oe-skills-s is a workspace-integrated pack, not a flat skill collection.
-# Skills live under horizon/skills/<module>/<skill>/ with module-level
+# Skills live under drobotics-s/skills/<module>/<skill>/ with module-level
 # routers and nested sub-skills that reference each other by relative
-# paths — the sync mirrors the ENTIRE horizon/ resource tree (HORIZON.md,
+# paths — the sync mirrors the ENTIRE drobotics-s/ resource tree (DROBOTICS-S.md,
 # VERSION, docs/, skills/) under catalog_dir "oe-skills-s" (bulk layout),
 # and the sync pipeline overlays the pack's setup.sh (declared
 # install_script) into the same catalog dir, so a Hub checkout is a
@@ -17,18 +17,18 @@ description: Horizon OpenExplorer (OE) tool chain for S-series — PTQ/QAT quant
 #   bash skills/oe-skills-s/setup.sh <project-root>
 install_type: workspace
 install_script: setup.sh
-workspace_dir: .horizon
+workspace_dir: .drobotics-s
 verify_paths:
-  - .horizon/HORIZON.md
-  - .horizon/VERSION
-  - .horizon/skill-index.json
-  - .horizon/skills/horizon-router/SKILL.md
+  - .drobotics-s/DROBOTICS-S.md
+  - .drobotics-s/VERSION
+  - .drobotics-s/skill-index.json
+  - .drobotics-s/skills/drobotics-router/SKILL.md
 install_instructions: |
   bash skills/oe-skills-s/setup.sh $PROJECT_ROOT
   # (from an rdk-skills checkout — the Hub is the install source)
   # or tell your AI: "Install D-Robotics OE-Skills-S from the marketplace"
 skills:
-  - path: horizon/
+  - path: drobotics-s/
     catalog_dir: oe-skills-s
 links:
   contributing: false

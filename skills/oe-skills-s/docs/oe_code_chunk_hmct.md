@@ -2,10 +2,10 @@
 
 ## 仓库概述
 
-- **名称**: hmct (Horizon Model Convert Tool) v2.8.3
+- **名称**: hmct (D Robotics Model Convert Tool) v2.8.3
 - **Python 包**: `hmct-2.8.3-cp310`，已安装 pip 包（非 git 仓库）
-- **用途**: 将 ONNX/Caffe 浮点模型转换为量化模型，部署到 Horizon BPU (AI 加速器) 芯片
-- **角色**: J6 Open Explorer 工具链核心组件，位于 `package/host/ai_toolchain/code/` 下
+- **用途**: 将 ONNX/Caffe 浮点模型转换为量化模型，部署到 D Robotics BPU (AI 加速器) 芯片
+- **角色**: S Open Explorer 工具链核心组件，位于 `package/host/ai_toolchain/code/` 下
 - **关联包**: `horizon_nn`（轻量 wrapper，仅 `__init__.py`）
 - **原生扩展**: 包含 `pyquant.so`、`pyquantizer.so`、`onnxruntime_pybind11_state.so`、`horizon_operators.so` 等 C++ .so 文件
 - **支持架构**: nash/nash-b/nash-e/nash-m/nash-h/nash-p/bayes/bayes-e/bernoulli2/bernoulli/expt
@@ -36,7 +36,7 @@ hmct-2.8.3-cp310/
     executor/                        # ONNX Runtime 推理执行器 (ORTExecutor)
     custom/                          # 自定义算子注册 | plugin/ — BEVPoolingV2/DeformConv2D
     reporter/                        # 报告: 相似度计算、量化类型统计、模型信息
-    skills/                          # reference/ (一键构建) + j6-hmct-cosine-similarity-tuning/
+    skills/                          # reference/ (一键构建) + s-hmct-cosine-similarity-tuning/
     tools/                           # CLI: simplify, profiler, convert, debug, compatibility, compare_*
     utility/                         # 工具函数 (random_data, tempdir)
   horizon_nn/                        # 轻量辅助包 | hmct-2.8.3.dist-info/ — pip 元数据
@@ -112,7 +112,7 @@ ModelBuilder(onnx_model, march, check_mode=False, save_model=False, name_prefix=
 | 搜索最优参数 | `modelwise_search`, `weightwise_search`, `layerwise_search` | 全局/逐层搜索最优校准参数 |
 | 混精度量化 | `mixed precision`, `node_config`, `qtype`, `int16`, `dual-int16` | 按节点/op 设置不同量化精度 |
 | 图优化 pass | `optimize`, `run_passes`, `PredicateBasedPass`, `register_pass` | 自定义/内置优化 pass |
-| 算子适配 | `adapt_`, `AdaptNode`, `adapt_conv_like_ops` | ONNX→Horizon 算子适配 |
+| 算子适配 | `adapt_`, `AdaptNode`, `adapt_conv_like_ops` | ONNX→D Robotics 算子适配 |
 | 算子融合 | `fuse_`, `FuseNode`, `fuse_bn_into_prev_conv` | BN 融合、连续算子融合 |
 | 冗余消除 | `eliminate_`, `EliminateNode`, `eliminate_unused` | 消除冗余节点/变量 |
 | 算子替换 | `replace_`, `ReplaceNode`, `replace_gemm_with_conv` | Gemm→Conv、Flatten→Reshape |

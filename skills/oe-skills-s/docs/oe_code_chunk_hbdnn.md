@@ -2,7 +2,7 @@
 
 ## 仓库概述
 
-- **名称**: hbdnn (Horizon BPU DNN 算子库) v1.0.3
+- **名称**: hbdnn (D Robotics BPU DNN 算子库) v1.0.3
 - **Python 包**: `hbdnn-1.0.3-py3`，预编译 wheel 分发包（非 git 仓库，无可构建源码）
 - **用途**: HBDK4 编译器栈中 DNN 算子的 CUDA 参考实现库，供 x86-64 主机侧模拟和验证量化算子行为
 - **角色**: RDK S 系列 Open Explorer (OE) v3.9.0-rc4 工具链的底层依赖，位于 `package/host/ai_toolchain/code/` 下

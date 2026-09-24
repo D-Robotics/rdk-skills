@@ -1,7 +1,7 @@
 ---
 name: x5-runtime-cpp-infer
 description: 生成或审查 X5 BPU SDK C++ 推理工程；当用户有 X5 .bin、I/O 合同和 Runtime SDK，需要实现模型加载、张量内存、hbDNNInfer、输出回读与释放时使用。模板只覆盖单输入已对齐 raw tensor，多输入或图像前处理必须按模型合同扩展。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -25,7 +25,7 @@ license: Apache-2.0
 
 ## 执行步骤
 
-1. 复制 `.drobotics/platforms/x5/assets/runtime-cpp/` 到新的工程目录。
+1. 复制 `.drobotics-x5/platforms/x5/assets/runtime-cpp/` 到新的工程目录。
 2. 模板只接受一个已经按 `alignedByteSize` 排列的 raw 输入；若模型多输入或需要 NV12 padding，先实现并单测专用 packing。
 3. 构建：
 

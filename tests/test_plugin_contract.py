@@ -87,7 +87,7 @@ class PluginContractTests(unittest.TestCase):
 
         # Upgrade rebuilds the workspace dir — local edits are lost, so it
         # needs its own confirmation gate.
-        self.assertIn("local edits inside `.drobotics/` / `.horizon/` are lost", text)
+        self.assertIn("local edits inside `.drobotics-x5/` / `.drobotics-s/` are lost", text)
         self.assertIn("Never run an upgrade without the explicit confirmation", text)
 
     def test_hub_device_mirror_has_no_retired_routes(self):
@@ -106,22 +106,22 @@ class PluginContractTests(unittest.TestCase):
 
     def test_workspace_router_handoffs_have_install_fallbacks(self):
         expected_routes = {
-            "rdk-board-delegate": {"horizon-router": "OE Tool Chain (S)"},
+            "rdk-board-delegate": {"drobotics-router": "OE Tool Chain (S)"},
             "rdk-board-knowledge": {
                 "x5-router": "OE Tool Chain (X5)",
-                "horizon-router": "OE Tool Chain (S)",
+                "drobotics-router": "OE Tool Chain (S)",
             },
             "rdk-embodied-lerobot": {
                 "x5-router": "OE Tool Chain (X5)",
-                "horizon-router": "OE Tool Chain (S)",
+                "drobotics-router": "OE Tool Chain (S)",
             },
             "rdk-hardware": {
                 "x5-router": "OE Tool Chain (X5)",
-                "horizon-router": "OE Tool Chain (S)",
+                "drobotics-router": "OE Tool Chain (S)",
             },
             "rdk-model-zoo": {
                 "x5-router": "OE Tool Chain (X5)",
-                "horizon-router": "OE Tool Chain (S)",
+                "drobotics-router": "OE Tool Chain (S)",
             },
         }
         for skill_name, routes in expected_routes.items():

@@ -36,7 +36,7 @@ hbm_outputs = hbm[0].feed(inputs)
 # 运行前需安装 hbdk4_runtime_aarch64 的wheel包
 bpu_outputs = hbm[0].feed(
     inputs,
-    remote_ip="xxx.horizon.cc",
+    remote_ip="board.example.invalid",
     remote_port=22,
     remote_work_root="/tmp"
 )
@@ -44,7 +44,7 @@ bpu_outputs = hbm[0].feed(
 # 指定运行核心
 bpu_outputs = hbm[0].feed(
     inputs,
-    remote_ip="xxx.horizon.cc",
+    remote_ip="board.example.invalid",
     remote_port=22,
     remote_work_root="/tmp",
     remote_cores=[0, 1]

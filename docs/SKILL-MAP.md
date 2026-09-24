@@ -170,73 +170,73 @@ flowchart LR
     root["S 系列模型工具链 / S toolchain"]
     root --> skill55["hbdk-manual"]
     click skill55 "../skills/oe-skills-s/skills/hbdk/hbdk-manual/SKILL.md" "Open SKILL.md"
-    root --> skill56["j6-hbdk-compile"]
-    click skill56 "../skills/oe-skills-s/skills/hbdk/j6-hbdk-compile/SKILL.md" "Open SKILL.md"
+    root --> skill56["s-hbdk-compile"]
+    click skill56 "../skills/oe-skills-s/skills/hbdk/s-hbdk-compile/SKILL.md" "Open SKILL.md"
     root --> skill57["hmct"]
     click skill57 "../skills/oe-skills-s/skills/hmct/SKILL.md" "Open SKILL.md"
-    root --> skill58["j6-hmct-cosine-similarity-tuning"]
-    click skill58 "../skills/oe-skills-s/skills/hmct/j6-hmct-cosine-similarity-tuning/SKILL.md" "Open SKILL.md"
+    root --> skill58["s-hmct-cosine-similarity-tuning"]
+    click skill58 "../skills/oe-skills-s/skills/hmct/s-hmct-cosine-similarity-tuning/SKILL.md" "Open SKILL.md"
     root --> skill59["hb-analyzer-performance"]
-    click skill59 "../skills/oe-skills-s/skills/horizon_tc_ui/hb-analyzer-performance/SKILL.md" "Open SKILL.md"
-    root --> skill60["horizon-tc-ui"]
-    click skill60 "../skills/oe-skills-s/skills/horizon_tc_ui/horizon-tc-ui/SKILL.md" "Open SKILL.md"
-    root --> skill61["horizon-router"]
-    click skill61 "../skills/oe-skills-s/skills/horizon-router/SKILL.md" "Open SKILL.md"
+    click skill59 "../skills/oe-skills-s/skills/tc_ui/hb-analyzer-performance/SKILL.md" "Open SKILL.md"
+    root --> skill60["s-tc-ui"]
+    click skill60 "../skills/oe-skills-s/skills/tc_ui/s-tc-ui/SKILL.md" "Open SKILL.md"
+    root --> skill61["drobotics-router"]
+    click skill61 "../skills/oe-skills-s/skills/drobotics-router/SKILL.md" "Open SKILL.md"
     root --> skill62["board-detection"]
-    click skill62 "../skills/oe-skills-s/skills/horizon-router/board-detection/SKILL.md" "Open SKILL.md"
+    click skill62 "../skills/oe-skills-s/skills/drobotics-router/board-detection/SKILL.md" "Open SKILL.md"
     root --> skill63["oe-llm-package-detection"]
-    click skill63 "../skills/oe-skills-s/skills/horizon-router/oe-llm-package-detection/SKILL.md" "Open SKILL.md"
+    click skill63 "../skills/oe-skills-s/skills/drobotics-router/oe-llm-package-detection/SKILL.md" "Open SKILL.md"
     root --> skill64["oe-llm-package-install"]
-    click skill64 "../skills/oe-skills-s/skills/horizon-router/oe-llm-package-install/SKILL.md" "Open SKILL.md"
+    click skill64 "../skills/oe-skills-s/skills/drobotics-router/oe-llm-package-install/SKILL.md" "Open SKILL.md"
     root --> skill65["oe-package-detection"]
-    click skill65 "../skills/oe-skills-s/skills/horizon-router/oe-package-detection/SKILL.md" "Open SKILL.md"
+    click skill65 "../skills/oe-skills-s/skills/drobotics-router/oe-package-detection/SKILL.md" "Open SKILL.md"
     root --> skill66["oe-package-install"]
-    click skill66 "../skills/oe-skills-s/skills/horizon-router/oe-package-install/SKILL.md" "Open SKILL.md"
-    root --> skill67["j6-plugin-adaptation"]
-    click skill67 "../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/SKILL.md" "Open SKILL.md"
-    root --> skill68["j6-plugin-dynamic-block"]
-    click skill68 "../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block/SKILL.md" "Open SKILL.md"
-    root --> skill69["j6-plugin-insert-quant-dequant"]
-    click skill69 "../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant/SKILL.md" "Open SKILL.md"
-    root --> skill70["j6-plugin-prepare"]
-    click skill70 "../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-prepare/SKILL.md" "Open SKILL.md"
-    root --> skill71["j6-plugin-set-fake-quantize"]
-    click skill71 "../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize/SKILL.md" "Open SKILL.md"
-    root --> skill72["j6-plugin-set-march"]
-    click skill72 "../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-march/SKILL.md" "Open SKILL.md"
-    root --> skill73["j6-plugin-consistency-debug"]
-    click skill73 "../skills/oe-skills-s/skills/plugin/j6-plugin-consistency-debug/SKILL.md" "Open SKILL.md"
-    root --> skill74["j6-plugin-export"]
-    click skill74 "../skills/oe-skills-s/skills/plugin/j6-plugin-export/SKILL.md" "Open SKILL.md"
-    root --> skill75["j6-plugin-graph-diff"]
-    click skill75 "../skills/oe-skills-s/skills/plugin/j6-plugin-graph-diff/SKILL.md" "Open SKILL.md"
-    root --> skill76["j6-plugin-hbdk-generating"]
-    click skill76 "../skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/SKILL.md" "Open SKILL.md"
-    root --> skill77["j6-hbdk-export-compile"]
-    click skill77 "../skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile/SKILL.md" "Open SKILL.md"
-    root --> skill78["j6-plugin-quantization"]
-    click skill78 "../skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization/SKILL.md" "Open SKILL.md"
-    root --> skill79["j6-plugin-model-check-result"]
-    click skill79 "../skills/oe-skills-s/skills/plugin/j6-plugin-model-check-result/SKILL.md" "Open SKILL.md"
-    root --> skill80["j6-plugin-precision-tuning"]
-    click skill80 "../skills/oe-skills-s/skills/plugin/j6-plugin-precision-tuning/SKILL.md" "Open SKILL.md"
+    click skill66 "../skills/oe-skills-s/skills/drobotics-router/oe-package-install/SKILL.md" "Open SKILL.md"
+    root --> skill67["s-plugin-adaptation"]
+    click skill67 "../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/SKILL.md" "Open SKILL.md"
+    root --> skill68["s-plugin-dynamic-block"]
+    click skill68 "../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-dynamic-block/SKILL.md" "Open SKILL.md"
+    root --> skill69["s-plugin-insert-quant-dequant"]
+    click skill69 "../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-insert-quant-dequant/SKILL.md" "Open SKILL.md"
+    root --> skill70["s-plugin-prepare"]
+    click skill70 "../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-prepare/SKILL.md" "Open SKILL.md"
+    root --> skill71["s-plugin-set-fake-quantize"]
+    click skill71 "../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-set-fake-quantize/SKILL.md" "Open SKILL.md"
+    root --> skill72["s-plugin-set-march"]
+    click skill72 "../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-set-march/SKILL.md" "Open SKILL.md"
+    root --> skill73["s-plugin-consistency-debug"]
+    click skill73 "../skills/oe-skills-s/skills/plugin/s-plugin-consistency-debug/SKILL.md" "Open SKILL.md"
+    root --> skill74["s-plugin-export"]
+    click skill74 "../skills/oe-skills-s/skills/plugin/s-plugin-export/SKILL.md" "Open SKILL.md"
+    root --> skill75["s-plugin-graph-diff"]
+    click skill75 "../skills/oe-skills-s/skills/plugin/s-plugin-graph-diff/SKILL.md" "Open SKILL.md"
+    root --> skill76["s-plugin-hbdk-generating"]
+    click skill76 "../skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/SKILL.md" "Open SKILL.md"
+    root --> skill77["s-hbdk-export-compile"]
+    click skill77 "../skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-hbdk-export-compile/SKILL.md" "Open SKILL.md"
+    root --> skill78["s-plugin-quantization"]
+    click skill78 "../skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-plugin-quantization/SKILL.md" "Open SKILL.md"
+    root --> skill79["s-plugin-model-check-result"]
+    click skill79 "../skills/oe-skills-s/skills/plugin/s-plugin-model-check-result/SKILL.md" "Open SKILL.md"
+    root --> skill80["s-plugin-precision-tuning"]
+    click skill80 "../skills/oe-skills-s/skills/plugin/s-plugin-precision-tuning/SKILL.md" "Open SKILL.md"
     root --> skill81["ucp"]
     click skill81 "../skills/oe-skills-s/skills/ucp/SKILL.md" "Open SKILL.md"
-    root --> skill82["j6-board-monitor"]
-    click skill82 "../skills/oe-skills-s/skills/ucp/j6-board-monitor/SKILL.md" "Open SKILL.md"
-    root --> skill83["j6-ucp-hbm-infer"]
-    click skill83 "../skills/oe-skills-s/skills/ucp/j6-ucp-hbm-infer/SKILL.md" "Open SKILL.md"
-    root --> skill84["j6-ucp-infer-generating"]
-    click skill84 "../skills/oe-skills-s/skills/ucp/j6-ucp-infer-generating/SKILL.md" "Open SKILL.md"
-    root --> skill85["j6-ucp-model-perf-eval"]
-    click skill85 "../skills/oe-skills-s/skills/ucp/j6-ucp-model-perf-eval/SKILL.md" "Open SKILL.md"
-    root --> skill86["j6-ucp-perfetto-trace-analysis"]
-    click skill86 "../skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-analysis/SKILL.md" "Open SKILL.md"
-    root --> skill87["j6-ucp-perfetto-trace-catcher"]
-    click skill87 "../skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-catcher/SKILL.md" "Open SKILL.md"
+    root --> skill82["s-board-monitor"]
+    click skill82 "../skills/oe-skills-s/skills/ucp/s-board-monitor/SKILL.md" "Open SKILL.md"
+    root --> skill83["s-ucp-hbm-infer"]
+    click skill83 "../skills/oe-skills-s/skills/ucp/s-ucp-hbm-infer/SKILL.md" "Open SKILL.md"
+    root --> skill84["s-ucp-infer-generating"]
+    click skill84 "../skills/oe-skills-s/skills/ucp/s-ucp-infer-generating/SKILL.md" "Open SKILL.md"
+    root --> skill85["s-ucp-model-perf-eval"]
+    click skill85 "../skills/oe-skills-s/skills/ucp/s-ucp-model-perf-eval/SKILL.md" "Open SKILL.md"
+    root --> skill86["s-ucp-perfetto-trace-analysis"]
+    click skill86 "../skills/oe-skills-s/skills/ucp/s-ucp-perfetto-trace-analysis/SKILL.md" "Open SKILL.md"
+    root --> skill87["s-ucp-perfetto-trace-catcher"]
+    click skill87 "../skills/oe-skills-s/skills/ucp/s-ucp-perfetto-trace-catcher/SKILL.md" "Open SKILL.md"
 ```
 
-[hbdk-manual](../skills/oe-skills-s/skills/hbdk/hbdk-manual/SKILL.md) · [j6-hbdk-compile](../skills/oe-skills-s/skills/hbdk/j6-hbdk-compile/SKILL.md) · [hmct](../skills/oe-skills-s/skills/hmct/SKILL.md) · [j6-hmct-cosine-similarity-tuning](../skills/oe-skills-s/skills/hmct/j6-hmct-cosine-similarity-tuning/SKILL.md) · [hb-analyzer-performance](../skills/oe-skills-s/skills/horizon_tc_ui/hb-analyzer-performance/SKILL.md) · [horizon-tc-ui](../skills/oe-skills-s/skills/horizon_tc_ui/horizon-tc-ui/SKILL.md) · [horizon-router](../skills/oe-skills-s/skills/horizon-router/SKILL.md) · [board-detection](../skills/oe-skills-s/skills/horizon-router/board-detection/SKILL.md) · [oe-llm-package-detection](../skills/oe-skills-s/skills/horizon-router/oe-llm-package-detection/SKILL.md) · [oe-llm-package-install](../skills/oe-skills-s/skills/horizon-router/oe-llm-package-install/SKILL.md) · [oe-package-detection](../skills/oe-skills-s/skills/horizon-router/oe-package-detection/SKILL.md) · [oe-package-install](../skills/oe-skills-s/skills/horizon-router/oe-package-install/SKILL.md) · [j6-plugin-adaptation](../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/SKILL.md) · [j6-plugin-dynamic-block](../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block/SKILL.md) · [j6-plugin-insert-quant-dequant](../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant/SKILL.md) · [j6-plugin-prepare](../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-prepare/SKILL.md) · [j6-plugin-set-fake-quantize](../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize/SKILL.md) · [j6-plugin-set-march](../skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-march/SKILL.md) · [j6-plugin-consistency-debug](../skills/oe-skills-s/skills/plugin/j6-plugin-consistency-debug/SKILL.md) · [j6-plugin-export](../skills/oe-skills-s/skills/plugin/j6-plugin-export/SKILL.md) · [j6-plugin-graph-diff](../skills/oe-skills-s/skills/plugin/j6-plugin-graph-diff/SKILL.md) · [j6-plugin-hbdk-generating](../skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/SKILL.md) · [j6-hbdk-export-compile](../skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile/SKILL.md) · [j6-plugin-quantization](../skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization/SKILL.md) · [j6-plugin-model-check-result](../skills/oe-skills-s/skills/plugin/j6-plugin-model-check-result/SKILL.md) · [j6-plugin-precision-tuning](../skills/oe-skills-s/skills/plugin/j6-plugin-precision-tuning/SKILL.md) · [ucp](../skills/oe-skills-s/skills/ucp/SKILL.md) · [j6-board-monitor](../skills/oe-skills-s/skills/ucp/j6-board-monitor/SKILL.md) · [j6-ucp-hbm-infer](../skills/oe-skills-s/skills/ucp/j6-ucp-hbm-infer/SKILL.md) · [j6-ucp-infer-generating](../skills/oe-skills-s/skills/ucp/j6-ucp-infer-generating/SKILL.md) · [j6-ucp-model-perf-eval](../skills/oe-skills-s/skills/ucp/j6-ucp-model-perf-eval/SKILL.md) · [j6-ucp-perfetto-trace-analysis](../skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-analysis/SKILL.md) · [j6-ucp-perfetto-trace-catcher](../skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-catcher/SKILL.md)
+[hbdk-manual](../skills/oe-skills-s/skills/hbdk/hbdk-manual/SKILL.md) · [s-hbdk-compile](../skills/oe-skills-s/skills/hbdk/s-hbdk-compile/SKILL.md) · [hmct](../skills/oe-skills-s/skills/hmct/SKILL.md) · [s-hmct-cosine-similarity-tuning](../skills/oe-skills-s/skills/hmct/s-hmct-cosine-similarity-tuning/SKILL.md) · [hb-analyzer-performance](../skills/oe-skills-s/skills/tc_ui/hb-analyzer-performance/SKILL.md) · [s-tc-ui](../skills/oe-skills-s/skills/tc_ui/s-tc-ui/SKILL.md) · [drobotics-router](../skills/oe-skills-s/skills/drobotics-router/SKILL.md) · [board-detection](../skills/oe-skills-s/skills/drobotics-router/board-detection/SKILL.md) · [oe-llm-package-detection](../skills/oe-skills-s/skills/drobotics-router/oe-llm-package-detection/SKILL.md) · [oe-llm-package-install](../skills/oe-skills-s/skills/drobotics-router/oe-llm-package-install/SKILL.md) · [oe-package-detection](../skills/oe-skills-s/skills/drobotics-router/oe-package-detection/SKILL.md) · [oe-package-install](../skills/oe-skills-s/skills/drobotics-router/oe-package-install/SKILL.md) · [s-plugin-adaptation](../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/SKILL.md) · [s-plugin-dynamic-block](../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-dynamic-block/SKILL.md) · [s-plugin-insert-quant-dequant](../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-insert-quant-dequant/SKILL.md) · [s-plugin-prepare](../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-prepare/SKILL.md) · [s-plugin-set-fake-quantize](../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-set-fake-quantize/SKILL.md) · [s-plugin-set-march](../skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-set-march/SKILL.md) · [s-plugin-consistency-debug](../skills/oe-skills-s/skills/plugin/s-plugin-consistency-debug/SKILL.md) · [s-plugin-export](../skills/oe-skills-s/skills/plugin/s-plugin-export/SKILL.md) · [s-plugin-graph-diff](../skills/oe-skills-s/skills/plugin/s-plugin-graph-diff/SKILL.md) · [s-plugin-hbdk-generating](../skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/SKILL.md) · [s-hbdk-export-compile](../skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-hbdk-export-compile/SKILL.md) · [s-plugin-quantization](../skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-plugin-quantization/SKILL.md) · [s-plugin-model-check-result](../skills/oe-skills-s/skills/plugin/s-plugin-model-check-result/SKILL.md) · [s-plugin-precision-tuning](../skills/oe-skills-s/skills/plugin/s-plugin-precision-tuning/SKILL.md) · [ucp](../skills/oe-skills-s/skills/ucp/SKILL.md) · [s-board-monitor](../skills/oe-skills-s/skills/ucp/s-board-monitor/SKILL.md) · [s-ucp-hbm-infer](../skills/oe-skills-s/skills/ucp/s-ucp-hbm-infer/SKILL.md) · [s-ucp-infer-generating](../skills/oe-skills-s/skills/ucp/s-ucp-infer-generating/SKILL.md) · [s-ucp-model-perf-eval](../skills/oe-skills-s/skills/ucp/s-ucp-model-perf-eval/SKILL.md) · [s-ucp-perfetto-trace-analysis](../skills/oe-skills-s/skills/ucp/s-ucp-perfetto-trace-analysis/SKILL.md) · [s-ucp-perfetto-trace-catcher](../skills/oe-skills-s/skills/ucp/s-ucp-perfetto-trace-catcher/SKILL.md)
 
 <a id="zoo"></a>
 

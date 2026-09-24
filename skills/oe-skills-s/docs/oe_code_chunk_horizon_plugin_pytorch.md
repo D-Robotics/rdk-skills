@@ -2,7 +2,7 @@
 
 ## 仓库概述
 - **Name**: `horizon_plugin_pytorch` v3.3.4+cu128.torch2100
-- **Purpose**: 面向地平线 BPU（Journey 6 系列）的量化感知训练 (QAT) 与模型导出插件
+- **Purpose**: 面向地瓜机器人 BPU（Journey 6 系列）的量化感知训练 (QAT) 与模型导出插件
 - **Role**: 在 PyTorch 2.10.0 + CUDA 12.8 之上扩展 BPU 专有量化 dtype、算子实现及 hbdk3/hbdk4 编译导出流水线
 - **Type**: 已安装的 Python wheel（非源码仓库），含 native extension `libhorizon_ops.so`
 - **Python**: cp39 (Python ≥3.9)

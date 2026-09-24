@@ -30,12 +30,12 @@ repo: D-Robotics/oe-skills-x5
 ref: v1.0.0
 install_type: workspace
 install_script: setup.sh
-workspace_dir: .drobotics
+workspace_dir: .drobotics-x5
 verify_paths:
-  - .drobotics/X5.md
-  - .drobotics/VERSION
-  - .drobotics/skill-index.json
-  - .drobotics/skills/x5-router/SKILL.md
+  - .drobotics-x5/X5.md
+  - .drobotics-x5/VERSION
+  - .drobotics-x5/skill-index.json
+  - .drobotics-x5/skills/x5-router/SKILL.md
 skills:
   - catalog_dir: oe-skills-x5
 """,
@@ -48,12 +48,12 @@ repo: D-Robotics/oe-skills-s
 ref: v1.0.0
 install_type: workspace
 install_script: setup.sh
-workspace_dir: .horizon
+workspace_dir: .drobotics-s
 verify_paths:
-  - .horizon/HORIZON.md
-  - .horizon/VERSION
-  - .horizon/skill-index.json
-  - .horizon/skills/horizon-router/SKILL.md
+  - .drobotics-s/DROBOTICS-S.md
+  - .drobotics-s/VERSION
+  - .drobotics-s/skill-index.json
+  - .drobotics-s/skills/drobotics-router/SKILL.md
 skills:
   - catalog_dir: oe-skills-s
 """,
@@ -66,14 +66,14 @@ skills:
     def test_pack_registry_contains_declared_workspace_contracts(self):
         registry = catalog.build_pack_registry(self.repo, catalog.load_components(self.repo))
         packs = {item["repo"]: item for item in registry["packs"]}
-        self.assertEqual(packs["D-Robotics/oe-skills-x5"]["workspace_dir"], ".drobotics")
+        self.assertEqual(packs["D-Robotics/oe-skills-x5"]["workspace_dir"], ".drobotics-x5")
         self.assertIn(
-            ".drobotics/skills/x5-router/SKILL.md",
+            ".drobotics-x5/skills/x5-router/SKILL.md",
             packs["D-Robotics/oe-skills-x5"]["verify_paths"],
         )
-        self.assertEqual(packs["D-Robotics/oe-skills-s"]["workspace_dir"], ".horizon")
+        self.assertEqual(packs["D-Robotics/oe-skills-s"]["workspace_dir"], ".drobotics-s")
         self.assertIn(
-            ".horizon/skills/horizon-router/SKILL.md",
+            ".drobotics-s/skills/drobotics-router/SKILL.md",
             packs["D-Robotics/oe-skills-s"]["verify_paths"],
         )
 
@@ -538,9 +538,9 @@ repo: D-Robotics/oe-skills-x5
 ref: v1.0.0
 install_type: workspace
 install_script: setup.sh
-workspace_dir: .drobotics
+workspace_dir: .drobotics-x5
 verify_paths:
-  - .drobotics/VERSION
+  - .drobotics-x5/VERSION
 skills:
   - catalog_dir: oe-skills-x5
 """,

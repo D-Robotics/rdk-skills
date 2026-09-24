@@ -4,9 +4,9 @@
 
 - **Name**: `horizon_plugin_profiler` (v3.3.4)
 - **Package**: `horizon-plugin-profiler` (pip), depends on `horizon_plugin_pytorch`
-- **Purpose**: PyTorch model profiling & quantization debug toolkit for Horizon Robotics BPU (Brain Processing Unit)
+- **Purpose**: PyTorch model profiling & quantization debug toolkit for D Robotics BPU (Brain Processing Unit)
 - **Role in toolchain**: Provides layer-by-layer comparison, sensitivity analysis, bad-case finding, and HTML reporting across the float -> fused -> calibration -> QAT -> quantized -> HBIR conversion pipeline. Diagnoses quantization accuracy loss and identifies sensitive operators.
-- **Author**: Horizon DeepLearning Platform
+- **Author**: D Robotics DeepLearning Platform
 - **Key deps**: numpy, tabulate, plotly, Jinja2, termcolor, tqdm, matplotlib, scipy; optional: `hbdk4` (compiler), `hbm_infer` (remote inference)
 
 ## 目录结构

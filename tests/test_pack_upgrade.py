@@ -58,8 +58,8 @@ BASH = _find_bash()
 class PackSetupUpgradeTests(unittest.TestCase):
     # catalog_dir -> workspace_dir
     PACKS = {
-        "x5": ("oe-skills-x5", ".drobotics"),
-        "s": ("oe-skills-s", ".horizon"),
+        "x5": ("oe-skills-x5", ".drobotics-x5"),
+        "s": ("oe-skills-s", ".drobotics-s"),
     }
 
     @classmethod
@@ -90,6 +90,20 @@ class PackSetupUpgradeTests(unittest.TestCase):
             cwd=str(mirror),
             check=False,
         )
+
+    def test_s_and_x5_can_install_and_force_update_together(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary)
+            (project / "AGENTS.md").write_text("# Project rules\nKeep this.\n")
+            for pack in ("x5", "s", "x5", "s"):
+                result = self._run_setup(self.mirrors[pack], project, "--update", "--force")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            rules = (project / "AGENTS.md").read_text()
+            for pack, (_, workspace) in self.PACKS.items():
+                self.assertTrue((project / workspace / "VERSION").is_file())
+                self.assertIn(workspace + "/", rules)
+            self.assertEqual(rules.count("you MUST follow the project rules"), 2)
+            self.assertIn("# Project rules\nKeep this.", rules)
 
     def _install(self, pack, project):
         """Fresh plain install, asserting the legacy argument form works."""

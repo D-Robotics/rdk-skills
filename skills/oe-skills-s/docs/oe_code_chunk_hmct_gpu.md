@@ -2,10 +2,10 @@
 
 ## 仓库概述
 
-- **名称**: hmct-gpu (Horizon Model Convert Tool — GPU 加速版) v2.8.3+cu128
+- **名称**: hmct-gpu (D Robotics Model Convert Tool — GPU 加速版) v2.8.3+cu128
 - **Python 包**: `hmct_gpu-2.8.3+cu128-cp310`，已安装 pip 包（CUDA 12.8 / Python 3.10）
 - **用途**: 与 `hmct` 包代码结构一致，但链接 `onnxruntime-gpu` 与 CUDA 版 `pyquantizer`/`onnxruntime_pybind11_state`，在 GPU 上执行校准推理（calibration）和 shape inference，显著加速大批量校准数据的处理
-- **角色**: J6 Open Explorer 工具链 GPU 加速变体；与 CPU 版 `hmct` 共享 Python API 接口
+- **角色**: S Open Explorer 工具链 GPU 加速变体；与 CPU 版 `hmct` 共享 Python API 接口
 - **关键依赖差异**: `onnxruntime-gpu`（替代 CPU 版 `onnxruntime`）、`onnxruntime-extensions == 0.10.1`、`numpy == 1.23.0`、`onnx == 1.15.0`、`protobuf == 3.20.3`
 - **支持架构 / 后端 / 流水线**: 与 CPU 版完全相同（nash*、hbdk3/hbdk4/expt/trt/lut）
 - **安装位置**: `package/host/ai_toolchain/code/hmct_gpu-2.8.3+cu128-cp310/`
@@ -35,7 +35,7 @@ hmct_gpu-2.8.3+cu128-cp310/
     custom/ + plugin/                # op_register / op_registration / BEVPoolingV2 / DeformConv2D
     reporter/                        # calculate_similarity, calculate_quant_type, calculate_hybrid_type, print_model_info
     tools/                           # debug.py (hmct-debugger CLI), convert, profiler, visualizer, simplify, compatibility
-    skills/                          # SKILL.md 路由 + reference/ + j6-hmct-cosine-similarity-tuning/
+    skills/                          # SKILL.md 路由 + reference/ + s-hmct-cosine-similarity-tuning/
     utility/                         # random_data, tempdir
   horizon_nn/                        # 轻量辅助包 (仅 __init__.py)
   hmct_gpu-2.8.3+cu128.dist-info/   # pip 元数据 (METADATA 列出 onnxruntime-gpu 等)
@@ -90,7 +90,7 @@ def build_model(
 | `tensor-analysis` | 张量级分析 |
 
 ### Skills 入口 (`hmct/skills/SKILL.md`)
-路由 A=build / B=check / C=精度调优（转交 `j6-hmct-cosine-similarity-tuning`）/ D=单项 debug。
+路由 A=build / B=check / C=精度调优（转交 `s-hmct-cosine-similarity-tuning`）/ D=单项 debug。
 
 ## 常用查询映射
 
@@ -103,7 +103,7 @@ def build_model(
 | per-channel / asymmetric 量化 | `per_channel`, `asymmetric`, `QuantConfig` | `common/quant/quant_config.py` |
 | 权重 bias correction | `bias_correction`, `bias_correction_num_sample` | 写入 `model_config.weight.bias_correction` |
 | float16 上溢/下溢 | `resolve_float16_overflow`, `resolve_float16_underflow` | `quantizer/calibrater/` |
-| 混合精度 / INT16 回退 | `node_config`, `quant_config`, `j6-hmct-cosine-similarity-tuning` | 调优 Skill 脚本 `hmct_precision_tuning.py` |
+| 混合精度 / INT16 回退 | `node_config`, `quant_config`, `s-hmct-cosine-similarity-tuning` | 调优 Skill 脚本 `hmct_precision_tuning.py` |
 | 节点灵敏度 | `get-sensitivity-of-nodes`, `node_sensitivity` | `hmct-debugger` 子命令 |
 | 数据分布 | `plot-distribution`, `parameter_distribution` | debugger 工具 |
 | 累积误差 | `plot-acc-error`, `accumulation_error` | debugger 工具 |
@@ -139,7 +139,7 @@ def build_model(
 | 随机数据生成 | `random_data` | `hmct/utility/` |
 | 临时目录 | `tempdir` | `hmct/utility/` |
 | 一键构建脚本 | `run_build.py build`, `run_build.py check` | `hmct/skills/reference/` |
-| 精度调优脚本 | `hmct_precision_tuning.py`, `get_sensitivity_of_nodes.py` | `skills/j6-hmct-cosine-similarity-tuning/script/` |
+| 精度调优脚本 | `hmct_precision_tuning.py`, `get_sensitivity_of_nodes.py` | `skills/s-hmct-cosine-similarity-tuning/script/` |
 
 ## 规则与约定
 

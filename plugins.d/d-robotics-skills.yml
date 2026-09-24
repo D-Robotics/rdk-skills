@@ -40,7 +40,7 @@ default_prompts:
 # without paying the context cost of pre-loading it.
 #
 # The pack installer handles the workspace-integrated packs (OE Tool
-# Chain X5 / S), whose skills depend on shared .drobotics/ resources:
+# Chain X5 / S), whose skills depend on shared .drobotics-x5/ resources:
 # it reads its bundled registry and runs the pack's documented clone +
 # setup.sh flow for the user's project.
 #

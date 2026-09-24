@@ -54,8 +54,8 @@ flowchart TB
     flat --> agent["选择 Skill → Agent 技能目录"]
     packs --> x5["OE X5: setup.sh TARGET_PROJECT"]
     packs --> s["OE S: setup.sh TARGET_PROJECT"]
-    x5 --> xd["TARGET_PROJECT/.drobotics/"]
-    s --> sd["TARGET_PROJECT/.horizon/"]
+    x5 --> xd["TARGET_PROJECT/.drobotics-x5/"]
+    s --> sd["TARGET_PROJECT/.drobotics-s/"]
     xd --> xr["Skill + 脚本 + 文档 + 平台配置"]
     sd --> sr["模块路由 + 子 Skill + 共享资源"]
 ```
@@ -154,12 +154,12 @@ X5 和 S 是两套独立 Pack，按目标平台选择。它们包含相互依赖
 读取仓库安装说明和 skills/rdk-pack-installer/references/pack-registry.json。
 使用 Hub 中 skills/oe-skills-x5/setup.sh 初始化目标项目；记录与安装内容一致的来源 ref。
 如果已安装，先比较版本并报告；需要重建目录时，说明本地修改的影响并等我确认。
-完成后按注册表 verify_paths 验证 .drobotics/，检查目标 Agent 的路由接入，
+完成后按注册表 verify_paths 验证 .drobotics-x5/，检查目标 Agent 的路由接入，
 说明是否需要额外配置，并给出一个 X5 模型量化任务示例。
 如果当前系统无法执行 Bash，请说明适用环境和下一步操作。
 ```
 
-**安装结果：** `项目/.drobotics/`，包含 X5 Skill、脚本、文档和平台配置。
+**安装结果：** `项目/.drobotics-x5/`，包含 X5 Skill、脚本、文档和平台配置。
 
 **手动安装**（在 Bash 环境中，将路径替换为真实项目绝对路径）：
 
@@ -181,12 +181,12 @@ bash skills/oe-skills-x5/setup.sh "/absolute/path/to/project"
 读取仓库安装说明和 skills/rdk-pack-installer/references/pack-registry.json。
 使用 Hub 中 skills/oe-skills-s/setup.sh 初始化目标项目；记录与安装内容一致的来源 ref。
 如果已安装，先比较版本并报告；需要重建目录时，说明本地修改的影响并等我确认。
-完成后按注册表 verify_paths 验证 .horizon/，检查目标 Agent 的路由接入，
+完成后按注册表 verify_paths 验证 .drobotics-s/，检查目标 Agent 的路由接入，
 说明是否需要额外配置，并给出一个 S 系列模型编译任务示例。
 如果当前系统无法执行 Bash，请说明适用环境和下一步操作。
 ```
 
-**安装结果：** `项目/.horizon/`，包含模块路由、子 Skill 和共享资源。
+**安装结果：** `项目/.drobotics-s/`，包含模块路由、子 Skill 和共享资源。
 
 **手动安装**（在上述 Hub checkout 中执行）：
 
@@ -253,7 +253,7 @@ dsh --profile <name>
 请检查我在 [目标 Agent / DSH profile]、[项目绝对路径或全局范围]
 安装的 RDK Skill、Hub 插件或 OE Pack，并按各自的安装渠道更新。
 先报告当前版本和目标版本。OE Pack 依据注册表 ref 与项目 INSTALLED_REF
-（缺失时参考 VERSION）比较；重建 .drobotics/ 或 .horizon/ 前，
+（缺失时参考 VERSION）比较；重建 .drobotics-x5/ 或 .drobotics-s/ 前，
 说明本地修改会受到的影响并等我确认。完成后验证并报告更新结果。
 ```
 
@@ -273,7 +273,7 @@ Hub 内容通过来源 Release 触发的升级 PR 更新，合入后才进入主
 | **BSP Skills** | 板级支持包（BSP）开发技能——主机交叉编译环境、repo/manifest 源码同步、系统镜像构建、内核/设备树/驱动模块、hobot-* deb 包、bootloader/miniboot、X3/X5 Ubuntu 根文件系统定制，以及 S 系列源码获取。 | [ `bsp-env-setup`](skills/bsp-env-setup), [ `bsp-source-sync`](skills/bsp-source-sync), [ `bsp-image-build`](skills/bsp-image-build), [ `bsp-kernel-build`](skills/bsp-kernel-build), [ `bsp-deb-build`](skills/bsp-deb-build), [ `bsp-bootloader-build`](skills/bsp-bootloader-build), [ `bsp-rootfs-custom`](skills/bsp-rootfs-custom), [ `bsp-s-series`](skills/bsp-s-series) |
 | **RDK Device Skills** | 设备侧技能：诊断快照、内存审计、无头模式、摄像头、视觉流水线、模型部署与基准测试、GPIO、TROS、文档检索、硬件规格、板卡选型、Model Zoo、外设驱动、官方配件、端侧 LLM/VLM 部署、具身智能、S 系列异构开发、命令手册、源码导航 | [ `rdk-diagnostic`](skills/rdk-diagnostic), [ `rdk-memory-audit`](skills/rdk-memory-audit), [ `rdk-headless-mode`](skills/rdk-headless-mode), [ `rdk-camera-setup`](skills/rdk-camera-setup), [ `rdk-vision-pipeline`](skills/rdk-vision-pipeline), [ `rdk-model-deploy`](skills/rdk-model-deploy), [ `rdk-model-benchmark`](skills/rdk-model-benchmark), [ `rdk-docs-reference`](skills/rdk-docs-reference), [ `rdk-system-config`](skills/rdk-system-config), [ `rdk-network-remote`](skills/rdk-network-remote), [ `rdk-system-maintain`](skills/rdk-system-maintain), [ `rdk-log-forensics`](skills/rdk-log-forensics), [ `rdk-gpio-40pin`](skills/rdk-gpio-40pin), [ `rdk-tros-setup`](skills/rdk-tros-setup), [ `rdk-ecosystem`](skills/rdk-ecosystem), [ `rdk-hardware`](skills/rdk-hardware), [ `rdk-board-knowledge`](skills/rdk-board-knowledge), [ `rdk-model-zoo`](skills/rdk-model-zoo), [ `rdk-multimedia`](skills/rdk-multimedia), [ `rdk-peripheral-cookbook`](skills/rdk-peripheral-cookbook), [ `rdk-accessories`](skills/rdk-accessories), [ `rdk-llm-deployment`](skills/rdk-llm-deployment), [ `rdk-embodied-lerobot`](skills/rdk-embodied-lerobot), [ `rdk-board-delegate`](skills/rdk-board-delegate), [ `rdk-command-manual`](skills/rdk-command-manual), [ `rdk-source-map`](skills/rdk-source-map) |
 | **OE 工具链 (X5)** | OpenExplorer X5 工具链——模型量化（PTQ/QAT）、编译、推理、性能评测、诊断。Workspace 集成型 Pack，需 setup.sh 初始化。 | [ `x5-accuracy-diagnostics`](skills/oe-skills-x5/skills/x5-accuracy-diagnostics), [ `x5-board-monitor`](skills/oe-skills-x5/skills/x5-board-monitor), [ `x5-bpu-python-api`](skills/oe-skills-x5/skills/x5-bpu-python-api), [ `x5-calibration-data-prepare`](skills/oe-skills-x5/skills/x5-calibration-data-prepare), [ `x5-consistency-diagnostics`](skills/oe-skills-x5/skills/x5-consistency-diagnostics), [ `x5-environment-install`](skills/oe-skills-x5/skills/x5-environment-install), [ `x5-environment-probe`](skills/oe-skills-x5/skills/x5-environment-probe), [ `x5-environment-setup`](skills/oe-skills-x5/skills/x5-environment-setup), [ `x5-model-diagnostics`](skills/oe-skills-x5/skills/x5-model-diagnostics), [ `x5-model-preflight`](skills/oe-skills-x5/skills/x5-model-preflight), [ `x5-performance-diagnostics`](skills/oe-skills-x5/skills/x5-performance-diagnostics), [ `x5-ptq-compile`](skills/oe-skills-x5/skills/x5-ptq-compile), [ `x5-ptq-config-authoring`](skills/oe-skills-x5/skills/x5-ptq-config-authoring), [ `x5-ptq-deploy`](skills/oe-skills-x5/skills/x5-ptq-deploy), [ `x5-qat-adaptation`](skills/oe-skills-x5/skills/x5-qat-adaptation), [ `x5-qat-compile`](skills/oe-skills-x5/skills/x5-qat-compile), [ `x5-qat-deploy`](skills/oe-skills-x5/skills/x5-qat-deploy), [ `x5-qat-training`](skills/oe-skills-x5/skills/x5-qat-training), [ `x5-router`](skills/oe-skills-x5/skills/x5-router), [ `x5-runtime-cpp-infer`](skills/oe-skills-x5/skills/x5-runtime-cpp-infer), [ `x5-runtime-deploy`](skills/oe-skills-x5/skills/x5-runtime-deploy), [ `x5-runtime-perf-eval`](skills/oe-skills-x5/skills/x5-runtime-perf-eval) |
-| **OE 工具链 (S)** | Horizon OpenExplorer（OE）工具链，面向 S 系列——PTQ/QAT 量化、HBDK 编译、UCP 板端推理、性能与精度评估、LLM 压缩。Workspace 集成型 Pack，需 setup.sh 初始化。 | [ `hbdk-manual`](skills/oe-skills-s/skills/hbdk/hbdk-manual), [ `j6-hbdk-compile`](skills/oe-skills-s/skills/hbdk/j6-hbdk-compile), [ `j6-hmct-cosine-similarity-tuning`](skills/oe-skills-s/skills/hmct/j6-hmct-cosine-similarity-tuning), [ `hmct`](skills/oe-skills-s/skills/hmct), [ `hb-analyzer-performance`](skills/oe-skills-s/skills/horizon_tc_ui/hb-analyzer-performance), [ `horizon-tc-ui`](skills/oe-skills-s/skills/horizon_tc_ui/horizon-tc-ui), [ `board-detection`](skills/oe-skills-s/skills/horizon-router/board-detection), [ `oe-llm-package-detection`](skills/oe-skills-s/skills/horizon-router/oe-llm-package-detection), [ `oe-llm-package-install`](skills/oe-skills-s/skills/horizon-router/oe-llm-package-install), [ `oe-package-detection`](skills/oe-skills-s/skills/horizon-router/oe-package-detection), [ `oe-package-install`](skills/oe-skills-s/skills/horizon-router/oe-package-install), [ `horizon-router`](skills/oe-skills-s/skills/horizon-router), [ `j6-plugin-dynamic-block`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-dynamic-block), [ `j6-plugin-insert-quant-dequant`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-insert-quant-dequant), [ `j6-plugin-prepare`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-prepare), [ `j6-plugin-set-fake-quantize`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-fake-quantize), [ `j6-plugin-set-march`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation/j6-plugin-set-march), [ `j6-plugin-adaptation`](skills/oe-skills-s/skills/plugin/j6-plugin-adaptation), [ `j6-plugin-consistency-debug`](skills/oe-skills-s/skills/plugin/j6-plugin-consistency-debug), [ `j6-plugin-export`](skills/oe-skills-s/skills/plugin/j6-plugin-export), [ `j6-plugin-graph-diff`](skills/oe-skills-s/skills/plugin/j6-plugin-graph-diff), [ `j6-hbdk-export-compile`](skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-hbdk-export-compile), [ `j6-plugin-quantization`](skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating/j6-plugin-quantization), [ `j6-plugin-hbdk-generating`](skills/oe-skills-s/skills/plugin/j6-plugin-hbdk-generating), [ `j6-plugin-model-check-result`](skills/oe-skills-s/skills/plugin/j6-plugin-model-check-result), [ `j6-plugin-precision-tuning`](skills/oe-skills-s/skills/plugin/j6-plugin-precision-tuning), [ `j6-board-monitor`](skills/oe-skills-s/skills/ucp/j6-board-monitor), [ `j6-ucp-hbm-infer`](skills/oe-skills-s/skills/ucp/j6-ucp-hbm-infer), [ `j6-ucp-infer-generating`](skills/oe-skills-s/skills/ucp/j6-ucp-infer-generating), [ `j6-ucp-model-perf-eval`](skills/oe-skills-s/skills/ucp/j6-ucp-model-perf-eval), [ `j6-ucp-perfetto-trace-analysis`](skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-analysis), [ `j6-ucp-perfetto-trace-catcher`](skills/oe-skills-s/skills/ucp/j6-ucp-perfetto-trace-catcher), [ `ucp`](skills/oe-skills-s/skills/ucp) |
+| **OE 工具链 (S)** | D Robotics OpenExplorer（OE）工具链，面向 S 系列——PTQ/QAT 量化、HBDK 编译、UCP 板端推理、性能与精度评估、LLM 压缩。Workspace 集成型 Pack，需 setup.sh 初始化。 | [ `hbdk-manual`](skills/oe-skills-s/skills/hbdk/hbdk-manual), [ `s-hbdk-compile`](skills/oe-skills-s/skills/hbdk/s-hbdk-compile), [ `s-hmct-cosine-similarity-tuning`](skills/oe-skills-s/skills/hmct/s-hmct-cosine-similarity-tuning), [ `hmct`](skills/oe-skills-s/skills/hmct), [ `hb-analyzer-performance`](skills/oe-skills-s/skills/tc_ui/hb-analyzer-performance), [ `s-tc-ui`](skills/oe-skills-s/skills/tc_ui/s-tc-ui), [ `board-detection`](skills/oe-skills-s/skills/drobotics-router/board-detection), [ `oe-llm-package-detection`](skills/oe-skills-s/skills/drobotics-router/oe-llm-package-detection), [ `oe-llm-package-install`](skills/oe-skills-s/skills/drobotics-router/oe-llm-package-install), [ `oe-package-detection`](skills/oe-skills-s/skills/drobotics-router/oe-package-detection), [ `oe-package-install`](skills/oe-skills-s/skills/drobotics-router/oe-package-install), [ `drobotics-router`](skills/oe-skills-s/skills/drobotics-router), [ `s-plugin-dynamic-block`](skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-dynamic-block), [ `s-plugin-insert-quant-dequant`](skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-insert-quant-dequant), [ `s-plugin-prepare`](skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-prepare), [ `s-plugin-set-fake-quantize`](skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-set-fake-quantize), [ `s-plugin-set-march`](skills/oe-skills-s/skills/plugin/s-plugin-adaptation/s-plugin-set-march), [ `s-plugin-adaptation`](skills/oe-skills-s/skills/plugin/s-plugin-adaptation), [ `s-plugin-consistency-debug`](skills/oe-skills-s/skills/plugin/s-plugin-consistency-debug), [ `s-plugin-export`](skills/oe-skills-s/skills/plugin/s-plugin-export), [ `s-plugin-graph-diff`](skills/oe-skills-s/skills/plugin/s-plugin-graph-diff), [ `s-hbdk-export-compile`](skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-hbdk-export-compile), [ `s-plugin-quantization`](skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-plugin-quantization), [ `s-plugin-hbdk-generating`](skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating), [ `s-plugin-model-check-result`](skills/oe-skills-s/skills/plugin/s-plugin-model-check-result), [ `s-plugin-precision-tuning`](skills/oe-skills-s/skills/plugin/s-plugin-precision-tuning), [ `s-board-monitor`](skills/oe-skills-s/skills/ucp/s-board-monitor), [ `s-ucp-hbm-infer`](skills/oe-skills-s/skills/ucp/s-ucp-hbm-infer), [ `s-ucp-infer-generating`](skills/oe-skills-s/skills/ucp/s-ucp-infer-generating), [ `s-ucp-model-perf-eval`](skills/oe-skills-s/skills/ucp/s-ucp-model-perf-eval), [ `s-ucp-perfetto-trace-analysis`](skills/oe-skills-s/skills/ucp/s-ucp-perfetto-trace-analysis), [ `s-ucp-perfetto-trace-catcher`](skills/oe-skills-s/skills/ucp/s-ucp-perfetto-trace-catcher), [ `ucp`](skills/oe-skills-s/skills/ucp) |
 <!-- skills-table-end -->
 
 ---
@@ -336,7 +336,7 @@ D-Robotics/rdk-skills/
 │   ├── rdk-pack-installer/        # Hub 内置安装器 skill（catalog 例外）
 │   ├── <skill-name>/             # 扁平布局 Skill（RDK Device Skills）
 │   ├── oe-skills-x5/             # workspace Pack 镜像（完整 x5/ 资源树 + setup.sh，可自安装）
-│   └── oe-skills-s/              # workspace Pack 镜像（完整 horizon/ 资源树 + setup.sh，可自安装）
+│   └── oe-skills-s/              # workspace Pack 镜像（完整 drobotics-s/ 资源树 + setup.sh，可自安装）
 ├── components.d/                # Pack 注册表（每个产品一个 YAML）
 │   ├── README.md                 # 注册规范
 │   ├── rdk-device.yml

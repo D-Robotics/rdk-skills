@@ -43,7 +43,7 @@ metadata:
 Apply these handoffs only after the target platform/version and an actual toolchain task are established; the maintenance branch is not a platform selector.
 
 - For X5, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` within the authorized installation scope.
-- For a matching S-series toolchain, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)` within the authorized installation scope.
+- For a matching S-series toolchain, check whether `drobotics-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)` within the authorized installation scope.
 
 Explain the workspace writes and reuse existing authorization. If installation is not authorized, the installer is absent, or the target is X3/legacy requiring a different version, record the missing capability and consult the target version's documentation instead. After an approved installation, restart or reload the Agent session, check availability again, and retry the scoped handoff; naming a router does not prove it is loaded. Do not install a toolchain merely to browse or run an already compiled sample.
 
