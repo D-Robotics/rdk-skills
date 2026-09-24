@@ -323,6 +323,7 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         workflow = read_workflow(".github/workflows/component-upgrade.yml")
         document = yaml.load(workflow, Loader=yaml.BaseLoader)
 
+        self.assertEqual(document["env"]["PYTHONDONTWRITEBYTECODE"], "1")
         self.assertEqual(set(document["on"]), {"workflow_dispatch"})
         inputs = document["on"]["workflow_dispatch"]["inputs"]
         self.assertEqual(
@@ -470,8 +471,7 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
         self.assertIn(
             "The classic branch protection is authoritative for `main` and enforced for "
             "administrators. It requires exactly `DCO Check / dco` and "
-            "`Verify committed skills catalog / verify`, one maintainer approval, "
-            "stale-review dismissal, approval after the last reviewable push, "
+            "`Verify committed skills catalog / verify`, "
             "conversation resolution, and blocks force-pushes and deletions.",
             section,
         )
@@ -479,7 +479,7 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
             "The component proposal App has no branch-ruleset bypass and no exemption "
             "from classic `main` protection. It authors or updates "
             "`refs/heads/bot/component-upgrade/*` and the matching PR, and it makes the "
-            "final head push. `maxma615` approves after that push; GitHub native Auto-merge",
+            "final head push. `maxma615` reviews the proposal and chooses whether to merge",
             section,
         )
         self.assertIn("`Contents: write` includes the merge API", section)

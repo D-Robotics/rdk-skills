@@ -134,9 +134,9 @@ The existing hourly job is replaced by a read-only reconciliation/audit job. It 
 
 The broad branch ruleset includes `refs/heads/*` and excludes both `refs/heads/main` and `refs/heads/bot/component-upgrade/*`; its create, update, and delete controls continue on every other matching branch ref. `main` is excluded from the broad restrict-update ruleset so GitHub native Auto-merge can complete after all classic-protection gates pass.
 
-The classic branch protection is authoritative for `main` and enforced for administrators. It requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`, one maintainer approval, stale-review dismissal, approval after the last reviewable push, conversation resolution, and blocks force-pushes and deletions. The latter check runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check; any new reviewable head push triggers the last-push approval boundary again.
+The classic branch protection is authoritative for `main` and enforced for administrators. It requires exactly `DCO Check / dco` and `Verify committed skills catalog / verify`, conversation resolution, and blocks force-pushes and deletions. The latter check runs the full Hub unittest suite plus catalog and plugin validation on the pull-request candidate. The `component-upgrade.yml` `validate` job is a pre-PR dispatch gate, not a PR-required check; any new reviewable head push triggers the last-push approval boundary again.
 
-The component proposal App has no branch-ruleset bypass and no exemption from classic `main` protection. It authors or updates `refs/heads/bot/component-upgrade/*` and the matching PR, and it makes the final head push. `maxma615` approves after that push; GitHub native Auto-merge, rather than an App or workflow call, performs the merge after every gate passes. GitHub `Contents: write` includes the merge API, and `Pull requests: write` permits submitting reviews, but the trusted workflows and policy never invoke review, approval, merge, or Auto-merge APIs.
+The component proposal App has no branch-ruleset bypass and no exemption from classic `main` protection. It authors or updates `refs/heads/bot/component-upgrade/*` and the matching PR, and it makes the final head push. `maxma615` reviews the proposal and chooses whether to merge; GitHub native Auto-merge, rather than an App or workflow call, performs the merge after every gate passes. GitHub `Contents: write` includes the merge API, and `Pull requests: write` permits submitting reviews, but the trusted workflows and policy never invoke review, approval, merge, or Auto-merge APIs.
 
 ### 5. Hub release workflow
 
@@ -213,3 +213,7 @@ The component proposal App is not a bypass actor for either tag ruleset. Despite
 - Batching different component releases into one upgrade PR.
 - Rewriting any released source or Hub tag.
 - Importing untagged source `main` changes into a formal Hub release.
+
+## Single-maintainer policy update (2026-09-24)
+
+The owner selected zero required approvals and disabled last-push approval. Required PR checks and administrator enforcement remain enabled. See docs/RELEASING.md for the current operational policy.
