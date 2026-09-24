@@ -1,7 +1,7 @@
 ---
 name: hbdk-manual
 description: HBDK4模型编译工具的使用指南索引，按任务场景组织
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

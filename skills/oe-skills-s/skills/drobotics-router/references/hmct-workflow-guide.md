@@ -2,7 +2,7 @@
 
 > 本文档从 drobotics-router SKILL.md 拆出，按需加载。当用户需求涉及 HMCT 量化构建、精度调优、敏感度分析等场景时阅读本文件。
 >
-> **⛔ 优先级声明**：本文档是 HMCT 数据准备和分析任务的**最高权威**。当子 Skill（hmct-workflow、s-hmct-cosine-similarity-tuning 等）的默认行为与本文档冲突时，以本文档为准。子 Skill 描述单步工具的用法，本文档规范数据准备和分析阶段的端到端行为。
+> **使用边界**：本文档是 HMCT 项目工作流和数据准备的辅助说明，不是 OE 官方手册。文中校准选项、参数、命令、API、配置字段与版本行为，须在执行前通过 RDK 文档 MCP 核对；MCP 官方页面优先于本文档和子 Skill。若 MCP 不可用或资料不足，报告阻塞，不以本文档兜底。
 
 ---
 
@@ -118,7 +118,7 @@ def restructure_flat_to_nested(flat_dir, output_dir):
    - 简化模型输入/输出（删除非推理输入）
 4. **如果修复后仍崩溃**：
    - ⛔ **禁止**静默降级为 `max` 或 `kl` 校准
-   - 使用 `oe-mcp search_doc` 检索 "histogram calibration error" 或相关报错信息
+   - 使用 `mcp__rdk_docs__search_docs`（`manual=oe-s`、`source=docs`）检索 "histogram calibration error" 或相关报错信息，并用 `mcp__rdk_docs__get_page` 读取命中页面
    - 向用户报告：说明 histogram 校准在当前模型/版本上不可用，建议走 QAT 路径或等待工具链更新
 5. **绝对禁止**：因为 histogram 崩溃而改用其他校准方法 + PTQ 路径来替代本应走 QAT 路径的任务
 

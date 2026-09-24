@@ -1,7 +1,7 @@
 ---
 name: s-hbdk-compile
 description: 高级自定义 HBDK 编译工作流，使用仓库内 compile_model.py 与 YAML，主要处理 QAT qat.bc 和用户明确要求的自定义编译流程。普通浮点 ONNX/Caffe PTQ 默认使用 hb_config_generator + hb_compile -c；显式要求 HBDK API 时使用 hbdk-manual。Use when the user explicitly requests this custom workflow, has a QAT qat.bc requiring compilation, or needs its specialized input-source/report features after confirming the standard OE CLI path is insufficient.
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

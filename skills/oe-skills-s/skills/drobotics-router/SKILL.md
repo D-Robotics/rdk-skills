@@ -1,7 +1,7 @@
 ---
 name: drobotics-router
 description: OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 D Robotics 子 Skill。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -19,30 +19,20 @@ OpenExplorer / D Robotics 工具链的顶层路由入口。
 
 ### 标准 PTQ 工具链入口优先
 
-浮点 ONNX/Caffe 的常规 PTQ 必须优先路由到 `hmct-workflow` / `s-tc-ui`：用 `hb_config_generator` 生成当前工具链版本的官方 YAML，核对校准数据和模型输入配置后运行 `hb_compile -c <config.yaml>`。只想检查模型时用 `hb_compile -m <model> --march <march>`，并明确这不会完成 PTQ。
+普通浮点 ONNX/Caffe PTQ 请求优先路由到 `hmct-workflow` / `s-tc-ui`。具体工具、参数、YAML 字段和当前版本的执行方式，先从 RDK 文档 MCP 检索当前官方手册后再给出或执行；本 Skill 只决定流程路由，不是 CLI 参考手册。
 
-不要把普通 PTQ 默认交给 `s-hbdk-compile` 的自定义 `compile_model.py`，也不要让 Agent 直接编写 HBDK API 代码。`s-hbdk-compile` 只用于其明确支持的 QAT `qat.bc` 或用户明确要求的自定义编译工作流；用户明确要求 HBDK API 级代码时转 `hbdk-manual`。输入文件是 `.bc` 时先识别其阶段，不要只按后缀路由。
+不要把普通 PTQ 默认交给 `s-hbdk-compile` 的自定义编译流程，也不要让 Agent 凭本地资料编写 HBDK API 代码。只有用户明确要求自定义工作流、输入产物与该 Skill 的任务范围匹配，或明确要求 HBDK API 级代码时，才路由到相应 Skill；执行细节以本次检索到的官方资料为准。输入文件是 `.bc` 时先识别其阶段，不要只按后缀路由。
 
-### 全链路部署规范优先于子 Skill
+### 全链路工作流
 
-当用户需求涉及「量化 → 编译 → 部署」完整链路时，`references/deployment-workflow.md` 中的全链路部署规范是**最高权威**。如果子 Skill 的默认行为与全链路规范冲突，**以全链路规范为准**。常见冲突场景：
-
-| 全链路规范要求 | 子 Skill 默认值 | 处理方式 |
-|--------------|---------------|---------|
-| `calibration_type: histogram` | HMCT 默认 `max` | 按全链路规范，使用 histogram |
-| `all_node_type: float16`（nash-p） | HMCT 默认 `int8` | 按全链路规范，使用 fp16 + conv int8 |
-| `remove_node_type: [Quantize, Dequantize]` | hbdk-compile 默认 `[Quantize]` | 按全链路规范，同时删除两者 |
-| 部署交付物 = UCP 推理代码 | hbm_infer SDK 即可完成验证 | 按全链路规范，UCP 代码才是部署交付物 |
-
-> **原则**：子 Skill 服务于单步操作，全链路规范服务于端到端目标。端到端任务中，单步的"合理默认"可能不符合全链路要求。
+端到端任务可读取 `references/deployment-workflow.md` 作为项目流程与交付检查清单。该文件及任何子 Skill 都不具有官方技术事实的权威性：校准选项、量化精度、`march` 映射、API、CLI、配置字段、版本默认值等，必须通过当前 RDK 文档 MCP 页面核对。MCP 页面与本地参考不一致时，以 MCP 页面为准，并说明本地流程建议需要调整。
 
 ### 量化配置默认原则
 
-除非用户明确要求混合精度调优，或当前任务已通过评测确认全 int8 精度不达标，否则涉及量化配置的任务（QAT 适配、导出、全流程代码生成）应默认使用全 int8 配置。
+配置量化精度前，先用官方 MCP 页面核实目标平台与当前工具链版本支持的类型和配置方式。除非用户明确要求混合精度，或评测结果显示当前精度不足，不要凭经验主动升高算子精度。
 
-- **禁止**在没有精度不达标证据的情况下，主动将算子升高到 int16 或 fp16
-- 如果全 int8 精度不达标，应先路由到 `s-plugin-precision-tuning`，按敏感度分析结果决定哪些算子需要升高精度，而不是凭经验预设混合精度
-- 用户明确说"用混合精度"或"int8 不够"时，才跳过全 int8 默认
+- 精度不达标时，先路由到 `s-plugin-precision-tuning`，结合敏感度分析和 MCP 核实的当前配置选项制定调优步骤
+- 用户明确说"用混合精度"或"当前精度不够"时，按用户目标检索并确认可用配置
 
 ### 长时间任务的等待策略
 
@@ -89,7 +79,7 @@ Bash: wc -l tuning_run.log          # 仍然可能触发
 1. **第 1 次失败** → 分析错误信息，微调参数后重试
 2. **第 2 次失败（同一方法）** → ⛔ **STOP**。必须：
    - 明确声明"当前方法已失败 2 次，切换策略"
-   - 从以下方向选择新策略：换工具/脚本、查阅文档（oe-mcp）、检查环境兼容性、向用户报告阻塞
+   - 从以下方向选择新策略：换工具/脚本、通过 RDK 文档 MCP 检索当前官方页面、检查环境兼容性、向用户报告阻塞
 3. **第 3 次失败（换了方法仍失败）** → 向用户报告阻塞原因，不再盲目重试
 
 **原因**：API 会检测短时间内的相似工具调用，连续 3 次语义相近的命令可能触发 400 错误终止。常见触发场景：反复用相同参数调用编译命令、反复读取同一个日志文件的尾部、反复尝试相同的 Docker 启动命令。
@@ -158,16 +148,12 @@ grep "<关键词>" large_file.csv
 
 ### OE 包检查
 
-任何量化、编译、部署任务进入前，先检查 `.drobotics-s/.env.oe-package` 是否存在且内容完整（含 `OE_DIR`、`OE_VERSION`、`EXECUTION_MODE`）：
+普通 PTQ 和常规 OE CLI 任务默认走 Docker。除非用户明确选择 local，或本任务要读取 OE 包内部资产，否则**不要求** `.drobotics-s/.env.oe-package` 或 `OE_DIR`，也不要因缺少该配置而暂停：
 
-- **存在且完整** → 直接读取，根据 `EXECUTION_MODE` 决定后续命令执行方式（local / docker）；docker 模式下必须使用 `DOCKER_EXEC_PREFIX` 拼接命令；local 模式下先 `source $VENV_ACTIVATE_CMD` 激活 venv
-- **不存在或不完整** → **中断当前任务**，向用户提示：
-  > 未检测到 OE 包环境配置（`.drobotics-s/.env.oe-package`）。请提供 OE 包路径，或回复"跳过"暂不配置。
-
-  根据用户回复处理：
-  1. **用户提供路径** → 派发给 subagent 执行检测（将 `.drobotics-s/skills/drobotics-router/oe-package-detection/SKILL.md` 的完整内容作为 subagent 的 prompt），检测完成后询问是否本地安装，选择安装则派发 `oe-package-install` Skill
-  2. **用户回复"跳过"或明确不配置** → 在当次对话中记录用户已跳过 OE 包检查，继续后续任务。后续涉及 OE 包的工具链命令可能因环境缺失而失败，需在回答中提示风险
-  3. **不持久化跳过标记**：下次新任务仍会再次提示，确保用户不会因一次跳过而永久忽略环境配置
+1. 在项目根目录运行 `python3 .drobotics-s/scripts/probe_environment.py --workflow ptq`。显式 QAT 请求改用 `--workflow qat`。脚本在没有显式 local 配置时默认 Docker；不会自动拉取镜像。
+2. 读取单个 JSON 结果。`status=ready` 时使用其 `image` 字段执行任务；只挂载本次需要的项目输入、输出和工作目录。探测结果只说明本机缓存镜像和工具可用性，不替代当前官方手册对任务命令和参数的核实。
+3. `status=blocked` 时依据 `missing` 汇报阻塞，不要推测镜像、静默拉取或转成本机执行。若用户明确改选 local，再派发 `oe-package-detection`；需要包内样例、脚本或其他资产时也派发该 Skill 获取路径，但继续使用 Docker 执行。
+4. 只有已显式配置 `EXECUTION_MODE=local` 或用户明确选择本机执行时，才使用 `python3 .drobotics-s/scripts/probe_environment.py --workflow ptq --execution-mode local`（QAT 使用 `--workflow qat`）。该路径需要有效的 `OE_DIR`；验证失败时报告缺少的配置或组件。仅需包内资产时，不得为了取得 `OE_DIR` 调用 local 探测或切换执行模式。
 
 ### OE-LLM 包检查
 
@@ -192,15 +178,11 @@ LLM 相关任务（LLM 量化/压缩/编译/板端 LLM 推理）进入前，先�
   2. **派发给 subagent 执行检测**：将 `.drobotics-s/skills/drobotics-router/board-detection/SKILL.md` 的完整内容作为 subagent 的 prompt
   3. **检测完成后**：主 agent 读取 `.env.board` 确认结果，继续后续任务
 
-### 文档检索规则（oe-mcp）— 强制
+### 官方文档检索规则（强制）
 
-> 涉及工具链的命令、参数、API、配置项、流程顺序、报错信息等，只要存在不确定，**必须**用 `oe-mcp` 检索后才能回答。
+每次回答涉及 OE S 工具链行为、命令、参数、API、配置、芯片平台映射、处理顺序或版本兼容性时，先用 `mcp__rdk_docs__search_docs`（`manual=oe-s`、`source=docs`）检索当前官方资料，再用 `mcp__rdk_docs__get_page` 读取相关页面。不要以本地 Skill、references、示例、代码快照或记忆替代这一步；它们只提供意图路由和项目工作流。
 
-1. **先查本地 Skill**：进入对应子 Skill 的 `SKILL.md` 及相关文件
-2. **再查 `oe-mcp`**：本地无法回答时，使用 `search_doc` 检索
-3. **复杂问题多轮检索**：至少 3–5 轮，每轮换角度（工具名 → 参数名 → 报错信息），直到信息充分
-
-**禁止**：跳过检索直接回答 / 只查一轮就下结论 / 检索不足时凭经验推测
+MCP 工具不可用、没有命中相关官方页面或页面证据不足时，说明阻塞及缺失证据，并停止给出未确认的工具链结论或命令。不得回退到旧版本地文档。需要的结论已由用户提供或与工具链事实无关时，可继续不依赖该资料的部分。
 
 ---
 
@@ -245,13 +227,13 @@ SKILL.md 中可能包含特定场景的执行框架、参考文档加载指令�
 
 ### 量化路径判定门禁（必须执行）
 
-当用户需求涉及浮点模型量化或部署时，在加载子 Skill 前按以下默认路径判定。D-Robotics OE S 系列手册明确推荐先试 PTQ；PTQ 无法满足需求时，再评估 QAT。来源见 `references/oe-s-official-docs.md`。
+当用户需求涉及浮点模型量化或部署时，在加载子 Skill 前按以下工作流判定。此路由遵循先评估 PTQ 的项目默认；相关模型格式支持范围和版本条件必须在本次任务中通过官方 RDK 文档 MCP 核实。
 
-1. **普通浮点 Caffe / ONNX**：默认 PTQ。Caffe 可直接进入 PTQ；ONNX 先核对当前 OE 版本支持范围、输入信息和算子约束，再用校准数据转换。
-2. **PyTorch `.pt` / `.pth`**：不因文件后缀自动选 QAT。先检查是否有模型定义、权重和输入样例可用于导出 ONNX；导出结果符合当前 OE 支持范围时，默认进入 PTQ。D-Robotics 手册当前列出的 ONNX 范围为 opset 10–19、ir_version ≤ 9。
+1. **浮点模型**：常规请求先评估 PTQ；开始前从当前官方页面确认格式、算子和版本适用条件。
+2. **PyTorch `.pt` / `.pth`**：不因文件后缀自动选 QAT。先判断项目是否具备导出 ONNX 的条件，再通过官方页面核对当前 OE 版本支持范围；符合条件时按 PTQ 工作流路由。
 3. **明确 QAT 请求**：用户明确要求量化感知训练、插件适配或 `horizon_plugin_pytorch` API 时，进入 QAT Skill。
-4. **PTQ 不适用或精度未达标**：先按当前 OE 手册排查 ONNX 合法性、算子约束、预处理和校准数据，再做 PTQ 精度分析/调优。仍不能满足目标时，说明原因并与用户确认是否改走 QAT；不得仅因输入是 PyTorch、模型复杂或某次转换失败就自动启动训练。
-5. **只要求检查模型**：使用当前版本文档支持的模型检查命令。检查通过不代表 PTQ 已完成，也不代表已生成 HBM。
+4. **PTQ 不适用或精度未达标**：先用官方资料核实支持条件，再检查预处理、校准数据并路由到精度分析/调优。仍不能满足目标时，说明 MCP 检索到的证据并与用户确认是否改走 QAT；不得仅因输入是 PyTorch、模型复杂或某次转换失败就自动启动训练。
+5. **只要求检查模型**：先通过官方 MCP 页面确认当前版本的检查方式。检查通过不代表 PTQ 已完成，也不代表已生成 HBM。
 
 **判定优先级**：用户明确指定 QAT 时遵循其选择；其他常规浮点模型部署请求先评估 PTQ。只有导出/校准等所需信息确实缺失且无法从项目中确认时才询问用户。
 
@@ -306,7 +288,7 @@ LightCompress 是 LLM 量化实验工具集，属于 `llm` 模块，依赖 OE-LL
 
 ## 按需加载参考文档
 
-以下文档**只在相关任务时才需要读取**，不必在每次进入本 Skill 时全部加载：
+以下本地资料**只在相关任务时才需要读取**，可辅助项目工作流、输入检查或报告结构；其中的 CLI、API、配置、平台映射和版本信息都必须通过官方 MCP 页面重新核对，不可作为事实依据：
 
 | 文档 | 路径 | 何时读取 |
 |------|------|----------|

@@ -122,6 +122,16 @@ else
   echo "  [WARN] skills/ 资源目录不存在，跳过" >&2
 fi
 
+# scripts (runtime probes and helpers)
+if [ -d "$DROBOTICS_SRC/scripts" ]; then
+  mkdir -p "$DROBOTICS_DST/scripts"
+  cp -r "$DROBOTICS_SRC/scripts/." "$DROBOTICS_DST/scripts/"
+  find "$DROBOTICS_DST/scripts" -type d -name '__pycache__' -prune -exec rm -rf {} +
+  echo "  [ok] scripts/    ($(ls "$DROBOTICS_DST/scripts" | wc -l) files)"
+else
+  echo "  [WARN] scripts/ 资源目录不存在，跳过" >&2
+fi
+
 # DROBOTICS-S.md
 if [ -f "$DROBOTICS_SRC/DROBOTICS-S.md" ]; then
   cp "$DROBOTICS_SRC/DROBOTICS-S.md" "$DROBOTICS_DST/DROBOTICS-S.md"
@@ -163,7 +173,11 @@ you MUST follow the project rules defined in .drobotics-s/DROBOTICS-S.md.
 
 For D Robotics S-series toolchain related tasks:
 - Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge.
-- If uncertain, you MUST retrieve documentation before answering."
+- For official toolchain behavior, query mcp__rdk_docs__search_docs (manual=oe-s, source=docs) and read matching pages with mcp__rdk_docs__get_page.
+- If the MCP tools are unavailable or evidence is insufficient, report a blocker and do not use local docs or memory as a substitute. Skills are routing and workflow guidance only.
+- For standard PTQ, run python3 .drobotics-s/scripts/probe_environment.py --workflow ptq first. The default Docker path checks cached images and does not require OE_DIR or .env.oe-package.
+- Use local OE package detection only when the user explicitly selects local mode or the task needs package-internal assets. Do not silently pull an image or switch execution modes.
+<!-- END D Robotics S Workspace Rules -->"
 
 INJECTED=0
 for file in CLAUDE.md AGENTS.md; do
@@ -178,8 +192,10 @@ rules = sys.argv[2]
 text = path.read_text()
 markers = ['Horizon Workspace Rules', 'D Robotics Workspace Rules', 'D Robotics S Workspace Rules']
 # Installed blocks have exactly this bounded sentence structure.
-pattern = r"(?m)^# (?:" + "|".join(re.escape(x) for x in markers) + r")\r?\n\r?\nIf the user request involves [^\n]+\n\(quantization, compile, deploy, evaluation, training, CLI usage, version issues\),\n[^\n]+\n\nFor [^\n]+\n- Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge\.\n- If uncertain, [^\n]+(?:\n|$)"
-text = re.sub(pattern, "", text).lstrip("\n")
+managed_pattern = r"(?ms)^# D Robotics S Workspace Rules\r?\n.*?^<!-- END D Robotics S Workspace Rules -->\r?\n?"
+text = re.sub(managed_pattern, "", text)
+legacy_pattern = r"(?m)^# (?:" + "|".join(re.escape(x) for x in markers) + r")\r?\n\r?\nIf the user request involves [^\n]+\n\(quantization, compile, deploy, evaluation, training, CLI usage, version issues\),\n[^\n]+\n\nFor [^\n]+\n- Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge\.\n- If uncertain, [^\n]+(?:\n|$)"
+text = re.sub(legacy_pattern, "", text).lstrip("\n")
 path.write_text(rules + "\n\n" + text)
 PYROUTE
     echo "  [ok] $file (routing refreshed)"
@@ -198,6 +214,10 @@ for f in DROBOTICS-S.md skill-index.json VERSION; do
 done
 if [ ! -d "$DROBOTICS_DST/skills" ] || [ "$(find "$DROBOTICS_DST/skills" -name 'SKILL.md' 2>/dev/null | wc -l)" -eq 0 ]; then
   echo "  [FAIL] skills/ 目录为空" >&2
+  ERRORS=$((ERRORS + 1))
+fi
+if [ ! -f "$DROBOTICS_DST/scripts/probe_environment.py" ]; then
+  echo "  [FAIL] 缺少 scripts/probe_environment.py" >&2
   ERRORS=$((ERRORS + 1))
 fi
 

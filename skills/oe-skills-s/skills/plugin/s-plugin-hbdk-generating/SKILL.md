@@ -1,7 +1,7 @@
 ---
 name: s-plugin-hbdk-generating
 description: Use when the user explicitly asks for QAT or horizon_plugin_pytorch workflow code for a model structure, including calibration, optional QAT training, export, and HBM compilation. Ordinary floating-point deployment defaults to the official OE PTQ flow through ONNX; do not trigger this skill solely because a task spans quantization and compilation.
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

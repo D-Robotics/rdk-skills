@@ -1,7 +1,7 @@
 ---
 name: s-ucp-perfetto-trace-catcher
 description: Capture UCP (D Robotics inference SDK) Perfetto traces from a S development board. Use this skill whenever the user wants to grab UCP traces, capture Perfetto traces on a D Robotics dev board, debug UCP scheduling issues with trace data, or pull .pftrace files from a remote board. Also trigger when the user mentions UCP performance analysis, UCP trace, hrt_model_exec tracing, or BPU trace capture on S/S1000 platforms. Do NOT use for DSP trace or Chrome trace.
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

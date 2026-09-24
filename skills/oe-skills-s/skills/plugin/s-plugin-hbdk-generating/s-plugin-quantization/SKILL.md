@@ -1,7 +1,7 @@
 ---
 name: s-plugin-quantization
 description: Use when the user explicitly requests QAT or horizon_plugin_pytorch calibration/training code for a custom PyTorch model, including QuantStub/DeQuantStub, prepare, observers, or fake-quant state. Ordinary floating-point deployment and PTQ requests use the official OE PTQ workflow instead.
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

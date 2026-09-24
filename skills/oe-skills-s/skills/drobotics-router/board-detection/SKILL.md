@@ -1,7 +1,7 @@
 ---
 name: board-detection
 description: 板卡硬件平台检测 Skill。当任务涉及板端运行、板端推理、远端 HBM、性能压测或 BPU 实测，且 .drobotics-s/.env.board 不存在或不完整时触发。自动完成板卡 IP 获取、SSH 架构探测、平台信息写入。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: s-plugin-set-fake-quantize
 description: 在适配 horizon_plugin_pytorch 的量化流程中，为模型设置 fake quantize 状态（QAT/CALIBRATION/VALIDATION）。只添加/调用 set_fake_quantize，不做其他修改。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
