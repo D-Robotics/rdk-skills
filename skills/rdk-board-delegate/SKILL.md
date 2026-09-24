@@ -1,7 +1,7 @@
 ---
 name: rdk-board-delegate
 description: 'S-series (S100/S100P/S600) "big-brain / little-brain" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc, IPC, UART, CAN) and Acore/Linux-specific hbmem zero-copy, CPU↔MCU/VDSP/BPU IPC, PCIe, EtherCAT, PTP/gPTP, OTA/miniboot, and VDSP. Covers OpenClaw board-task delegation. Use for S-series MCU firmware, real-time joint/motor control, IPC, EtherCAT/PTP, PCIe, upgrades, VDSP, or CPU+BPU+MCU architecture. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); S-series .hbm compile → drobotics-router; ready-made models → rdk-model-zoo; ROS/stereo/lidar application development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.'
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 

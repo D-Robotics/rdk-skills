@@ -1,7 +1,7 @@
 ---
 name: rdk-embodied-lerobot
 description: 'Deploy trained LeRobot ACT or Pi0/openpi VLA policies on RDK S-series: export to ONNX, compile to BPU `.hbm`, and run the board control loop. Use for ACT/Pi0 deployment, export_bpu_actpolicy.py, bpu_control_robot.py, build_all.sh, hbm-runtime, openpi_runtime, or piper_node. 触发词:具身智能、ACT 部署、模仿学习策略上板、LeRobot 上 RDK、Pi0、openpi、VLA、机械臂策略、SO-101、双臂 mango。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); generic non-policy .onnx conversion: X5 → x5-router, S-series → drobotics-router, X3/Ultra → rdk-docs-reference for official toolchain docs; ros2 commands/env → rdk-tros-setup; LLM/VLM → rdk-llm-deployment; S-series heterogeneous work → rdk-board-delegate; errors → rdk-board-knowledge.'
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
