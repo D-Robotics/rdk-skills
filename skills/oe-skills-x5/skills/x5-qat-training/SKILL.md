@@ -1,7 +1,7 @@
 ---
 name: x5-qat-training
 description: 执行 X5 Plugin calibration、量化感知训练、validation 和 convert 后定点评测；当适配模型已可运行，需要生成可比较指标与检查点时使用。要求 March.BAYES_E 和可复现训练，不使用 HAT Trainer。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -14,15 +14,16 @@ license: Apache-2.0
 ## 输入合同
 
 - 已适配模型、浮点 checkpoint、训练/校准/验证 DataLoader。
-- 评价函数、浮点基线、目标阈值、随机种子、设备和预算。
+- 评价函数、浮点基线、目标阈值、随机种子、设备和预算；目标运行环境需通过 CUDA 可见性检查。
 - 新检查点目录及覆盖策略。
 
 ## 前置检查
 
 1. 固定 `March.BAYES_E`，记录 Plugin/PyTorch/CUDA 版本。
-2. 先在当前环境复现浮点指标。
-3. calibration、QAT validation 和 quantized validation 必须共享前处理与评价口径。
-4. 数据加载器不得隐式读取 HAT registry/config。
+2. 使用 `x5-environment-probe --workflow qat` 验证设备可见性；Docker 模式使用匹配的 GPU image 和 `--gpus all`。`torch.cuda.is_available()` 为 true 只表示可见设备存在，不能替代训练运行验证。
+3. 先在当前环境复现浮点指标。
+4. calibration、QAT validation 和 quantized validation 必须共享前处理与评价口径。
+5. 数据加载器不得隐式读取 HAT registry/config。
 
 ## 执行步骤
 

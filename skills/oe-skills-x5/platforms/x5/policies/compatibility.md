@@ -32,7 +32,7 @@
 
 以下内容明确不属于当前 X5 Pack：
 
-- `hat` Python 包或 Horizon Torch Samples 框架；
+- `hat` Python 包或 HAT 框架；
 - HAT Trainer、HAT config、registry、launcher、callbacks；
 - HAT Model Zoo 和示例训练工程；
 - `tools/compile_perf.py` 等 HAT 工具。

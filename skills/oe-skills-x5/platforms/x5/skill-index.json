@@ -9,12 +9,37 @@
     "manual_baseline": "OE Mapper v1.2.8 / Python 3.10",
     "excluded_capabilities": ["HAT", "X3", "S-series workflows"]
   },
+  "routing_policy": {
+    "quantization": {
+      "default_method": "PTQ",
+      "official_reference": "https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/faststart/ptq_qat_overview.html",
+      "ptq_skill": "x5-ptq-deploy",
+      "qat_skill": "x5-qat-deploy",
+      "qat_entry_conditions": [
+        "explicit_user_request",
+        "ptq_requirement_not_met_after_evaluation"
+      ],
+      "pytorch_only_action": "ask_export_or_qat_intent"
+    },
+    "environment": {
+      "preferred_execution": "docker",
+      "container_probe": "read_only_tool_help",
+      "fallbacks": ["explicitly_configured_host_toolchain"],
+      "host_opt_in": "--execution-mode host",
+      "host_opt_in_environment_variable": "OE_DROBOTICS_EXECUTION_MODE=host",
+      "qat_gpu_probe": {
+        "docker_flag": "--gpus all",
+        "check": "torch.cuda.is_available",
+        "claim_scope": "device_visibility_only"
+      }
+    }
+  },
   "skills": [
     {
       "id": "x5-router",
       "kind": "router",
       "entry": ".drobotics-x5/skills/x5-router/SKILL.md",
-      "intents": ["X5 模型部署", "X5 PTQ", "X5 QAT", "X5 Runtime", "X5 诊断"],
+      "intents": ["X5 模型部署", "X5 PTQ", "X5 通用量化默认 PTQ", "明确要求 X5 QAT", "X5 Runtime", "X5 诊断"],
       "accepts": ["user-request", "model-path", "failure-receipt"],
       "produces": ["route-decision", "route.json", "ordered-handoffs"],
       "risk": "low",
@@ -40,7 +65,7 @@
       "id": "x5-environment-probe",
       "kind": "environment",
       "entry": ".drobotics-x5/skills/x5-environment-probe/SKILL.md",
-      "intents": ["检查 X5 环境", "生成环境快照", "确认 hb_mapper 版本"],
+      "intents": ["检查 X5 Docker/host 环境", "生成环境快照", "确认容器中的 hb_mapper 版本"],
       "accepts": ["workflow-target", "optional-board-facts"],
       "produces": ["environment.json", "ready-degraded-blocked"],
       "risk": "low",

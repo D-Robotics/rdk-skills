@@ -1,7 +1,7 @@
 ---
 name: x5-ptq-deploy
 description: 编排 ONNX/Caffe 到 X5 bayes-e .bin 的 OE Mapper PTQ 全流程；当用户要求 checker、校准、YAML、makertbin、模型信息和 Runtime 验证形成闭环时使用。通过原子 Skills 执行，不接受 Plugin QAT .hbm/.hbir、HAT 或 S 系列流程。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -9,7 +9,7 @@ license: Apache-2.0
 
 ## 目标与边界
 
-主路径固定为 `checker → 校准数据 → 配置 → makertbin → hb_model_info → Runtime 正确性`。编译返回 0 不是完成；QAT 产物不得改后缀或自动交给本流程。
+OE 官方推荐浮点模型先尝试 PTQ，因此未指定方法且输入为 ONNX/Caffe 时默认进入本流程。主路径固定为 `checker → 校准数据 → 配置 → makertbin → hb_model_info → Runtime 正确性`。编译返回 0 不是完成；QAT 产物不得改后缀或自动交给本流程。
 
 ## 输入合同
 
@@ -20,7 +20,7 @@ license: Apache-2.0
 
 ## 前置检查
 
-1. 环境对 PTQ 为 `ready`，且 `hb_mapper`、`hb_model_info` 可用。
+1. 环境对 PTQ 为 `ready`，且 `environment.json` 证明 Docker 容器或用户明确配置的 host 环境中 `hb_mapper`、`hb_model_info` 可用。默认优先 Docker。
 2. 目标 march 只能是 CLI/YAML `bayes-e`。
 3. 输入不是 `.hbm/.hbir/.bin`，配置不引用 HAT、HBDK4、HMCT、UCP 或 `nash-*`。
 4. 为每次尝试创建新 run/working 目录；已有输出不得默认覆盖。
@@ -56,3 +56,4 @@ license: Apache-2.0
 
 - `.drobotics-x5/platforms/x5/policies/compatibility.md`
 - `.drobotics-x5/platforms/x5/references/run-contract.md`
+- [OE X5 PTQ/QAT 方法简介](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/faststart/ptq_qat_overview.html)

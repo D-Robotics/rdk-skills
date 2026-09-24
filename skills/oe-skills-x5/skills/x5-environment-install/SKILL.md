@@ -1,7 +1,7 @@
 ---
 name: x5-environment-install
 description: 按已审阅计划安装或配置 X5 OE Mapper、Plugin、Runtime 或本地离线制品；仅当 environment.json 为 blocked、制品来源与回滚路径已明确且用户已确认副作用时使用。禁止安装 HAT 或把在线下载当作默认方案。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -9,7 +9,7 @@ license: Apache-2.0
 
 ## 目标与边界
 
-执行最小、可回滚、来源可追溯的环境变更。只处理当前 X5 工作流所需组件，不顺带升级无关包。
+执行最小、可回滚、来源可追溯的环境变更。Docker 为默认推荐的 OE 执行方式；优先导入用户已提供并审阅的离线 Docker image，或使用已存在的本地 image。只处理当前 X5 工作流所需组件，不顺带升级无关包。
 
 ## 输入合同
 
@@ -29,7 +29,7 @@ license: Apache-2.0
 1. 使用 `.drobotics-x5/scripts/release_artifacts.py` 检查制品清单与哈希。
 2. 记录安装前版本和恢复命令。
 3. 执行计划中的最小变更；每个命令和返回码写入运行日志。
-4. 不得在失败后切换到未经审阅的在线源。
+4. 不得在失败后切换到未经审阅的在线源或自动执行 `docker pull`。
 5. 安装后重新执行 `x5-environment-probe`，用真实结果判断是否完成。
 
 ## 产物与完成标准
@@ -50,3 +50,4 @@ license: Apache-2.0
 
 - `.drobotics-x5/docs/offline-artifact-delivery.md`
 - `.drobotics-x5/platforms/x5/policies/risk-policy.md`
+- [OE X5 官方环境部署手册](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/env_install/env_deploy.html)

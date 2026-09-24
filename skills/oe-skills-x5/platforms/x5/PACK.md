@@ -5,18 +5,21 @@
 - **完成**：围绕 X5 建立可复现的环境探测、ONNX/Caffe PTQ、`horizon_plugin_pytorch` QAT、Runtime C/C++、板端 Python 推理、精度与性能诊断闭环。
 - **PTQ 主路径**：`hb_mapper checker` → X5 YAML → `hb_mapper makertbin` → `bayes-e` `.bin` → Runtime/板端验证。
 - **QAT 主路径**：`March.BAYES_E` → calibration/QAT/convert → `check_model` → Plugin `compile_model`/`export_hbir`。QAT 产物与 PTQ `.bin` 是不同合同，禁止未经手册和实际环境验证就互相转换或替代。
-- **不处理**：HAT（Horizon Torch Samples）框架、HAT config、HAT Trainer、HAT Model Zoo、`tools/compile_perf.py`；S100/S100P/S600 的 `nash-*`、HBDK4、HMCT、UCP；X3 或其他 X 芯片。
+- **不处理**：HAT 框架、HAT config、HAT Trainer、HAT Model Zoo、`tools/compile_perf.py`；S100/S100P/S600 的 `nash-*`、HBDK4、HMCT、UCP；X3 或其他 X 芯片。
 - **入口**：`x5-router`。端到端请求只选择一个主 Workflow，并通过显式 handoff 串联原子 Skill。
 
 ## 兼容性与资料
 
-- **Pack 版本**：`2.0.0`。
+- **平台运行合同版本**：`2.0.0`（独立于源码发布版本 `1.1.0`）。
 - **工具链基线**：X5 `OE Mapper v1.2.8 / Python 3.10` 与匹配的 Runtime SDK。
+- **开发环境**：OE 官方强烈建议使用 Docker。默认验证 X5 OE image；仅在用户明确选择 `--execution-mode host`（或设置 `OE_DROBOTICS_EXECUTION_MODE=host`）后使用 host 工具链。
+- **量化默认**：未指定量化方法且已有 ONNX/Caffe 浮点模型时先试 PTQ；仅在用户明确要求或 PTQ 评测证明无法达到目标时考虑 QAT。
 - **PTQ march**：CLI/YAML 必须是 `bayes-e`。
 - **QAT march**：Python API 必须是 `March.BAYES_E`。`March.BAYES` 对应 J5，不得用于 X5。
 - **本地手册**：`OE_DROBOTICS_DOC_ROOT` → `OE_X_SERIES_DOC_ROOT` → Pack/工作区相对发现。禁止把维护者机器的绝对路径作为发布后的唯一默认值。
 - **固定发布物**：SDK、文档、Docker 镜像和离线制品以 [离线制品交付指南](../../../docs/offline-artifact-delivery.md) 为准。下载、镜像导入和在线拉取前必须取得明确确认。
 - **详细兼容矩阵**：执行前读取 [compatibility.md](policies/compatibility.md)。
+- **官方环境依据**：[OE X5 环境部署](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/env_install/env_deploy.html)；[PTQ/QAT 简介](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/faststart/ptq_qat_overview.html)。
 
 ## 输入资产与前置
 

@@ -1,7 +1,7 @@
 ---
 name: x5-board-monitor
 description: 采集并解析 X5 hrut_somstatus、温度、CPU/BPU/DDR/GPU 频率、BPU ratio 和 dmesg 证据；当需要建立板端资源快照或关联性能异常时使用。默认只读和有界采样，不调频、不清日志、不循环到手工终止。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 
