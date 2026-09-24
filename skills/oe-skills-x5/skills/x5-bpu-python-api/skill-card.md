@@ -2,7 +2,7 @@
 
 ## Description:
 
-Loads X5 .bin on board via hbm_runtime.HB_HBMRuntime, reads model I/O and runs local Python inference; requires system /etc/version >= 3.5.0 and matching X5 libdnn wheel/DEB.
+Loads X5 .bin on board via hbm_runtime.HB_HBMRuntime, reads model I/O and runs local Python inference; use only after official MCP documentation confirms support for the exact board version and a matching X5 libdnn wheel/DEB is available.
 
 This skill is ready for commercial/non-commercial use.
 
@@ -16,7 +16,7 @@ Apache-2.0
 
 ## Use Case:
 
-当系统 /etc/version 不低于 3.5.0 且已有匹配 X5 libdnn 的本地 wheel/DEB 时，使用本技能在板端加载 .bin 并执行 Python 推理与输出验证。
+先通过官方 MCP 检索并读取 `rdk-x` 页面确认当前板端版本范围，并检查匹配 X5 libdnn 的 wheel/DEB 来源后，使用本技能加载 `.bin` 并执行 Python 推理与输出验证。页面的“3.5.0 版本之后”不得改写成 `>= 3.5.0`；若版本正好是 3.5.0，需同时提供 MCP 复核、包来源和板端实际导入证据，缺失时保持阻塞。
 
 ### Deployment Geography for Use:
 
@@ -30,7 +30,8 @@ Mitigation: 禁止安装 PyPI 同名 S 系列包；只使用用户提供的 X5 �
 ## Reference(s):
 
 - Agent Skills（agentskills.dev）
-- references/x5_bpu_pyapi.md — BPU Python API 参考
+- `rdk-x` 官方 X5 Python API 页面（每次使用前通过文档 MCP 重新读取）
+- `references/x5_bpu_pyapi.md` — 可选离线辅助资料，不作为官方证据
 
 ## Skill Output:
 

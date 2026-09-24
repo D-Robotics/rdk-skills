@@ -15,8 +15,6 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from search_local_docs import load_platform_index, resolve_doc_root, resolve_python_api_doc, score, terms
-
 SKILL_SPECS = {
     "x5-bpu-python-api": {
         "version": "2.0.0",
@@ -24,11 +22,6 @@ SKILL_SPECS = {
         "platform": "x5",
         "chip": "X5",
         "path": ".drobotics-x5/skills/x5-bpu-python-api",
-        "manual_platform": "x5",
-        "reference_path": Path("skills/x5-bpu-python-api/references/x5_bpu_pyapi.md"),
-        "route": "/local-python-api/x5-bpu",
-        "query": "X5 hbm_runtime Python API",
-        "minimum": "3.5.0",
         "model_suffix": ".bin",
         "required_headings": (
             "## 目标与边界",
@@ -43,6 +36,10 @@ SKILL_SPECS = {
         "required_terms": (
             "cat /etc/version",
             "3.5.0",
+            "mcp__rdk_docs__search_docs",
+            'manual="rdk-x"',
+            "mcp__rdk_docs__get_page",
+            "3.5.0 版本之后",
             "HB_HBMRuntime",
             "libdnn",
             "pip install hbm_runtime",
@@ -65,19 +62,6 @@ def assert_true(condition: bool, message: str, failures: list[str]) -> None:
         failures.append(message)
 
 
-def ranked_routes(entries: list[dict[str, Any]], query: str) -> list[str]:
-    query_terms = terms(query)
-    ranked = sorted(
-        (
-            (score(entry, query_terms), str(entry.get("routePath", "")))
-            for entry in entries
-            if score(entry, query_terms) > 0
-        ),
-        key=lambda item: (-item[0], item[1]),
-    )
-    return [route for _, route in ranked]
-
-
 def check_index_and_skills(root: Path, index: dict[str, Any], failures: list[str]) -> None:
     for skill_id, spec in SKILL_SPECS.items():
         module_skills = index.get("modules", {}).get(spec["module"], {}).get("skills", [])
@@ -87,8 +71,6 @@ def check_index_and_skills(root: Path, index: dict[str, Any], failures: list[str
         expected_file = f"{expected_path}/SKILL.md"
         skill_file = root / expected_file.removeprefix(".drobotics-x5/")
         assert_true(skill_file.is_file(), f"Missing Skill file: {skill_id}", failures)
-        reference_file = root / spec["reference_path"]
-        assert_true(reference_file.is_file(), f"Missing packaged API reference: {reference_file}", failures)
         if not skill_file.is_file():
             continue
 
@@ -138,34 +120,11 @@ def check_routing_and_packs(root: Path, failures: list[str]) -> None:
     if x5_pack_path.is_file():
         pack_text = x5_pack_path.read_text(encoding="utf-8")
         assert_true("x5-bpu-python-api" in pack_text, "X5 Pack does not list x5-bpu-python-api", failures)
-        assert_true("3.5.0" in pack_text, "X5 Pack lacks Python API version gate 3.5.0", failures)
-
-
-def check_manuals_and_retrieval(
-    x5_docs_root: Path,
-    s_docs_root: Path | None,
-    x5_manual: Path,
-    s_manual: Path | None,
-    failures: list[str],
-) -> None:
-    doc_roots = {"x5": x5_docs_root}
-    manuals = {"x5": x5_manual}
-    for skill_id, spec in SKILL_SPECS.items():
-        platform = spec["manual_platform"]
-        doc_root = doc_roots[platform]
-        manual_path = manuals[platform]
-        assert_true(doc_root.is_dir(), f"Missing {platform} docs root: {doc_root}", failures)
-        assert_true(manual_path.is_file(), f"Missing {platform} Python API manual: {manual_path}", failures)
-        if not doc_root.is_dir() or not manual_path.is_file():
-            continue
-
-        entries = load_platform_index(doc_root, "zh", manual_path)
-        routes = ranked_routes(entries, spec["query"])
-        assert_true(
-            spec["route"] in routes[:12],
-            f"Local {platform} retrieval did not surface {spec['route']} for '{spec['query']}'",
-            failures,
-        )
+        assert_true(">= 3.5.0" not in pack_text, "X5 Pack must not rewrite the official wording as an inclusive minimum", failures)
+    api_skill = root / "skills/x5-bpu-python-api/SKILL.md"
+    api_text = api_skill.read_text(encoding="utf-8") if api_skill.is_file() else ""
+    assert_true("3.5.0 版本之后" in api_text, "X5 API Skill must preserve the official post-3.5.0 wording", failures)
+    assert_true("实际 `import hbm_runtime`" in api_text, "X5 API Skill must require board import evidence at the ambiguous boundary", failures)
 
 
 def run_version_gate(script_path: Path, platform: str, value: str) -> subprocess.CompletedProcess[str]:
@@ -188,9 +147,8 @@ def check_version_gate(root: Path, failures: list[str]) -> None:
 
     checks = (
         ("x5", "3.4.9", 1),
-        ("x5", "3.5.0", 0),
-        ("s", "4.0.4", 1),
-        ("s", "4.0.5", 0),
+        ("x5", "3.5.0", 4),
+        ("x5", "3.5.1", 0),
     )
     for platform, value, expected_code in checks:
         result = run_version_gate(script_path, platform, value)
@@ -202,13 +160,8 @@ def check_version_gate(root: Path, failures: list[str]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate separated S/X5 hbm_runtime Python API Skills")
-    parser.add_argument("--x5-docs-root", help="Override X5 documentation root")
-    parser.add_argument("--s-docs-root", help="Override S-series documentation root")
-    parser.add_argument("--x5-manual", help="Override X5 Python API Markdown")
-    parser.add_argument("--s-manual", help="Override S-series Python API Markdown")
-    args = parser.parse_args()
-
+    parser = argparse.ArgumentParser(description="Validate the X5 hbm_runtime Python API Skill without local manuals")
+    parser.parse_args()
     root = installed_root()
     index_path = root / "skill-index.json"
     failures: list[str] = []
@@ -222,19 +175,11 @@ def main() -> int:
     check_routing_and_packs(root, failures)
     check_version_gate(root, failures)
 
-    try:
-        x5_docs_root = resolve_doc_root(args.x5_docs_root)
-        x5_manual = resolve_python_api_doc(args.x5_manual)
-    except FileNotFoundError as error:
-        failures.append(str(error))
-    else:
-        check_manuals_and_retrieval(x5_docs_root, None, x5_manual, None, failures)
-
     if failures:
         print("\n".join(f"FAIL: {failure}" for failure in failures), file=sys.stderr)
         return 1
 
-    print("BPU_PYTHON_API_SKILL_VALIDATION_OK: X5 skill, version gate, routes, local manual, and retrieval")
+    print("BPU_PYTHON_API_SKILL_VALIDATION_OK: X5 skill, conservative version boundary, routes, and MCP contract (local manuals optional)")
     return 0
 
 

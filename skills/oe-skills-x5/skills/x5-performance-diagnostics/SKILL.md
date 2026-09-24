@@ -1,7 +1,7 @@
 ---
 name: x5-performance-diagnostics
 description: 关联 X5 hb_perf 静态估计、Runtime 实测、BPU ratio、温度频率和 CPU/I/O 开销以定位性能瓶颈；当模型太慢、静态与板端差异大或 BPU 利用率异常时使用。默认只读，不自动改 O3、core、频率或系统进程。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -47,5 +47,6 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `_sources/oe_mapper/source/tune_content/performance_tune.rst.txt`
-- `_sources/oe_mapper/source/ptq/ptq_tool/hb_perf.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 performance tuning hb_perf")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

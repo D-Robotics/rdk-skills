@@ -136,7 +136,7 @@ if [ -d "$DROBOTICS_DST/skills" ]; then
   echo "  [ok] skills/ ($SKILL_COUNT skills)"
 fi
 
-for file in X5.md skill-index.json VERSION; do
+for file in X5.md skill-index.json VERSION release-artifacts.json; do
   if [ -f "$DROBOTICS_SRC/$file" ]; then
     cp "$DROBOTICS_SRC/$file" "$DROBOTICS_DST/$file"
     echo "  [ok] $file"
@@ -158,7 +158,9 @@ you MUST follow the project rules defined in .drobotics-x5/X5.md.
 
 For X5 OpenExplorer related tasks:
 - Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge.
-- If uncertain, use .drobotics-x5/scripts/search_local_docs.py to retrieve local documentation before answering."
+- Before stating or using X5 OE commands, APIs, configuration, version limits, or workflow details, call mcp__rdk_docs__search_docs with manual=oe-x5 and source=docs, then call mcp__rdk_docs__get_page on a matching official developer.d-robotics.cc URL.
+- For the board-side X5 Python API, manual=rdk-x may be needed; verify the exact X5 scope and version in the fetched page.
+- If MCP is unavailable or the official page does not establish the needed fact, stop the dependent operation and report it as blocked. Local manuals and packaged Markdown are not authoritative evidence."
 
 for file in CLAUDE.md AGENTS.md; do
   target="$PROJECT_ROOT/$file"
@@ -172,7 +174,7 @@ rules = sys.argv[2]
 text = path.read_text()
 markers = ['X5 Workspace Rules']
 # Installed blocks have exactly this bounded sentence structure.
-pattern = r"(?m)^# (?:" + "|".join(re.escape(x) for x in markers) + r")\r?\n\r?\nIf the user request involves [^\n]+\n\(quantization, compile, deploy, evaluation, training, CLI usage, version issues\),\n[^\n]+\n\nFor [^\n]+\n- Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge\.\n- If uncertain, [^\n]+(?:\n|$)"
+pattern = r"(?ms)^# (?:" + "|".join(re.escape(x) for x in markers) + r")\r?\n.*?(?=^# |\Z)"
 text = re.sub(pattern, "", text).lstrip("\n")
 path.write_text(rules + "\n\n" + text)
 PYROUTE
@@ -186,8 +188,8 @@ fi
 ERRORS=0
 for file in \
   X5.md skill-index.json VERSION INSTALLED_REF \
+  release-artifacts.json \
   docs/offline-artifact-delivery.md \
-  scripts/search_local_docs.py \
   scripts/validate_x5_skills.py \
   scripts/check_bpu_python_api_version.py \
   scripts/validate_bpu_python_api_skills.py \
@@ -204,8 +206,7 @@ for file in \
   platforms/x5/scripts/run_ptq.py \
   platforms/x5/assets/runtime-cpp/main.cc \
   skills/x5-router/SKILL.md \
-  skills/x5-bpu-python-api/SKILL.md \
-  skills/x5-bpu-python-api/references/x5_bpu_pyapi.md; do
+  skills/x5-bpu-python-api/SKILL.md; do
   if [ ! -f "$DROBOTICS_DST/$file" ]; then
     echo "  [FAIL] missing $file" >&2
     ERRORS=$((ERRORS + 1))

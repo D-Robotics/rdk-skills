@@ -1,7 +1,7 @@
 ---
 name: x5-qat-compile
 description: 对 X5 Plugin 定点模型执行 trace、check_model 和 compile_model/export_hbir；当 quantized 指标已达标，需要生成 .hbm 或 .hbir 与编译报告时使用。禁止输出伪装的 .bin 或自动调用 hb_mapper makertbin。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -54,5 +54,6 @@ python .drobotics-x5/platforms/x5/scripts/check_qat_target.py \
 
 ## 按需参考
 
-- `_sources/plugin/source/api_reference/apis/compiler.rst.txt`
-- `_sources/plugin/source/quick_start/quick_start.ipynb.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 Plugin compiler check_model compile_model export_hbir")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

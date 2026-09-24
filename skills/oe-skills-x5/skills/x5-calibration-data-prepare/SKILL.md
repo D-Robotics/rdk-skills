@@ -1,7 +1,7 @@
 ---
 name: x5-calibration-data-prepare
 description: 为 X5 OE Mapper PTQ 准备和审计校准数据；当用户需要选择代表性样本、复现训练前处理、生成二进制/数组数据与 manifest 时使用。只处理 PTQ 数据，不处理 HAT Dataset/Trainer 或 QAT 训练管线。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -49,5 +49,6 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `_sources/oe_mapper/source/ptq/ptq_usage/prepare_calibration_data.rst.txt`
-- `_sources/oe_mapper/source/faststart/quickstart.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 PTQ calibration data preparation input samples")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

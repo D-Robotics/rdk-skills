@@ -1,7 +1,7 @@
 ---
 name: x5-environment-install
 description: 按已审阅计划安装或配置 X5 OE Mapper、Plugin、Runtime 或本地离线制品；仅当 environment.json 为 blocked、制品来源与回滚路径已明确且用户已确认副作用时使用。禁止安装 HAT 或把在线下载当作默认方案。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

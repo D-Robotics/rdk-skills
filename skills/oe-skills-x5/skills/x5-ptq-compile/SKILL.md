@@ -1,7 +1,7 @@
 ---
 name: x5-ptq-compile
 description: 执行已验证 X5 YAML 的 hb_mapper checker/makertbin 并验证唯一 .bin 与 BPU march；当配置和环境已就绪、需要生成 bayes-e PTQ 产物时使用。不得处理 QAT .hbm/.hbir，也不得复用非空输出目录而未确认。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -55,5 +55,6 @@ python .drobotics-x5/platforms/x5/scripts/run_ptq.py full \
 
 ## 按需参考
 
-- `_sources/oe_mapper/source/ptq/ptq_usage/quantize_compile.rst.txt`
-- `_sources/oe_mapper/source/ptq/ptq_tool/hb_model_info.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 hb_mapper makertbin quantize compile hb_model_info")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

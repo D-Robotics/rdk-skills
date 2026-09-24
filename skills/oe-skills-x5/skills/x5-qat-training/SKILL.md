@@ -1,7 +1,7 @@
 ---
 name: x5-qat-training
 description: 执行 X5 Plugin calibration、量化感知训练、validation 和 convert 后定点评测；当适配模型已可运行，需要生成可比较指标与检查点时使用。要求 March.BAYES_E 和可复现训练，不使用 HAT Trainer。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -54,5 +54,6 @@ python .drobotics-x5/platforms/x5/scripts/check_qat_target.py \
 
 ## 按需参考
 
-- `_sources/plugin/source/user_guide/calibration.md.txt`
-- `_sources/plugin/source/user_guide/qat.md.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 Plugin calibration QAT training")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

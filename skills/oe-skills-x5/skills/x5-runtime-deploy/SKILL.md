@@ -1,7 +1,7 @@
 ---
 name: x5-runtime-deploy
 description: 编排 X5 Runtime 模型门禁、板端上传、命令行/C++ 推理、正确性、性能与资源验证；当用户要上板运行 X5 .bin、使用 hrt_model_exec 或 BPU SDK 时使用。Plugin .hbm/.hbir 只有在实际 Runtime 兼容证据充分时才接收；不使用 S 系列 UCP。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -28,7 +28,7 @@ license: Apache-2.0
 
 1. 记录板端版本、模型信息和部署计划。
 2. 上传到新目录并回读大小/哈希；不替换系统 Runtime。
-3. 快速验证时按本地手册使用 `hrt_model_exec`，不得凭记忆补参数。
+3. 快速验证前先通过官方 MCP 检索并读取 `hrt_model_exec` 页面，严格按当前 X5 手册参数执行。
 4. C++ 应用交接 `x5-runtime-cpp-infer`；板端 Python 交接 `x5-bpu-python-api`。
 5. 用固定输入比较 Runtime 与参考输出；再交接性能和监控 Skills。
 6. 保存命令、板端日志、输出文件和验证结果。
@@ -49,5 +49,6 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `_sources/runtime/source/runtime_dev.rst.txt`
-- `.drobotics-x5/platforms/x5/policies/risk-policy.md`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 Runtime development hrt_model_exec deployment")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

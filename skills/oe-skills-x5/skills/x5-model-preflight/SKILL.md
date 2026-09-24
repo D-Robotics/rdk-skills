@@ -1,7 +1,7 @@
 ---
 name: x5-model-preflight
 description: 对 X5 PTQ 的 ONNX/Caffe 模型执行格式、输入合同、浮点参考运行和 hb_mapper checker 预检；当尚未生成正式 YAML、需要判断模型能否进入 bayes-e PTQ 时使用。只做预检，不生成部署成功结论。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -55,4 +55,6 @@ python .drobotics-x5/platforms/x5/scripts/run_ptq.py checker \
 
 ## 按需参考
 
-- `_sources/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_checker.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 hb_mapper checker model preflight")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

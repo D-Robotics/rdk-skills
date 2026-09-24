@@ -1,7 +1,7 @@
 ---
 name: x5-accuracy-diagnostics
 description: 定位 X5 PTQ 或 Plugin QAT 的首次精度掉点阶段；当有浮点、校准、QAT、定点、编译或板端指标及固定输入时使用。只读比较并设计单变量实验，不自动重训或重编译。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -47,5 +47,6 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `_sources/oe_mapper/source/ptq/ptq_tool/accuracy_debug.rst.txt`
-- `_sources/plugin/source/user_guide/quant_analysis.md.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 accuracy_debug quant_analysis calibration quantization accuracy")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

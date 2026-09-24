@@ -20,7 +20,7 @@
       "install_script": "setup.sh",
       "install_type": "workspace",
       "name": "OE Tool Chain (X5)",
-      "ref": "v1.1.0",
+      "ref": "v1.1.1",
       "repo": "D-Robotics/oe-skills-x5",
       "verify_paths": [
         ".drobotics-x5/X5.md",

@@ -1,7 +1,7 @@
 ---
 name: x5-runtime-cpp-infer
 description: 生成或审查 X5 BPU SDK C++ 推理工程；当用户有 X5 .bin、I/O 合同和 Runtime SDK，需要实现模型加载、张量内存、hbDNNInfer、输出回读与释放时使用。模板只覆盖单输入已对齐 raw tensor，多输入或图像前处理必须按模型合同扩展。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -54,5 +54,6 @@ bash build.sh <new-build-dir>
 
 ## 按需参考
 
-- `_sources/runtime/source/runtime_dev.rst.txt`
-- `_sources/runtime/source/bpu_sdk_api/bpu_sdk_api.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 Runtime BPU SDK hbDNN C++ API")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。
