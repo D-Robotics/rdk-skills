@@ -1,7 +1,7 @@
 ---
 name: rdk-model-zoo
 description: "Use when asking about ready-made RDK Model Zoo models, matching branches, downloads, sample execution, or published benchmarks. 触发词：现成模型、跑示例、模型目录、帧率查询。Do not use as the primary skill for PR review, repository development, custom quantization, or fresh performance measurement."
-version: "1.1.0"
+version: "1.1.1"
 license: Apache-2.0
 metadata:
   author: "RDK Model Zoo maintainers"

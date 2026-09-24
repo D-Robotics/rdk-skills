@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 name: RDK Model Zoo Skills
 repo: D-Robotics/rdk_model_zoo
-ref: v1.0.0
+ref: v1.0.1
 description: Cross-platform Model Zoo discovery, repository context, integration,
   development, validation, review and release workflows for X5, S series, X3 and historical
   layouts.
