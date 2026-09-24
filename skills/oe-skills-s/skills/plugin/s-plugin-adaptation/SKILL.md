@@ -1,7 +1,7 @@
 ---
 name: s-plugin-adaptation
 description: Use when the user explicitly asks to adapt a floating-point PyTorch model for D-Robotics QAT with `horizon_plugin_pytorch`, including the ordered preparation steps. Ordinary model deployment defaults to OE PTQ via ONNX when supported.
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

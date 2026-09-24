@@ -7,7 +7,7 @@ tools:
     description: 计算图差异对比脚本，解析两个 FX Graph 文件并生成结构化 diff 报告
     path: s-plugin-graph-diff/s_plugin_graph_diff.py
     required: true
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

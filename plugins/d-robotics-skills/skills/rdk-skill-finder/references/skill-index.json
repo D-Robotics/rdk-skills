@@ -123,7 +123,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/drobotics-router/oe-package-detection",
-      "description": "OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .drobotics-s/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、S 系列 GPU/CPU Docker 判定，并将结果写入 .env 文件。",
+      "description": "当用户明确选择本机 local 执行，或任务必须读取 OE 包内部资产时使用；普通 PTQ 的默认 Docker 缓存镜像探测不需要 OE_DIR 或 .env.oe-package。",
       "install_type": "workspace",
       "name": "oe-package-detection",
       "pack": "OE Tool Chain (S)",

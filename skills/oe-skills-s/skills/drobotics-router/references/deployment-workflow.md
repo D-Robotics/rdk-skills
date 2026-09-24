@@ -2,7 +2,7 @@
 
 > 本文档从 drobotics-router SKILL.md 拆出，按需加载。当用户需求涉及量化、编译、部署完整链路时阅读本文件。
 >
-> **⛔ 优先级声明**：本文档是全链路部署任务的**最高权威**。当子 Skill 的默认行为与本文档冲突时，以本文档为准。子 Skill 服务于单步操作，本文档服务于端到端目标。
+> **使用边界**：本文档是项目工作流与交付检查清单，不是 OE 官方手册。文中校准选项、精度类型、`march`、CLI、API、配置字段等技术事实和版本默认值，都必须在执行前通过 RDK 文档 MCP 核对；MCP 官方页面优先于本文档及任何子 Skill。若 MCP 不可用或资料不足，报告阻塞，不以本文档兜底。
 
 ## PTQ 链路
 
@@ -67,30 +67,10 @@
 - 阅读用户提供的预处理代码（如 `get_data_loaders()`），提取 `mean_value`、`scale_value`、`input_type_rt` 等参数
 - 在编译 YAML 的 `input_sources` 中配置板端预处理节点（NV12 → RGB、mean/scale 归一化），不要跳过此步骤选择 DDR 模式
 
-### 5. QAT 链路必须检查 GPU 环境
-- QAT 校准和训练需要 GPU。执行前先检查 `torch.cuda.is_available()`
-- 若返回 False，按以下顺序排查：
-  1. `nvidia-smi` — 确认 GPU 驱动正常
-  2. `docker exec <container> python3 -c "import torch; print(torch.cuda.is_available())"` — 确认容器内有 GPU
-  3. 若容器内 CUDA 不可用，常见原因：
-     - **容器启动时未传 `--gpus all`**：`docker inspect <container>` 检查 `HostConfig.DeviceRequests` 是否为 null。若为 null，说明启动命令缺少 GPU 参数，需要**重建容器**（Docker 不支持给运行中的容器追加 GPU）
-     - **长时间运行的容器丢失 GPU hook**：Docker daemon 重启或 NVIDIA 驱动更新后，已运行的容器可能丢失 nvidia-container-runtime 注入的 GPU 设备映射。修复方法：**`docker restart <container>`**，重启后 nvidia hook 重新生效
-  4. **切换到 OE GPU docker 容器**（推荐方案）：
-     ```bash
-     # 用无 v 前缀的已安装 OE 包版本构造镜像标签；当前手册发布包版本为 3.7.0。
-     OE_VERSION=3.7.0
-     OE_VERSION_TAG="${OE_VERSION#v}"
-     GPU_IMAGE="registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_gpu:v${OE_VERSION_TAG}"
-
-     docker run --rm --gpus all --shm-size="15g" --entrypoint /bin/bash \
-       -v "$OE_DIR:/open_explorer" \
-       -v <数据目录>:/data \
-       -v <工作目录>:/workspace \
-       "$GPU_IMAGE" \
-       -lc "python3 your_qat_script.py"
-     ```
-     镜像标签必须和实际安装的 OE 包版本一致；如果版本值带 `v` 前缀，构造标签前先去掉，避免拼出 `vv3.7.0`。GPU 是否可用必须在当前宿主机与容器中实测：检查 `nvidia-smi`，并运行 `python3 -c "import torch; print(torch.cuda.is_available())"`。未实测前不要假定 `torch.cuda.is_available()` 为 True。
-- GPU 不可用时，应明确告知用户并建议切换到 GPU docker 容器，不可静默跳过校准/导出/编译步骤
+### 5. QAT 链路必须检查所选环境
+- 先运行 `python3 .drobotics-s/scripts/probe_environment.py --workflow qat`，只使用结果中已验证的 `image`。GPU 镜像必须有 `qat_cuda.ok=true` 才能按 GPU 路径运行；已验证的 CPU 镜像也可用于 CPU QAT，但训练可能较慢。
+- GPU 探测失败时检查宿主机驱动、Docker GPU 支持及容器内 CUDA 可见性；不得把 CPU 镜像没有 CUDA 误判为故障。运行时只挂载本次需要的数据与工作目录；仅在确实读取 OE 包内部资产时才挂载 `OE_DIR`。
+- 镜像、依赖及 QAT 命令仍需用当前官方文档 MCP 页面核对。环境阻塞时报告探测结果，不可静默跳过校准、导出或编译步骤。
 
 ### 6. 部署后可选：板端资源验证
 - 当用户提到目标帧率、实车设计帧率、资源预算等关键词时，部署完成后应使用 `s-board-monitor` 验证模型在目标帧率下的 BPU/DDR/内存消耗
