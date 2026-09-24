@@ -25,7 +25,7 @@
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `path` | string | 源头仓库中需要镜像的目录路径（扁平布局：含 `SKILL.md` 的目录；workspace 布局：资源树根目录，如 `x5/`、`horizon/`） |
+| `path` | string | 源头仓库中需要镜像的目录路径（扁平布局：含 `SKILL.md` 的目录；workspace 布局：资源树根目录，如 `x5/`、`drobotics-s/`） |
 | `catalog_dir` | string | 本目录 `skills/` 下的顶层目录名（全局唯一） |
 
 ## 选填字段
@@ -48,7 +48,7 @@
 
 ### workspace 镜像形态：完整资源树 + setup.sh（可自安装）
 
-workspace Pack 的 `skills` 必须有且只有一个 entry，其 `path` 指向源头仓库的资源树根目录（如 `x5/`、`horizon/`），`catalog_dir` 即该 Pack 在本目录的顶层目录名。同步流水线会将：
+workspace Pack 的 `skills` 必须有且只有一个 entry，其 `path` 指向源头仓库的资源树根目录（如 `x5/`、`drobotics-s/`），`catalog_dir` 即该 Pack 在本目录的顶层目录名。同步流水线会将：
 
 1. **完整资源树**（`docs/`、`platforms/`、`scripts/`、`skill-index.json`、`VERSION` 以及 `skills/` 子树）rsync 到 `skills/<catalog_dir>/`；
 2. Pack 根目录的 `install_script`（`setup.sh`）**覆盖层**到同一目录（rsync 看不到仓库根级文件，故用稀疏检出的附加文件单独覆盖）。

@@ -258,6 +258,47 @@ class ProposalStagingTests(unittest.TestCase):
         staged = self.git("diff", "--cached", "--name-only").stdout.splitlines()
         self.assertIn("skills/catalog/credentials.secret", staged)
 
+    def test_allows_the_two_exact_generated_skill_catalog_files(self):
+        """Plugin catalog generation may update its two committed JSON indexes."""
+        helper = load_upgrade()
+        generated = (
+            "skills/rdk-pack-installer/references/pack-registry.json",
+            "skills/rdk-skill-finder/references/skill-index.json",
+        )
+        for relative_path in generated:
+            path = self.root / relative_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{}\n", encoding="utf-8")
+
+        paths = helper.stage_and_validate_proposal(
+            self.root,
+            component_file="components.d/bsp.yml",
+            catalog_dirs=["catalog"],
+            repair=True,
+        )
+
+        self.assertCountEqual(paths, generated)
+
+    def test_rejects_near_match_paths_for_generated_skill_catalog_files(self):
+        """The generated-file exception must not authorize neighboring paths."""
+        helper = load_upgrade()
+        unexpected = (
+            "skills/rdk-pack-installer/references/pack-registry.json.bak",
+            "skills/rdk-skill-finder/references/skill-index.json.bak",
+        )
+        for relative_path in unexpected:
+            path = self.root / relative_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("unexpected\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(ValueError, "unexpected staged path"):
+            helper.stage_and_validate_proposal(
+                self.root,
+                component_file="components.d/bsp.yml",
+                catalog_dirs=["catalog"],
+                repair=True,
+            )
+
     def test_rejects_untracked_and_ignored_files_outside_the_allowlist(self):
         """A generator must not smuggle an unexpected path into or beside the patch."""
         helper = load_upgrade()

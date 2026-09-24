@@ -27,6 +27,8 @@ GENERATED_EXACT_PATHS = {
     ".agents/plugins/marketplace.json",
     ".cursor-plugin/marketplace.json",
     ".dsh-plugin/marketplace.json",
+    "skills/rdk-pack-installer/references/pack-registry.json",
+    "skills/rdk-skill-finder/references/skill-index.json",
 }
 FAILURE_JOBS = ("validate", "build-proposal", "upsert-pr")
 JOB_RESULTS = {"success", "failure", "cancelled", "skipped"}
