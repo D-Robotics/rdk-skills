@@ -101,6 +101,8 @@ mkdir -p "$DROBOTICS_DST"
 if [ -d "$DROBOTICS_SRC/docs" ]; then
   mkdir -p "$DROBOTICS_DST/docs"
   cp -r "$DROBOTICS_SRC/docs/"* "$DROBOTICS_DST/docs/"
+  # Retire OE code snapshots shipped by older releases; official facts use docs MCP.
+  find "$DROBOTICS_DST/docs" -type f -name 'oe_code_chunk_*.md' -delete
   echo "  [ok] docs/    ($(ls "$DROBOTICS_DST/docs" | wc -l) files)"
 else
   echo "  [WARN] docs/ 资源目录不存在，跳过" >&2

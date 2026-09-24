@@ -1,7 +1,7 @@
 ---
 name: s-plugin-insert-quant-dequant
 description: 为浮点 PyTorch 模型插入部署边界 QuantStub/DeQuantStub（horizon_plugin_pytorch）。满足：quant/dequant 是部署边界；每个输入/输出各自独立 stub；QuantStub 初始化不设置 scale。
-version: 1.1.1
+version: 1.1.2
 license: Apache-2.0
 ---
 

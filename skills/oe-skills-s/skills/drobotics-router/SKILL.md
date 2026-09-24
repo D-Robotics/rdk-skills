@@ -1,7 +1,7 @@
 ---
 name: drobotics-router
 description: OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 D Robotics 子 Skill。
-version: 1.1.1
+version: 1.1.2
 license: Apache-2.0
 ---
 
