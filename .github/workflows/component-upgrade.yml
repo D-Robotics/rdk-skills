@@ -40,6 +40,10 @@ on:
         default: true
         type: boolean
 
+env:
+  # The drift verifier force-stages files; Python caches are not artifacts.
+  PYTHONDONTWRITEBYTECODE: "1"
+
 permissions:
   contents: read
 
