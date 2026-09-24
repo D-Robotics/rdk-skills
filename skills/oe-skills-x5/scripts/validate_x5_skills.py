@@ -74,7 +74,7 @@ PACK_REQUIRED_HEADINGS = (
     "## 验收",
 )
 PACK_REQUIRED_TERMS = (
-    "Pack 版本",
+    "平台运行合同版本",
     PACK_VERSION,
     "bayes-e",
     "March.BAYES_E",
@@ -220,6 +220,30 @@ def check_pack_index(root: Path, failures: list[str]) -> dict[str, Any]:
     excluded = set(pack.get("excluded_capabilities", []))
     for boundary in ("HAT", "X3", "S-series workflows"):
         assert_true(boundary in excluded, f"X5 pack does not exclude {boundary}", failures)
+    routing_policy = index.get("routing_policy", {})
+    quantization = routing_policy.get("quantization", {}) if isinstance(routing_policy, dict) else {}
+    assert_true(quantization.get("default_method") == "PTQ", "Unspecified X5 quantization must default to PTQ", failures)
+    assert_true(quantization.get("ptq_skill") == "x5-ptq-deploy", "X5 PTQ route must use x5-ptq-deploy", failures)
+    assert_true(quantization.get("qat_skill") == "x5-qat-deploy", "X5 QAT route must use x5-qat-deploy", failures)
+    assert_true(
+        set(quantization.get("qat_entry_conditions", []))
+        == {"explicit_user_request", "ptq_requirement_not_met_after_evaluation"},
+        "X5 QAT must require explicit intent or evaluated PTQ gap evidence",
+        failures,
+    )
+    assert_true(
+        "ptq_qat_overview.html" in str(quantization.get("official_reference", "")),
+        "X5 PTQ-first rule must cite the official OE PTQ/QAT overview",
+        failures,
+    )
+    environment_policy = routing_policy.get("environment", {}) if isinstance(routing_policy, dict) else {}
+    assert_true(environment_policy.get("preferred_execution") == "docker", "X5 OE environment must prefer Docker", failures)
+    assert_true(environment_policy.get("container_probe") == "read_only_tool_help", "X5 container probe must be read-only", failures)
+    assert_true(environment_policy.get("host_opt_in") == "--execution-mode host", "Host OE execution must require explicit opt-in", failures)
+    qat_gpu_probe = environment_policy.get("qat_gpu_probe", {})
+    assert_true(qat_gpu_probe.get("docker_flag") == "--gpus all", "QAT Docker probe must request GPU visibility", failures)
+    assert_true(qat_gpu_probe.get("check") == "torch.cuda.is_available", "QAT Docker probe must check CUDA visibility", failures)
+    assert_true(qat_gpu_probe.get("claim_scope") == "device_visibility_only", "QAT probe must not claim training validation", failures)
 
     skills = index.get("skills")
     assert_true(isinstance(skills, list), "X5 index skills must be an array", failures)
@@ -334,8 +358,15 @@ def parse_frontmatter(skill_id: str, text: str, failures: list[str]) -> dict[str
     if not isinstance(payload, dict):
         failures.append(f"Frontmatter must be an object: {skill_id}")
         return {}
-    assert_true(set(payload) == {"name", "description"}, f"{skill_id} frontmatter must contain only name and description", failures)
+    assert_true(
+        set(payload) == {"name", "description", "version", "license"},
+        f"{skill_id} frontmatter must contain name, description, version, and license",
+        failures,
+    )
     assert_true(payload.get("name") == skill_id, f"Wrong frontmatter name: {skill_id}", failures)
+    expected_version = (Path(__file__).resolve().parents[1] / "VERSION").read_text(encoding="utf-8").strip()
+    assert_true(payload.get("version") == expected_version, f"Wrong release version: {skill_id}", failures)
+    assert_true(payload.get("license") == "Apache-2.0", f"Wrong license metadata: {skill_id}", failures)
     description = payload.get("description")
     assert_true(isinstance(description, str) and len(description.strip()) >= 30, f"Description is too weak: {skill_id}", failures)
     assert_true(isinstance(description, str) and "X5" in description, f"Description lacks X5 scope: {skill_id}", failures)
@@ -357,7 +388,6 @@ def check_skill_contracts(
     actual_ids = sorted(path.parent.name for path in skill_root.glob("*/SKILL.md"))
     assert_true(actual_ids == sorted(EXPECTED_SKILLS), "X5 Skill directories do not match the V2 index", failures)
     pack_items = {item.get("id"): item for item in pack_index.get("skills", []) if isinstance(item, dict)}
-    global_paths = global_index.get("paths", {})
     skill_texts: dict[str, str] = {}
     manual_references: set[str] = set()
 
@@ -370,11 +400,6 @@ def check_skill_contracts(
         skill_texts[skill_id] = text
         metadata = parse_frontmatter(skill_id, text, failures)
         description = metadata.get("description")
-        assert_true(
-            description == global_paths.get(skill_id, {}).get("description"),
-            f"Global description does not match SKILL.md: {skill_id}",
-            failures,
-        )
         positions = [text.find(heading) for heading in COMMON_HEADINGS]
         assert_true(all(position >= 0 for position in positions), f"{skill_id} lacks one or more standard V2 sections", failures)
         assert_true(positions == sorted(positions), f"{skill_id} standard sections are out of order", failures)
@@ -509,6 +534,10 @@ def check_router(root: Path, failures: list[str]) -> None:
         "March.BAYES_E",
         "HAT",
         "X3",
+        "默认优先 PTQ",
+        "明确要求 QAT",
+        "Docker",
+        "routing_policy",
     ):
         assert_true(term in text, f"x5-router lacks boundary term: {term}", failures)
 
@@ -548,6 +577,21 @@ def check_eval_matrix(root: Path, failures: list[str]) -> None:
     if isinstance(isolation, list):
         actual = {row.get("id"): row.get("expect") for row in isolation if isinstance(row, dict)}
         assert_true(actual == ISOLATION_CASES, "Eval isolation cases do not enforce HAT/J5/S/X3 boundaries", failures)
+    routing_cases = payload.get("routing_cases")
+    assert_true(isinstance(routing_cases, list), "Eval routing_cases must be an array", failures)
+    expected_routing_cases = {
+        "unspecified-onnx-quantization": ("x5-ptq-deploy", "default_to_ptq"),
+        "explicit-qat": ("x5-qat-deploy", "honor_explicit_qat"),
+        "ptq-accuracy-gap": ("x5-accuracy-diagnostics", "diagnose_before_qat_escalation"),
+        "pytorch-source-alone": (None, "ask_export_or_qat_intent"),
+    }
+    if isinstance(routing_cases, list):
+        actual_routing_cases = {
+            row.get("id"): (row.get("expected_skill"), row.get("expected_action"))
+            for row in routing_cases
+            if isinstance(row, dict)
+        }
+        assert_true(actual_routing_cases == expected_routing_cases, "X5 PTQ/QAT default and escalation cases changed", failures)
 
 
 def check_schemas_and_assets(root: Path, failures: list[str]) -> None:

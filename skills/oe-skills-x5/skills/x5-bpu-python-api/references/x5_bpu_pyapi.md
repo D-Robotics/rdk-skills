@@ -36,7 +36,7 @@ RDK X5 3.5.0 版本之后，使用 Python 进行算法推理、目标检测、�
   - 支持量化参数结构 QuantParams，数据类型枚举 hbDNNDataType，模型调度参数对象SchedParam  和量化类型枚举 hbDNNQuantiType，提供类型安全的属性访问。
 
 ## 安装说明（Installation）
-本模块 hbm_runtime 是基于 C++ 实现的高性能推理运行时 Python 接口，依赖 pybind11 和地平线提供的底层推理库（如 libdnn）。支持通过系统 DEB 包（.deb） 的方式进行安装，适用于 Python 3.10 及以上版本。
+本模块 hbm_runtime 是基于 C++ 实现的高性能推理运行时 Python 接口，依赖 pybind11 和地瓜机器人提供的底层推理库（如 libdnn）。支持通过系统 DEB 包（.deb） 的方式进行安装，适用于 Python 3.10 及以上版本。
 ### 系统依赖
 | 依赖项       | 最低版本  | 说明                                                   |
 |------------|-----------|--------------------------------------------------------|
@@ -44,7 +44,7 @@ RDK X5 3.5.0 版本之后，使用 Python 进行算法推理、目标检测、�
 | pip        | ≥ 22.0    | 安装 wheel 包所需                                      |
 | pybind11   | 任意      | 构建时使用，安装包时不需要依赖                         |
 | scikit-build-core | ≥ 0.7 | 构建 wheel 包时使用（仅源码构建）                    |
-| 地平线基础库 | 根据平台 | 如 libdnn.so，通常由 BSP 提供           |
+| 地瓜机器人基础库 | 根据平台 | 如 libdnn.so，通常由 BSP 提供           |
 
 ### 构建wheel包
 构建wheel包的方式有两种，下面分别介绍。(RDK X5 软件 3.5.0 版本之后默认已经安装)
@@ -209,7 +209,7 @@ for output_name, output_data in results[model_name].items():
   如需更复杂用法（多输入模型、量化参数读取等），请参考[API部分](#模块类函数说明api-reference)。
 
 ## 模块/类/函数说明（API Reference）
-Python 模块 hbm_runtime 是通过 PyBind11 封装的地平线 BIN 模型推理接口，基于底层 libdnn 实现。提供统一封装的模型加载、输入输出信息查询、推理执行等功能，支持多模型加载、多输入推理、指定推理模型，BPU Core、推理任务优先级等。
+Python 模块 hbm_runtime 是通过 PyBind11 封装的地瓜机器人 BIN 模型推理接口，基于底层 libdnn 实现。提供统一封装的模型加载、输入输出信息查询、推理执行等功能，支持多模型加载、多输入推理、指定推理模型，BPU Core、推理任务优先级等。
 
 ### 枚举类型
 #### hbDNNDataType

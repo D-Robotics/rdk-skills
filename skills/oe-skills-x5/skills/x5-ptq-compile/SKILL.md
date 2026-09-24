@@ -1,7 +1,7 @@
 ---
 name: x5-ptq-compile
 description: 执行已验证 X5 YAML 的 hb_mapper checker/makertbin 并验证唯一 .bin 与 BPU march；当配置和环境已就绪、需要生成 bayes-e PTQ 产物时使用。不得处理 QAT .hbm/.hbir，也不得复用非空输出目录而未确认。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -32,6 +32,8 @@ python .drobotics-x5/platforms/x5/scripts/run_ptq.py full \
 ~~~
 
 脚本依次运行 checker、`hb_mapper makertbin` 和 `hb_model_info`。只有审阅并确认非空目录后才允许追加 `--allow-nonempty-working-dir`。
+
+脚本直接调用当前环境中的 OE 工具。默认在已验证的 X5 OE Docker 容器内执行，并将 Pack、模型、校准数据、配置、日志和 working_dir 放在容器可见的共享挂载路径中；宿主机 OE 工具仅在用户明确配置 host 模式时使用。
 
 ## 产物与完成标准
 

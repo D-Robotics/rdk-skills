@@ -1,7 +1,7 @@
 ---
 name: x5-qat-deploy
 description: 编排 X5 horizon_plugin_pytorch calibration、QAT、定点转换与 Plugin 编译；当用户有可训练 PyTorch 模型、数据和浮点基线，希望得到 March.BAYES_E 的 .hbm/.hbir 及指标闭环时使用。明确排除 HAT，且不把 QAT 自动交给 hb_mapper makertbin。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -15,15 +15,16 @@ QAT 合同固定为 `March.BAYES_E → adaptation → calibration/QAT → conver
 
 - 可训练 PyTorch 模型和可复现构建入口。
 - 训练/校准/验证数据、浮点权重、浮点指标和评价代码。
-- Plugin/PyTorch/Python/GPU 环境快照、example inputs、输出目录和预算。
+- Plugin/PyTorch/Python/GPU 环境快照、example inputs、输出目录和预算。Docker 模式需确认 `execution.docker_image.tools` 包含 `cuda`；host 模式需确认 `toolchain.cuda.available` 为 `true`。
 - 目标指标、最大训练成本和检查点覆盖策略。
 
 ## 前置检查
 
 1. 目标芯片是 X5，源码明确使用 `March.BAYES_E`；手册 quick start 中的 `March.BAYES` 示例必须替换并验证。
 2. HAT package、config、Trainer、registry、Model Zoo 与 `tools/compile_perf.py` 均不得进入流程。
-3. 先复现浮点基线；无法复现时不得用 QAT 指标宣称改善。
-4. 训练环境、数据版本和随机种子可记录；输出使用新 attempt 目录。
+3. 确认目标环境能看到 CUDA。Docker 探测通过 `--gpus all` 和 `torch.cuda.is_available()` 验证设备可见性；这不等于训练脚本或收敛验证通过。
+4. 先复现浮点基线；无法复现时不得用 QAT 指标宣称改善。
+5. 训练环境、数据版本和随机种子可记录；输出使用新 attempt 目录。
 
 ## 执行步骤
 

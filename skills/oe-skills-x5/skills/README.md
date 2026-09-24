@@ -1,6 +1,6 @@
 # X5 Skill Pack V2
 
-X5 Pack 以“S 系列的实战深度 + V2 的模块化、脚本化和机器可验证合同”为完成标准。入口为 `x5-router`，详细注册表为 `.drobotics-x5/platforms/x5/skill-index.json`。
+X5 source release 为 `1.1.0`；内部平台运行合同为 V2。Pack 以“S 系列的实战深度 + V2 的模块化、脚本化和机器可验证合同”为完成标准。入口为 `x5-router`，详细注册表为 `.drobotics-x5/platforms/x5/skill-index.json`。量化默认优先 PTQ，OE 官方推荐 Docker。
 
 ## 能力模块
 

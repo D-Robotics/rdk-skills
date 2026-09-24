@@ -32,6 +32,28 @@
       },
       "additionalProperties": true
     },
+    "execution": {
+      "type": "object",
+      "required": ["preferred_mode", "selected_mode", "docker_image", "host_fallback_available"],
+      "properties": {
+        "preferred_mode": {"const": "docker"},
+        "selected_mode": {"type": ["string", "null"], "enum": ["docker", "host", null]},
+        "docker_image": {
+          "type": "object",
+          "required": ["image", "image_available", "verified", "tools", "error"],
+          "properties": {
+            "image": {"type": ["string", "null"]},
+            "image_available": {"type": "boolean"},
+            "verified": {"type": "boolean"},
+            "tools": {"type": "array", "items": {"type": "string"}},
+            "error": {"type": ["string", "null"]}
+          },
+          "additionalProperties": false
+        },
+        "host_fallback_available": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
     "documentation": {
       "type": "object",
       "required": ["root", "available", "hat_in_scope"],

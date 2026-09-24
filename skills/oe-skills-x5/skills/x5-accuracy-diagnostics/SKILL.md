@@ -1,7 +1,7 @@
 ---
 name: x5-accuracy-diagnostics
 description: 定位 X5 PTQ 或 Plugin QAT 的首次精度掉点阶段；当有浮点、校准、QAT、定点、编译或板端指标及固定输入时使用。只读比较并设计单变量实验，不自动重训或重编译。
-version: 1.0.1
+version: 1.1.0
 license: Apache-2.0
 ---
 

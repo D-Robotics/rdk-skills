@@ -136,3 +136,20 @@ isolation_cases:
   - id: reject-x3-reuse
     prompt: "把 X5 Runtime 和 wheel 直接用于 X3"
     expect: blocked_until_x3_pack_exists
+
+routing_cases:
+  - id: unspecified-onnx-quantization
+    prompt: "把这个 X5 ONNX 浮点模型量化部署，未指定 PTQ 或 QAT。"
+    expected_skill: x5-ptq-deploy
+    expected_action: default_to_ptq
+  - id: explicit-qat
+    prompt: "我明确要对可训练 PyTorch 模型做 X5 Plugin QAT。"
+    expected_skill: x5-qat-deploy
+    expected_action: honor_explicit_qat
+  - id: ptq-accuracy-gap
+    prompt: "X5 PTQ 已完成评测但精度仍低于目标，请分析下一步。"
+    expected_skill: x5-accuracy-diagnostics
+    expected_action: diagnose_before_qat_escalation
+  - id: pytorch-source-alone
+    prompt: "我只有 PyTorch 源码和权重，帮我给 X5 做量化；我没有指定 QAT。"
+    expected_action: ask_export_or_qat_intent
