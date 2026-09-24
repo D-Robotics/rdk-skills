@@ -8,11 +8,13 @@ description: >
   当用户提到 OpenExplorer、horizon_tc_ui、工具链、编译模型、生成 YAML、量化、
   calibration、HBIR、HBM、march、fast-perf、check 模式、板端推理、
   定点/浮点 BC 模型判断等场景时，应优先使用本 Skill。
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 
 # s-tc-ui Skill
+
+普通浮点模型部署默认优先使用 OE 标准 PTQ。Caffe 可直接处理；PyTorch 等模型先导出满足当前 OE 版本约束的 ONNX，再使用本 Skill 与 `hmct-workflow` 完成 YAML 配置、模型检查和 `hb_compile`。只有用户明确要求 QAT 或 PTQ 不适用并确认后，才进入 `horizon_plugin_pytorch` 工作流。
 
 ## 适用范围
 
@@ -28,7 +30,7 @@ license: Apache-2.0
 主要覆盖流程：
 
 ```text
-ONNX/Caffe 模型 → YAML 配置 → PTQ 量化 → HBIR(.bc) → HBM(.hbm) → 精度验证 / 性能分析 / 板端部署
+浮点 Caffe 或导出为受支持 ONNX 的模型 → YAML 配置 → PTQ 量化 → HBIR(.bc) → HBM(.hbm) → 精度验证 / 性能分析 / 板端部署
 ```
 
 ## 触发词
@@ -68,7 +70,7 @@ ONNX/Caffe 模型 → YAML 配置 → PTQ 量化 → HBIR(.bc) → HBM(.hbm) →
 
 | 场景 | Delegate 目标 | 判定条件 |
 |---|---|---|
-| 精度分析（cosine/consistency 深度分析） | `horizon-model-cosine-analyzer` | 用户询问精度掉点原因、逐层 cosine 对比、定位精度问题根因 |
+| 精度分析（cosine/consistency 深度分析） | PTQ 使用 `s-hmct-cosine-similarity-tuning`；QAT 量化误差使用 `s-plugin-precision-tuning`；部署阶段差异使用 `s-plugin-consistency-debug` | 按误差出现阶段和模型来源路由，不委派到仓库中不存在的 Skill |
 | 性能分析（HBM 性能瓶颈分析） | `hb-analyzer-performance` | 用户询问性能瓶颈、算子耗时、内存占用优化 |
 
 **模糊场景处理原则**：

@@ -1,7 +1,7 @@
 ---
 name: s-plugin-set-march
 description: 在适配 horizon_plugin_pytorch 的过程中，为脚本或入口添加 march 设置逻辑。
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 

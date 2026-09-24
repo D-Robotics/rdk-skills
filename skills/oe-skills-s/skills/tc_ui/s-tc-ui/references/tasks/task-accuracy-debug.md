@@ -9,7 +9,7 @@
 - 已确认精度不达标（cosine 值低于预期或 consistency 不通过）
 - 已有测试输入数据
 
-> **重要**：深度精度分析（逐层 cosine 对比、层间误差传播分析）已 **delegate 到 horizon-model-cosine-analyzer skill**。本文档仅覆盖本地工具链的桥接和分阶段产物保留方法。
+> **重要**：本任务覆盖 hb_verifier 的阶段对比与中间产物保留。完成定位后，PTQ 精度调优进入 `s-hmct-cosine-similarity-tuning`；QAT/calibration 误差进入 `s-plugin-precision-tuning`；训练侧正常而部署阶段掉点进入 `s-plugin-consistency-debug`。
 
 ## 产出物
 
@@ -19,7 +19,7 @@
 | HBIR 中间产物 (.bc) | `{working_dir}/{prefix}_*.bc` | 分阶段保留的中间模型 |
 | HBM 模型 | `{working_dir}/{prefix}.hbm` | 编译产物 |
 | hb_verifier 输出 | 控制台 / 日志 | 一致性 / cosine 对比结果 |
-| 逐层分析结果 | delegate 到 horizon-model-cosine-analyzer | 深度精度分析 |
+| 逐层分析结果 | 按模型来源及误差阶段交给 `s-hmct-cosine-similarity-tuning`、`s-plugin-precision-tuning` 或 `s-plugin-consistency-debug` | 深度精度分析 |
 
 ## 步骤
 
@@ -139,11 +139,13 @@ hb_compile -c compile_config.yaml --skip compile
 
 配合 DEBUG 模式，可以精确定位精度损失发生在哪个阶段。
 
-### 步骤 7：Delegate 到 horizon-model-cosine-analyzer
+### 步骤 7：按误差阶段交给现有精度 Skill
 
-当需要深度精度分析（逐层 cosine 对比、层间误差传播）时：
+完成阶段对比后，根据误差来源路由：
 
-> **DELEGATE**: 使用 `horizon-model-cosine-analyzer` skill 进行逐层精度分析。
+> - PTQ 精度调优：`s-hmct-cosine-similarity-tuning`
+> - QAT/calibration 误差：`s-plugin-precision-tuning`
+> - 部署阶段一致性差异：`s-plugin-consistency-debug`
 >
 > 前置准备：
 > 1. 保留原始 ONNX 模型
@@ -181,4 +183,4 @@ hb_compile -c compile_config.yaml --skip compile
 - **hb_compile**：分阶段编译 → `task-float-to-hbm.md`
 - **Calibration 调优**：→ `task-calibration-tuning.md`
 - **板端验证**：→ `task-board-deploy-verify.md`
-- **深度精度分析**：delegate 到 `horizon-model-cosine-analyzer` skill
+- **深度精度分析**：按 PTQ、QAT/calibration 或部署阶段一致性，路由到仓库中对应的精度 Skill

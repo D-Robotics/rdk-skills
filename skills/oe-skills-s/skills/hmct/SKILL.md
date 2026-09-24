@@ -1,14 +1,14 @@
 ---
 name: hmct-workflow
 description: >
-  HMCT 模型转换与 PTQ 量化总入口——对浮点 ONNX/Caffe 的标准 PTQ 流程优先使用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c。
+  HMCT 模型转换与 PTQ 量化总入口——对浮点 Caffe/ONNX，以及 PyTorch 等框架导出 ONNX 后的标准 PTQ，优先使用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c。
   根据用户意图自动路由：
-  (1) 提供了校准数据 → 使用 hb_config_generator 生成官方 YAML 配置，再运行 hb_compile -c 执行标准 PTQ；
+  (1) 提供了校准数据 → 使用 hb_config_generator 生成官方 YAML 配置，再运行 hb_compile -c 执行标准 PTQ；PyTorch .pt/.pth 默认先检查导出受支持 ONNX 的条件；
   (2) 未提供校准数据 → 使用 hb_compile -m --march 检查模型；
   (3) 用户希望进行精度调优 → 转交 s-hmct-cosine-similarity-tuning SKILL 执行多阶段调优；
   (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。
   当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -21,7 +21,7 @@ license: Apache-2.0
 ```
 用户请求
   │
-  ├─ 意图：浮点 ONNX/Caffe 模型的 PTQ 量化，且提供了校准数据（cal_data_dir）
+  ├─ 意图：浮点 Caffe/ONNX 模型的 PTQ，或 PyTorch 导出 ONNX 后 PTQ，且提供校准数据（cal_data_dir）
   │   └─→ 路由 A：hb_config_generator 生成官方 YAML → hb_compile -c
   │
   ├─ 意图：检查模型能否被工具链处理，当前没有校准数据

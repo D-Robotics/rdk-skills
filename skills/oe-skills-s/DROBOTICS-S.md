@@ -9,7 +9,7 @@
 - Skill 索引：`.drobotics-s/skill-index.json`
 - 文档目录：`.drobotics-s/docs/`
 - Skill 目录：`.drobotics-s/skills/`
-- 当前 release 版本：`1.0.2`
+- 当前 release 版本：`1.1.0`
 
 ## 2. 使用规则
 
@@ -17,6 +17,8 @@
 - 当请求属于 D Robotics 范畴，但还不能明确落到某个具体 skill 时，先使用 `.drobotics-s/skills/drobotics-router/SKILL.md` 作为顶层路由 skill。
 - 业务 skill 按模块放在 `.drobotics-s/skills/<module>/<slug>/`；具体路径以 `.drobotics-s/skill-index.json` 和下方模块清单为准。
 - 未经检索，不要猜测 D Robotics 工具链命令、参数或流程细节。
+- 普通浮点模型部署优先尝试 PTQ：Caffe 可直接走 PTQ；PyTorch 等框架先导出满足当前 OE 版本要求的 ONNX。只有用户明确要求 QAT，或 PTQ 经支持性检查与精度调优仍无法满足目标并获用户确认后，才走 `horizon_plugin_pytorch` 流程。依据见 `.drobotics-s/skills/drobotics-router/references/oe-s-official-docs.md`。
+- S100/S100P/S600 产品名称用于用户文档；工具实际要求的 `nash-*` march、Python 包名和 Docker 镜像标识保持其真实名称，不要把产品名硬替换进命令或配置。
 - 本地文档统一放在 `.drobotics-s/docs/` 下，文档目录名固定不带版本号。
 
 ## 3. 执行前检查
@@ -43,51 +45,52 @@
 - 如果查询对应 skill 后仍有不理解的问题，或者需要进一步确认官方流程、参数说明、API 行为、版本差异或报错含义，必须使用 `oe-mcp` 做文档检索。
 - `oe-mcp` 用于补充和确认，不替代当前 release 包内的 skill 路由；最终回答应尽量基于已查看的 skill 内容、MCP 文档或代码证据。
 - 当本地 skill 与 `oe-mcp` 检索结果不一致时，先说明差异，再给出保守建议。
+- 优先按 D-Robotics 官方建议在 Docker 中运行 OE。镜像标签必须与 `OE_VERSION` 匹配；旧 `j6` 镜像只用于识别已有环境，不作为新环境默认值。
 
 ## 6. 内置 Skills
 
-- `drobotics-router@1.0.2` -> `.drobotics-s/skills/drobotics-router/SKILL.md`: D Robotics 顶层路由 skill，用于在具体 skill 之间做渐进式任务分流。
+- `drobotics-router@1.1.0` -> `.drobotics-s/skills/drobotics-router/SKILL.md`: D Robotics 顶层路由 skill，用于在具体 skill 之间做渐进式任务分流。
 
 ### OE 包环境
 
-- `oe-package-detection@1.0.2` -> `.drobotics-s/skills/drobotics-router/oe-package-detection/SKILL.md`
-- `oe-package-install@1.0.2` -> `.drobotics-s/skills/drobotics-router/oe-package-install/SKILL.md`
-- `board-detection@1.0.2` -> `.drobotics-s/skills/drobotics-router/board-detection/SKILL.md`
+- `oe-package-detection@1.1.0` -> `.drobotics-s/skills/drobotics-router/oe-package-detection/SKILL.md`
+- `oe-package-install@1.1.0` -> `.drobotics-s/skills/drobotics-router/oe-package-install/SKILL.md`
+- `board-detection@1.1.0` -> `.drobotics-s/skills/drobotics-router/board-detection/SKILL.md`
 
 ### OE-LLM 包环境
 
-- `oe-llm-package-detection@1.0.2` -> `.drobotics-s/skills/drobotics-router/oe-llm-package-detection/SKILL.md`
-- `oe-llm-package-install@1.0.2` -> `.drobotics-s/skills/drobotics-router/oe-llm-package-install/SKILL.md`
+- `oe-llm-package-detection@1.1.0` -> `.drobotics-s/skills/drobotics-router/oe-llm-package-detection/SKILL.md`
+- `oe-llm-package-install@1.1.0` -> `.drobotics-s/skills/drobotics-router/oe-llm-package-install/SKILL.md`
 
 ### HBDK (hbdk)
 
-- `s-hbdk-compile@1.0.2` -> `.drobotics-s/skills/hbdk/s-hbdk-compile/SKILL.md`
-- `hbdk-manual@1.0.2` -> `.drobotics-s/skills/hbdk/hbdk-manual/SKILL.md`
+- `s-hbdk-compile@1.1.0` -> `.drobotics-s/skills/hbdk/s-hbdk-compile/SKILL.md`
+- `hbdk-manual@1.1.0` -> `.drobotics-s/skills/hbdk/hbdk-manual/SKILL.md`
 
 ### D Robotics Plugin (plugin)
 
-- `s-plugin-adaptation@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-adaptation/SKILL.md`
-- `s-plugin-export@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-export/SKILL.md`
-- `s-plugin-model-check-result@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-model-check-result/SKILL.md`
-- `s-plugin-graph-diff@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-graph-diff/SKILL.md`
-- `s-plugin-hbdk-generating@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-hbdk-generating/SKILL.md`
-- `s-plugin-consistency-debug@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-consistency-debug/SKILL.md`
-- `s-plugin-precision-tuning@1.0.2` -> `.drobotics-s/skills/plugin/s-plugin-precision-tuning/SKILL.md`
+- `s-plugin-adaptation@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-adaptation/SKILL.md`
+- `s-plugin-export@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-export/SKILL.md`
+- `s-plugin-model-check-result@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-model-check-result/SKILL.md`
+- `s-plugin-graph-diff@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-graph-diff/SKILL.md`
+- `s-plugin-hbdk-generating@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-hbdk-generating/SKILL.md`
+- `s-plugin-consistency-debug@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-consistency-debug/SKILL.md`
+- `s-plugin-precision-tuning@1.1.0` -> `.drobotics-s/skills/plugin/s-plugin-precision-tuning/SKILL.md`
 
 ### HMCT / Quantization (hmct)
 
-- `hmct-workflow@1.0.2` -> `.drobotics-s/skills/hmct/SKILL.md`
+- `hmct-workflow@1.1.0` -> `.drobotics-s/skills/hmct/SKILL.md`
 
 ### UCP / Runtime (ucp)
 
-- `s-ucp-infer-generating@1.0.2` -> `.drobotics-s/skills/ucp/s-ucp-infer-generating/SKILL.md`
-- `s-ucp-hbm-infer@1.0.2` -> `.drobotics-s/skills/ucp/s-ucp-hbm-infer/SKILL.md`
-- `s-ucp-model-perf-eval@1.0.2` -> `.drobotics-s/skills/ucp/s-ucp-model-perf-eval/SKILL.md`
-- `s-ucp-perfetto-trace-analysis@1.0.2` -> `.drobotics-s/skills/ucp/s-ucp-perfetto-trace-analysis/SKILL.md`
-- `s-ucp-perfetto-trace-catcher@1.0.2` -> `.drobotics-s/skills/ucp/s-ucp-perfetto-trace-catcher/SKILL.md`
-- `s-board-monitor@1.0.2` -> `.drobotics-s/skills/ucp/s-board-monitor/SKILL.md`
+- `s-ucp-infer-generating@1.1.0` -> `.drobotics-s/skills/ucp/s-ucp-infer-generating/SKILL.md`
+- `s-ucp-hbm-infer@1.1.0` -> `.drobotics-s/skills/ucp/s-ucp-hbm-infer/SKILL.md`
+- `s-ucp-model-perf-eval@1.1.0` -> `.drobotics-s/skills/ucp/s-ucp-model-perf-eval/SKILL.md`
+- `s-ucp-perfetto-trace-analysis@1.1.0` -> `.drobotics-s/skills/ucp/s-ucp-perfetto-trace-analysis/SKILL.md`
+- `s-ucp-perfetto-trace-catcher@1.1.0` -> `.drobotics-s/skills/ucp/s-ucp-perfetto-trace-catcher/SKILL.md`
+- `s-board-monitor@1.1.0` -> `.drobotics-s/skills/ucp/s-board-monitor/SKILL.md`
 
 ### D Robotics TC UI / Analyzer (tc_ui)
 
-- `hb-analyzer-performance@1.0.2` -> `.drobotics-s/skills/tc_ui/hb-analyzer-performance/SKILL.md`
-- `s-tc-ui@1.0.2` -> `.drobotics-s/skills/tc_ui/s-tc-ui/SKILL.md`
+- `hb-analyzer-performance@1.1.0` -> `.drobotics-s/skills/tc_ui/hb-analyzer-performance/SKILL.md`
+- `s-tc-ui@1.1.0` -> `.drobotics-s/skills/tc_ui/s-tc-ui/SKILL.md`

@@ -4,7 +4,7 @@
 
 - **Name**: `horizon_tc_ui` v3.5.16
 - **Summary**: D Robotics Algorithm Toolchain User Interface — the CLI and user-facing auxiliary layer of the D Robotics Open Explorer toolchain
-- **Target Hardware**: Journey 6 (Nash) BPU family: `nash-b-lite`, `nash-b`, `nash-b-plus`, `nash-e`, `nash-m`, `nash-p`, `nash-starry-p`, `nash-h`
+- **Target Hardware**: D-Robotics S-series BPU (Nash family). Keep the actual target identifiers unchanged: `nash-b-lite`, `nash-b`, `nash-b-plus`, `nash-e`, `nash-m`, `nash-p`, `nash-starry-p`, `nash-h`.
 - **Role in Toolchain**: Provides six `hb_*` console_scripts that wrap `hbdk4_compiler` (BPU compiler), `hmct` (calibration/quantization), `hbdnn`/`hbm_infer` (runtime inference). It is the entry-point users interact with for: model compilation (`hb_compile`), config generation, model inspection, verification (simulator + ARM board SSH), analysis/visualization, and eval dataset preprocessing.
 - **Python**: `>=3.10,<3.12`; dependencies include `click`, `onnx==1.15.0`, `numpy`, `opencv-python`, `paramiko`, `pydantic>2`, `pyyaml`, `schema`, `scikit-image`.
 - **Distribution**: Installed as a pre-built wheel; no source build system, tests, or lint config. Ships with `horizon_tc_ui-3.5.16.dist-info/`.

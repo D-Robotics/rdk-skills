@@ -1,7 +1,7 @@
 ---
 name: s-plugin-adaptation
-description: 为用户的浮点 PyTorch 模型适配地瓜机器人机器人公司的 QAT 工具 `horizon_plugin_pytorch`。这是一个编排型 skill，必须按固定顺序依次调用：`s-plugin-set-march` → `s-plugin-insert-quant-dequant` → `s-plugin-dynamic-block` → `s-plugin-prepare` → `s-plugin-set-fake-quantize`。
-version: 1.0.2
+description: Use when the user explicitly asks to adapt a floating-point PyTorch model for D-Robotics QAT with `horizon_plugin_pytorch`, including the ordered preparation steps. Ordinary model deployment defaults to OE PTQ via ONNX when supported.
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -9,7 +9,7 @@ license: Apache-2.0
 
 ## 目标
 
-把一个普通的**浮点 PyTorch 模型**，按地瓜机器人机器人公司的 `horizon_plugin_pytorch` 量化工具链要求，逐步改造成可进入 QAT / calibration / validation 流程的模型。
+把一个普通的**浮点 PyTorch 模型**，按 D-Robotics `horizon_plugin_pytorch` 工具链要求，逐步改造成可进入 QAT / calibration / validation 流程的模型。仅在用户明确选择 QAT 或插件适配时使用；普通部署请求默认先评估导出 ONNX 后走 OE PTQ。
 
 这个 Skill **不是单独做某一步改动**，而是一个**总控/编排类 skill**。它负责根据用户需求，将完整适配过程拆成多个标准子 skill，并**严格按照固定顺序执行**。
 

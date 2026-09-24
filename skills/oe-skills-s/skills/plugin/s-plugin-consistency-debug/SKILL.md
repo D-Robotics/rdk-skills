@@ -1,7 +1,7 @@
 ---
 name: s-plugin-consistency-debug
 description: 当用户遇到 D Robotics Plugin PyTorch 训练部署一致性问题（QAT 模型正常但 BC/HBM 掉点、export/convert/compile 阶段精度偏差）时使用。本 skill 引导用户按 qat.pt -> qat.export.pt -> qat.bc -> quantized.bc -> hbm 分段定位问题，并在每个阶段帮助适配工具、分析工具产出物。
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 

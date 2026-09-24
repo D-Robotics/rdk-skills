@@ -1,7 +1,7 @@
 ---
 name: s-plugin-dynamic-block
 description: 在适配 horizon_plugin_pytorch（prepare/JIT_STRIP）时，自动为动态控制流/动态循环中涉及算子替换或融合的逻辑添加 dynamic_block 标注，避免 scope/替换错乱与 forward 报错。
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 

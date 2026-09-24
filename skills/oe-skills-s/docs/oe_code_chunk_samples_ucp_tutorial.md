@@ -5,7 +5,7 @@
 - **名称**: UCP Tutorial Samples (ucp_tutorial)
 - **版本**: D Robotics S Open Explorer SDK v3.9.0 RC4
 - **路径**: `samples/ucp_tutorial/`
-- **用途**: 提供 C++ 示例程序，演示如何在 S (Journey 6) BPU SoC 上使用 D Robotics UCP (Unified Computing Platform) 系列 API
+- **用途**: 提供 C++ 示例程序，演示如何在 D-Robotics S 系列 BPU SoC 上使用 D-Robotics UCP (Unified Computing Platform) 系列 API
 - **角色**: AI 工具链中的端侧部署参考实现，覆盖 DNN 推理、视觉处理 (VP)、高性能库 (HPL)、DSP/GPU 自定义算子、端到端感知流水线及模型执行工具
 - **目标平台**: aarch64 Linux / QNX / Android (RDK S 系列开发板)，x86 主机仿真
 

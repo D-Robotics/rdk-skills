@@ -1,7 +1,7 @@
 ---
 name: oe-package-detection
-description: OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .drobotics-s/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、GPU/CPU Docker 判定，并将结果写入 .env 文件。
-version: 1.0.2
+description: OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .drobotics-s/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、S 系列 GPU/CPU Docker 判定，并将结果写入 .env 文件。
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -44,11 +44,11 @@ license: Apache-2.0
 
 ### 3. 采集 OE 版本信息
 
-从 OE 包目录中提取以下信息：
+从 OE 包目录中提取以下信息，并优先按当前 D-Robotics S 系列 OE 发布包和在线手册识别版本：
 
 **OE 包整体版本**：
 - 检查 `version.txt`、`VERSION`、`release_notes.md` 或 `release_notes.txt`
-- 从文件名推断（如 `OpenExplorer_v3.9.0_rc4`）
+- 从文件名推断（当前在线手册列出的发布包为 `oe-package-3.7.0-s100-s600.tgz`）
 - 以上都无法确定时询问用户
 
 **各组件版本**（通过 `pip show` 检查已安装版本，同时记录 OE 包内 whl 文件名中的版本）：
@@ -61,10 +61,13 @@ license: Apache-2.0
 | `hbdk4_compiler` | `hbdk4-compiler` | 编译器 |
 
 **Docker 信息**：
-- 检查 `run_docker.sh` 是否存在
-- 从 `run_docker.sh` 内容或 OE 版本推断 Docker 镜像名称：
-  - CPU：`openexplorer/ai_toolchain_ubuntu_22_j6_cpu:{version}`
-  - GPU：`openexplorer/ai_toolchain_ubuntu_22_j6_gpu:{version}`
+- D-Robotics OE 手册强烈建议使用 Docker。默认 `EXECUTION_MODE=docker`；只有用户明确要求本机执行，且本地 OE 包版本与所有依赖均已核实时，才选择 `local`。
+- 使用与 OE 包版本完全匹配的 S 系列镜像。OE 3.7.0 CPU 镜像 `registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v3.7.0` 已在受限容器中验证可执行 `hb_compile --help` 和 `hb_config_generator --help`。GPU 镜像 `registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_gpu:v3.7.0` 已在 sz-dev 的 GPU 容器中实测，`nvidia-smi` 可见 RTX 5090 且 `torch.cuda.is_available()` 为 True；其他宿主机仍须单独检查。
+- S100/S600 镜像命名：
+  - CPU：`registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v{version}`
+  - GPU：`registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_gpu:v{version}`
+- 手册列出的 OE 3.7.0 发布包为 `oe-package-3.7.0-s100-s600.tgz`，对应镜像标签 `v3.7.0`。其他版本须先从匹配的 `run_docker.sh` 或镜像仓库确认标签；不要擅自使用不同版本的镜像。`OE_VERSION` 保存为数字版本（例如 `3.7.0`）；如来源带 `v` 前缀，拼接标签前先去掉。
+- 旧配置中的 `openexplorer/ai_toolchain_ubuntu_22_j6_cpu` / `..._j6_gpu` 只作为历史兼容信息识别，不作为新环境默认镜像。镜像不可用时报告版本不匹配，不自动切换旧镜像。
 
 ### 4. 本地环境匹配检查
 
@@ -79,36 +82,34 @@ license: Apache-2.0
    - `hb_model_info --version`（或 `which hb_model_info`）
    - `hmct-debugger --version`（或 `which hmct-debugger`）
 
-根据检查结果判定执行模式：
+默认使用 Docker：
 
-- **全部匹配** → `EXECUTION_MODE=local`
-- **部分缺失或版本不匹配** → `EXECUTION_MODE=docker`，记录缺失项
+- `EXECUTION_MODE=docker`，记录本地缺失或不匹配项；运行时使用版本匹配的 S 系列镜像。
+- 只有用户明确要求本机执行，且本地 OE 包、Python 和组件版本均匹配时，才设 `EXECUTION_MODE=local`。
 
 ### 5. Docker 模式下的 GPU/CPU 判定
 
 当 `EXECUTION_MODE=docker` 时，需要确定使用 GPU 还是 CPU 镜像：
 
-1. **启动 GPU Docker 容器并测试 GPU 可用性**（注意 GPU 镜像 Entrypoint 为 `/bin/bash`，必须用 `--entrypoint` + `-c` 传命令）：
+1. **启动 GPU Docker 容器并测试 GPU 可用性**。显式指定 Bash 入口，不依赖未验证的镜像默认 Entrypoint：
    ```bash
-   docker run --rm --gpus all --entrypoint /bin/bash \
-     openexplorer/ai_toolchain_ubuntu_22_j6_gpu:{version} -c "nvidia-smi"
+   OE_VERSION=3.7.0
+   OE_VERSION_TAG="${OE_VERSION#v}"
+   GPU_IMAGE="registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_gpu:v${OE_VERSION_TAG}"
+   docker run --rm --gpus all --network none --read-only \
+     --tmpfs /tmp:rw,exec,nosuid,size=256m --entrypoint /bin/bash "$GPU_IMAGE" \
+     -lc 'nvidia-smi && python3 -c "import torch; print(torch.cuda.is_available())"'
    ```
 
-2. **检查 nvidia-smi 输出**：
-   - 能正常输出 GPU 信息 → `DOCKER_TYPE=gpu`
-   - 报错或无 GPU 设备 → `DOCKER_TYPE=cpu`
+2. **检查 GPU 与 CUDA 输出**：
+   - `nvidia-smi` 正常且 `torch.cuda.is_available()` 为 True → `DOCKER_TYPE=gpu`
+   - 任一检查失败 → `DOCKER_TYPE=cpu`；若用户要求 QAT，说明当前容器不能执行 GPU 训练
 
-3. **采集 GPU 详细信息**（仅当 GPU 可用时）：
+3. **采集 GPU 详细信息**（仅当上一步确认 GPU 可用时）：
    ```bash
-   docker run --rm --gpus all --entrypoint /bin/bash \
-     openexplorer/ai_toolchain_ubuntu_22_j6_gpu:{version} -c "python3 -c \"
-   import torch, json
-   info = {'cuda_version': torch.version.cuda, 'gpu_count': torch.cuda.device_count(), 'gpus': []}
-   for i in range(torch.cuda.device_count()):
-       p = torch.cuda.get_device_properties(i)
-       info['gpus'].append({'index': i, 'name': p.name, 'memory_gb': round(p.total_memory/1024**3,1), 'compute_capability': f'{p.major}.{p.minor}'})
-   print(json.dumps(info))
-   \""
+   docker run --rm --gpus all --network none --read-only \
+     --tmpfs /tmp:rw,exec,nosuid,size=256m --entrypoint /bin/bash "$GPU_IMAGE" \
+     -lc "python3 -c 'import torch, json; print(json.dumps({\"cuda_version\": torch.version.cuda, \"gpu_count\": torch.cuda.device_count(), \"cuda_available\": torch.cuda.is_available()}))'"
    ```
    将返回的 JSON 写入 `GPU_INFO` 字段。如果 PyTorch 无法识别 GPU（`cuda.is_available()=False`），则 `GPU_INFO` 设为空。
 
@@ -124,7 +125,7 @@ license: Apache-2.0
 
 # === OE 包基本信息 ===
 OE_DIR=<OE 包路径>
-OE_VERSION=<OE 版本号，如 3.9.0_rc4>
+OE_VERSION=<OE 数字版本号，如 3.7.0；不要包含 v 前缀>
 
 # === 组件版本 ===
 HORIZON_TC_UI_VERSION=<版本>
@@ -137,16 +138,16 @@ EXECUTION_MODE=<local | docker>
 
 # --- 以下仅在 EXECUTION_MODE=docker 时填写 ---
 DOCKER_TYPE=<gpu | cpu>
-DOCKER_IMAGE=openexplorer/ai_toolchain_ubuntu_22_j6_<gpu|cpu>:<version>
+DOCKER_IMAGE=registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_<gpu|cpu>:v<OE_VERSION>
 DOCKER_RUN_CMD=bash <OE_DIR>/run_docker.sh ./data
-DOCKER_EXEC_PREFIX=docker run --rm [--gpus all] --entrypoint /bin/bash <DOCKER_IMAGE> -c
+DOCKER_EXEC_PREFIX=docker run --rm [--gpus all] -v <OE_DIR>:/open_explorer --entrypoint /bin/bash <DOCKER_IMAGE> -lc
 MISSING_COMPONENTS=<缺失或不匹配的组件列表，逗号分隔>
 
 # --- 以下仅在 DOCKER_TYPE=gpu 时填写 ---
 GPU_INFO=<JSON: {"cuda_version":"...","gpu_count":N,"gpus":[{"index":0,"name":"...","memory_gb":...,"compute_capability":"..."},...]}>
 ```
 
-> **`DOCKER_EXEC_PREFIX` 说明**：GPU 镜像的 `Entrypoint` 为 `['/bin/bash']`，非交互式执行命令时如果直接 `docker run image cmd`，实际会执行 `/bin/bash cmd`（把 cmd 当脚本文件名），报 `cannot execute binary file`。必须用 `--entrypoint /bin/bash image -c "cmd"` 的方式。`DOCKER_EXEC_PREFIX` 已包含正确的 entrypoint 处理，子 Skill 直接拼接即可：`$DOCKER_EXEC_PREFIX "hb_compile ..."`。CPU 镜像无此问题，但统一使用 `DOCKER_EXEC_PREFIX` 可避免遗漏。
+> **`DOCKER_EXEC_PREFIX` 说明**：不要依赖未经验证的镜像默认 Entrypoint。执行非交互命令时显式使用 `--entrypoint /bin/bash <image> -lc "<命令>"`，并按任务挂载数据和工作目录。OE 3.7.0 CPU 镜像的 CLI help 已用该方式验证；GPU 镜像仍需在当前宿主机实测。
 
 - 后续任务直接读取此文件，无需重复检测
 - 如果 `EXECUTION_MODE=local`，不填写 Docker 相关字段
@@ -158,8 +159,9 @@ GPU_INFO=<JSON: {"cuda_version":"...","gpu_count":N,"gpus":[{"index":0,"name":".
 - **`local`** → 直接在当前环境执行 CLI 命令
 - **`docker`** → 读取 `DOCKER_EXEC_PREFIX`，拼接 CLI 命令：
   ```bash
-  # 非交互式单命令（推荐，直接拼 DOCKER_EXEC_PREFIX）
-  eval "$DOCKER_EXEC_PREFIX 'hb_compile --help'"
+  # 只读 CLI help 验证（OE 3.7.0 CPU 镜像已验证）
+  docker run --rm --network none --read-only --tmpfs /tmp:rw,exec,nosuid,size=256m \
+    --entrypoint /bin/bash "$DOCKER_IMAGE" -lc 'hb_compile --help'
 
   # 交互式（通过 run_docker.sh 启动 shell）
   bash <OE_DIR>/run_docker.sh ./data
@@ -167,7 +169,7 @@ GPU_INFO=<JSON: {"cuda_version":"...","gpu_count":N,"gpus":[{"index":0,"name":".
   # 手动 docker run
   docker run -it --rm \
     -v <OE_DIR>:/open_explorer \
-    -v ./dataset:/data/horizon_j6/data \
+    -v ./dataset:/data/oe/data \
     <DOCKER_IMAGE>
   ```
 
@@ -175,4 +177,4 @@ GPU_INFO=<JSON: {"cuda_version":"...","gpu_count":N,"gpus":[{"index":0,"name":".
 
 - OE 包版本决定了各组件的兼容版本，混用不同版本可能导致量化或编译失败
 - 如果用户更换了 OE 包或升级了组件，需要删除 `.drobotics-s/.env.oe-package` 重新检测
-- Docker 模式下，OE 包路径会自动挂载到容器内的 `/open_explorer`，命令中应使用容器内路径
+- 使用 `run_docker.sh` 时按脚本设置挂载 OE 包；直接 `docker run` 时必须显式挂载到 `/open_explorer`，命令中使用容器内路径
