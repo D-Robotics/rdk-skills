@@ -1,7 +1,7 @@
 ---
 name: oe-llm-package-install
 description: OE-LLM 包本地安装 Skill。在 oe-llm-package-detection 完成后触发，询问用户是否本地安装。若用户同意，则检测本地 Python / CUDA / PyTorch 版本，匹配 OE-LLM 包内 whl，创建 venv 全量安装，更新 .env 为 EXECUTION_MODE=local。
-version: 1.1.1
+version: 1.1.2
 license: Apache-2.0
 ---
 

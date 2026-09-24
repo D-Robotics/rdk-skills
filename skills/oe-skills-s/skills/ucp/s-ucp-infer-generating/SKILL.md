@@ -1,7 +1,7 @@
 ---
 name: s-ucp-infer-generating
 description: 提供基于 UCP 的模型推理 C++ 代码生成能力。当用户询问 UCP/DNN 推理接口怎么用、某个 API 的参数含义、如何加载模型、如何分配 tensor 内存、如何提交推理任务、Cache 同步怎么做，或要求只生成推理流程中某个模块的代码时使用。
-version: 1.1.1
+version: 1.1.2
 license: Apache-2.0
 ---
 

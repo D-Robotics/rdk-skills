@@ -1,7 +1,7 @@
 ---
 name: oe-package-detection
 description: 当用户明确选择本机 local 执行，或任务必须读取 OE 包内部资产时使用；普通 PTQ 的默认 Docker 缓存镜像探测不需要 OE_DIR 或 .env.oe-package。
-version: 1.1.1
+version: 1.1.2
 license: Apache-2.0
 ---
 
