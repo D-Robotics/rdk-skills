@@ -4,14 +4,15 @@
 
 ## Delegate 规则清单
 
-### 1. 精度分析 → `horizon-model-cosine-analyzer`
+### 1. 精度分析 → 按阶段路由到仓库内 Skill
 
 **触发关键词**：精度分析、cosine 掉点、consistency 不达标、逐层对比、定位精度问题、哪一层精度有问题
 
-**判定条件**：
-- 用户已完成 hb_verifier 运行，拿到了 cosine/consistency 结果，想进一步分析**根因**
-- 用户询问「为什么精度掉点」「哪一层导致掉点」「如何修复精度问题」
-- 需要进行逐层 cosine 对比、tensor 级别的数据分析
+**判定条件**：先确认精度差异出现在哪个阶段，再进入相应 Skill：
+- 普通浮点模型 PTQ 精度调优 → `s-hmct-cosine-similarity-tuning`
+- QAT/calibration 阶段的精度误差或训练问题 → `s-plugin-precision-tuning`
+- 训练侧正常、export/convert/compile/HBM 阶段才出现差异 → `s-plugin-consistency-debug`
+- hb_verifier 分阶段输出和中间 `.bc` 对比留在当前任务中完成；把日志、模型对和输入数据交给对应 Skill。
 
 **不 delegate 的情况**：
 - 用户只是需要运行 hb_verifier 命令 → 留在本 Skill 的 [task-board-deploy-verify.md](tasks/task-board-deploy-verify.md)
@@ -58,7 +59,7 @@
 
 用户同时关心精度和性能时：
 1. **先确认精度是否达标**：精度是前提条件
-2. 精度未达标 → 先走精度调优 [task-calibration-tuning.md](tasks/task-calibration-tuning.md) 或 delegate 到 `horizon-model-cosine-analyzer`
+2. 精度未达标 → PTQ 使用 `s-hmct-cosine-similarity-tuning`；QAT 训练/校准误差使用 `s-plugin-precision-tuning`；仅部署阶段掉点使用 `s-plugin-consistency-debug`
 3. 精度达标后 → 再分析性能
 
 ### 编译失败 + 精度问题

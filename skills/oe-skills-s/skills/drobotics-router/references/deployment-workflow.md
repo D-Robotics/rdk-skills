@@ -6,7 +6,7 @@
 
 ## PTQ 链路
 
-用户输入为 **ONNX 模型 + 校准数据**时走此链路。
+普通浮点模型部署默认先评估 PTQ。Caffe 可直接进入 PTQ；ONNX 按当前 OE 版本要求检查后进入 PTQ。PyTorch、TensorFlow 等模型可先导出 ONNX，再按 PTQ 流程处理。官方手册当前列出的 ONNX 范围为 opset 10–19、ir_version ≤ 9，实际执行仍需核对已安装 OE 版本。
 
 ```
 浮点模型校验 → 校准数据准备 → 量化（含精度调优） → 编译 → [数学等价性能优化] → HBM 精度验证 → UCP 部署代码生成
@@ -14,25 +14,12 @@
 
 ## QAT 链路
 
-用户输入为 **PyTorch 模型代码**（`.pt` / `.pth` + 模型定义）时走此链路。
+用户明确要求 QAT、插件适配或 `horizon_plugin_pytorch` API 时走此链路。若 PTQ 经支持性检查和精度调优仍达不到目标，可向用户说明差距并确认是否转 QAT。
 
 - "量化适配"在 D Robotics 工具链中特指 QAT 适配（horizon_plugin_pytorch），不等同于 PTQ
-- 唯一例外：用户给了 PyTorch 代码但**明确说"导出 ONNX 再量化"**，此时走 PTQ 路径
-- **QAT → PTQ 降级阻断检查**：当用户提供了 PyTorch 代码但 Agent 考虑走 PTQ 路径时，**必须**先完成以下检查并输出结果，否则禁止降级：
-
-  ```
-  QAT→PTQ 降级检查（全部必须验证后才能降级）：
-  □ 1. 用户是否明确要求"导出 ONNX 再量化"？ → [是/否]
-  □ 2. GPU 是否可用（torch.cuda.is_available()）？ → [是/否]
-       - 如果不可用：是否已尝试 GPU docker 容器方案？ → [是/否/N/A]
-  □ 3. 是否已尝试 QAT 适配（s-plugin-adaptation）？ → [是/否]
-       - 如果未尝试：理由是什么？ → [填写]
-  □ 4. 是否存在已有的 .bc 文件证明 QAT 已完成？ → [是/否]
-  ```
-
-  **只有当以下条件之一满足时才允许降级为 PTQ**：
-  - 问题 1 回答"是"（用户明确指示"导出 ONNX 再量化"）
-  - 或者：问题 2 已尝试 GPU docker 且仍不可用 + 问题 3 已尝试 QAT 且失败 + 向用户报告并得到确认
+- `.pt` / `.pth` 后缀本身不是选择 QAT 的依据。若项目中有模型定义、权重和导出所需输入信息，先评估导出 ONNX 并使用 PTQ。
+- 用户明确选择 QAT 时遵循该选择；普通部署中不得因模型复杂、GPU 情况或单次转换错误直接改为 QAT。
+- 若 PTQ 暂不可行，先核对 ONNX 导出条件、算子约束、预处理和校准集；缺少必要信息时询问用户。只有在说明 PTQ 失败或不适用的证据后，才提出 QAT 作为下一方案。
 
 ```
 浮点模型校验 → QAT 适配 → 导出 HBIR/BC → 编译 → [数学等价性能优化] → HBM 精度验证 → UCP 部署代码生成
@@ -90,14 +77,19 @@
      - **长时间运行的容器丢失 GPU hook**：Docker daemon 重启或 NVIDIA 驱动更新后，已运行的容器可能丢失 nvidia-container-runtime 注入的 GPU 设备映射。修复方法：**`docker restart <container>`**，重启后 nvidia hook 重新生效
   4. **切换到 OE GPU docker 容器**（推荐方案）：
      ```bash
+     # 用无 v 前缀的已安装 OE 包版本构造镜像标签；当前手册发布包版本为 3.7.0。
+     OE_VERSION=3.7.0
+     OE_VERSION_TAG="${OE_VERSION#v}"
+     GPU_IMAGE="registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_gpu:v${OE_VERSION_TAG}"
+
      docker run --rm --gpus all --shm-size="15g" --entrypoint /bin/bash \
-       -v $OE_DIR:/open_explorer \
+       -v "$OE_DIR:/open_explorer" \
        -v <数据目录>:/data \
        -v <工作目录>:/workspace \
-       openexplorer/ai_toolchain_ubuntu_22_j6_gpu:$OE_VERSION \
-       -c "python3 your_qat_script.py"
+       "$GPU_IMAGE" \
+       -lc "python3 your_qat_script.py"
      ```
-     容器内 `torch.cuda.is_available() = True`，`horizon_plugin_pytorch` / `hbdk4` / `hmct` 均可用
+     镜像标签必须和实际安装的 OE 包版本一致；如果版本值带 `v` 前缀，构造标签前先去掉，避免拼出 `vv3.7.0`。GPU 是否可用必须在当前宿主机与容器中实测：检查 `nvidia-smi`，并运行 `python3 -c "import torch; print(torch.cuda.is_available())"`。未实测前不要假定 `torch.cuda.is_available()` 为 True。
 - GPU 不可用时，应明确告知用户并建议切换到 GPU docker 容器，不可静默跳过校准/导出/编译步骤
 
 ### 6. 部署后可选：板端资源验证

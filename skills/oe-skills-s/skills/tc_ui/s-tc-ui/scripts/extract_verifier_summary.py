@@ -13,7 +13,9 @@
     cosine similarity 和 consistency 值，生成汇总表。
     低于阈值的项标红提示。
 
-    注意：本工具不做深度分析，深度分析请委托给 horizon-model-cosine-analyzer。
+    注意：本工具仅汇总 hb_verifier 输出。后续 PTQ、QAT/calibration 或部署阶段误差，
+    分别交给 s-hmct-cosine-similarity-tuning、s-plugin-precision-tuning 或
+    s-plugin-consistency-debug。
 
 输入：
     --input: hb_verifier 日志文件路径（必填）
@@ -357,7 +359,7 @@ def format_text(result: dict, use_color: bool = True) -> str:
 
     lines.append("")
     lines.append("注: 标 * 或 FAIL 的项低于设定阈值")
-    lines.append("注: 深度分析请使用 horizon-model-cosine-analyzer")
+    lines.append("注: 深度分析请按来源使用 s-hmct-cosine-similarity-tuning、s-plugin-precision-tuning 或 s-plugin-consistency-debug")
 
     return "\n".join(lines)
 

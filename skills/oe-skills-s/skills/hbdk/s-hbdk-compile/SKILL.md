@@ -1,7 +1,7 @@
 ---
 name: s-hbdk-compile
 description: 高级自定义 HBDK 编译工作流，使用仓库内 compile_model.py 与 YAML，主要处理 QAT qat.bc 和用户明确要求的自定义编译流程。普通浮点 ONNX/Caffe PTQ 默认使用 hb_config_generator + hb_compile -c；显式要求 HBDK API 时使用 hbdk-manual。Use when the user explicitly requests this custom workflow, has a QAT qat.bc requiring compilation, or needs its specialized input-source/report features after confirming the standard OE CLI path is insufficient.
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -542,7 +542,7 @@ python ~/.claude/skills/s-hbdk-compile/compile_model.py -c <config_path>
 | 不支持的模型格式 / 后缀 | 仅支持 `.onnx`、`.bc`，否则立即终止 |
 | `.bc` 无法 load | 提示可能与当前 hbdk4 版本不兼容，建议对齐导出工具链 |
 | `.bc` 为 quantized（含 `hbdk.target`） | 要求改用 **qat.bc**，本脚本从 QAT 产物开始 |
-| ONNX 无 `HzCalibration` | 要求确认是否为 horizon PTQ 导出 ONNX |
+| ONNX 无 `HzCalibration` | 要求确认是否为 D-Robotics OE PTQ 流程所需的已校准 ONNX |
 | 配置文件为空或格式错误 | 报错并提示用户检查配置 |
 | 检测到 CPU 算子 | 列出具体算子名，询问用户是否继续 |
 | 编译过程报错 | 分析错误，尝试自动修复或提示用户 |

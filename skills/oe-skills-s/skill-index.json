@@ -47,161 +47,161 @@
   },
   "paths": {
     "hb-analyzer-performance": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "horizon_tc_ui",
       "path": ".drobotics-s/skills/tc_ui/hb-analyzer-performance",
       "skillFile": ".drobotics-s/skills/tc_ui/hb-analyzer-performance/SKILL.md",
       "description": "使用 hb_analyzer 分析模型性能。当用户提到模型文件（.onnx/.bc/.hbm）并想了解性能、延时、带宽、BPU利用率、瓶颈、实测、对比时触发。常见场景：评测模型、检查性能、找瓶颈、板端测试、分析 perf JSON。关键词：\"性能\"、\"延时\"、\"带宽\"、\"BPU\"、\"瓶颈\"、\"太慢\"、\"实测\"、\"对比\"、\"评测\"、\"hb_analyzer\"。即使用户没明确说\"分析\"，只要提到模型+性能相关词就应该触发。"
     },
     "s-tc-ui": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "horizon_tc_ui",
       "path": ".drobotics-s/skills/tc_ui/s-tc-ui",
       "skillFile": ".drobotics-s/skills/tc_ui/s-tc-ui/SKILL.md",
-      "description": "OpenExplorer 工具链 CLI 包集成 Skill。普通浮点 ONNX/Caffe PTQ 优先使用 hb_config_generator 生成官方 YAML，再通过 hb_compile -c 编译；仅检查模型使用 hb_compile -m --march。也适用于 hb_model_info、hb_verifier、hb_analyzer、hb_eval_preprocess、HBIR/HBM、性能分析和板端部署验证。当用户提到工具链 CLI、PTQ YAML、模型编译/量化、HBM、march、fast-perf、模型检查、板端推理时使用本 Skill。"
+      "description": "OpenExplorer 工具链 CLI 包集成 Skill。普通浮点 ONNX/Caffe PTQ 优先使用 hb_config_generator 生成官方 YAML，再通过 hb_compile -c 编译；PyTorch 等模型先评估导出受支持的 ONNX。仅检查模型使用 hb_compile -m --march。也适用于 hb_model_info、hb_verifier、hb_analyzer、hb_eval_preprocess、HBIR/HBM、性能分析和板端部署验证。"
     },
     "hbdk-manual": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "hbdk",
       "path": ".drobotics-s/skills/hbdk/hbdk-manual",
       "skillFile": ".drobotics-s/skills/hbdk/hbdk-manual/SKILL.md",
       "description": "HBDK4模型编译工具的使用指南索引，按任务场景组织"
     },
     "s-hbdk-compile": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "hbdk",
       "path": ".drobotics-s/skills/hbdk/s-hbdk-compile",
       "skillFile": ".drobotics-s/skills/hbdk/s-hbdk-compile/SKILL.md",
       "description": "高级自定义 HBDK 编译工作流，使用仓库内 compile_model.py 与 YAML，主要处理 QAT qat.bc 和用户明确要求的自定义编译流程。普通浮点 ONNX/Caffe PTQ 默认使用 hb_config_generator + hb_compile -c；显式要求 HBDK API 时使用 hbdk-manual。Use when the user explicitly requests this custom workflow, has a QAT qat.bc requiring compilation, or needs its specialized input-source/report features after confirming the standard OE CLI path is insufficient."
     },
     "hmct-workflow": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "hmct",
       "path": ".drobotics-s/skills/hmct",
       "skillFile": ".drobotics-s/skills/hmct/SKILL.md",
-      "description": "HMCT 模型转换与 PTQ 量化总入口——普通浮点 ONNX/Caffe PTQ 优先使用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c；仅检查模型使用 hb_compile -m --march，不执行 PTQ。根据用户意图自动路由：(1) 提供校准数据 → 官方 YAML + hb_compile -c；(2) 只检查模型 → hb_compile -m；(3) 精度调优 → 转交 s-hmct-cosine-similarity-tuning；(4) 单项精度 debug → 调用 hmct-debugger CLI。关键词：HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity。"
+      "description": "HMCT 模型转换与 PTQ 量化总入口。普通浮点模型默认先评估 PTQ：Caffe 可直接进入 PTQ，PyTorch 等模型先导出受支持的 ONNX；优先用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c。仅检查模型使用 hb_compile -m --march，不执行 PTQ。按用户意图路由精度调优或 debugger。"
     },
     "s-hmct-cosine-similarity-tuning": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "hmct",
       "path": ".drobotics-s/skills/hmct/s-hmct-cosine-similarity-tuning",
       "skillFile": ".drobotics-s/skills/hmct/s-hmct-cosine-similarity-tuning/SKILL.md",
       "description": "HMCT PTQ 精度调优工作流。自动按 INT8→INT16→dual-int16→FP16 逐级验证上限，\n  结合节点敏感度分析渐进回退，找到满足 Cosine Similarity 阈值（默认 >=0.99）的\n  最小混精度 quant_config，产出达标配置与调优报告。\n  触发关键词：HMCT 精度调优、PTQ 调优、量化精度、cosine similarity 不达标、混合精度。"
     },
     "s-plugin-adaptation": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-adaptation",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-adaptation/SKILL.md",
-      "description": "为用户的浮点 PyTorch 模型适配地瓜机器人机器人公司的 QAT 工具 `horizon_plugin_pytorch`。这是一个编排型 skill，必须按固定顺序依次调用：`s-plugin-set-march` → `s-plugin-insert-quant-dequant` → `s-plugin-dynamic-block` → `s-plugin-prepare` → `s-plugin-set-fake-quantize`。"
+      "description": "用户明确要求 QAT 或 horizon_plugin_pytorch 时，为浮点 PyTorch 模型适配 D-Robotics QAT 工具。按固定顺序调用：s-plugin-set-march → s-plugin-insert-quant-dequant → s-plugin-dynamic-block → s-plugin-prepare → s-plugin-set-fake-quantize。普通浮点部署默认先评估 PTQ。"
     },
     "s-plugin-export": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-export",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-export/SKILL.md",
       "description": "使用 horizon_plugin_pytorch 的 hbdk4.export 将 QAT 模型导出为 HBIR IR 模块。以独立导出脚本的形式执行，不在训练或评测脚本中添加导出逻辑。"
     },
     "s-plugin-graph-diff": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-graph-diff",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-graph-diff/SKILL.md",
       "description": "对比两份 FX Graph 计算图文件，精确定位计算图结构和算子参数差异，并根据 diff 报告在原始模型代码中找到对应的差异位置。"
     },
     "s-plugin-hbdk-generating": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-hbdk-generating",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-hbdk-generating/SKILL.md",
-      "description": "为基础网络结构生成从量化到编译的完整流程代码（set_march → Quant/DeQuant → 量化配置 → prepare → 校准 → QAT → export → convert → remove_io_op → statistics → compile HBM）。当用户需要同时覆盖量化和编译多个步骤时触发，如\"帮我写量化编译全流程代码\"、\"Conv+BN+ReLU 量化部署\"、\"地瓜机器人量化编译\"、\"基础结构量化到 HBM\"。即使用户没有明确说\"全流程\"，只要涉及从量化到编译的多个步骤都应触发。如果用户只需要量化或只需要编译，应路由到对应子 skill。关键词：\"量化编译\"、\"量化部署\"、\"全流程\"、\"set_march 到 HBM\"、\"地瓜机器人量化\"、\"D Robotics 量化编译\"、\"基础结构量化\"、\"QAT 量化编译\"。"
+      "description": "用户明确要求 QAT 或 horizon_plugin_pytorch 插件代码时，为基础网络生成 QAT 到编译流程 (set_march → Quant/DeQuant → prepare → calibration/QAT → export → convert → compile HBM)。普通浮点 Caffe/ONNX 部署默认走 OE 标准 PTQ；PyTorch 模型优先评估导出 ONNX 后 PTQ。"
     },
     "s-plugin-model-check-result": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-model-check-result",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-model-check-result/SKILL.md",
       "description": "在 horizon_plugin_pytorch 量化配置检查中，读取并分析 prepare 产出的 model_check_result.txt，定位模型结构与 qconfig 问题（算子融合、共享模块、qconfig 异常、averaging_constant 非默认值、算子输入浮点检查）。"
     },
     "s-plugin-consistency-debug": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-consistency-debug",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-consistency-debug/SKILL.md",
       "description": "定位 D Robotics Plugin PyTorch 训练-部署一致性问题。当用户报告 QAT 模型训练侧精度正常，但 export/convert/compile/HBM 板端出现精度下降或掉点时触发。按 qat.pt → qat.export.pt → qat.bc → quantized.bc → hbm 分段定位，使用 QuantAnalysis 做逐层对比和敏感度分析。触发关键词：\"训练部署一致性\"、\"export 掉点\"、\"convert 掉点\"、\"compile 掉点\"、\"BC 精度偏差\"、\"HBM 掉点\"、\"板端精度下降\"、\"quantized.bc 不一致\"、\"pre_export 误差\"、\"一致性 debug\"。注意：仅处理训练侧正常但部署侧掉点；若 calibration/QAT 本身精度就不达标，应路由到 s-plugin-precision-tuning。bypass 模式下参见 bypass.md。"
     },
     "s-plugin-precision-tuning": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "plugin",
       "path": ".drobotics-s/skills/plugin/s-plugin-precision-tuning",
       "skillFile": ".drobotics-s/skills/plugin/s-plugin-precision-tuning/SKILL.md",
       "description": "floatvscalib debug 结果解读与量化误差分析（截断误差与舍入误差分类、逐算子误差归因、fix-scale 建议、compare_per_layer_out 分析）。也处理 D Robotics Plugin PyTorch 侧精度调优：calibration 后精度不达标、QAT 训练 loss 不收敛或精度崩溃、int8/int16/fp16 混合精度调优。聚焦 PyTorch 侧训练/校准精度，不处理 export/convert/compile 阶段的部署一致性问题。触发关键词：\"floatvscalib\"、\"debug 结果解读\"、\"截断误差\"、\"舍入误差\"、\"compare_per_layer_out\"、\"fixscale\"、\"fix-scale\"、\"calibration 精度\"、\"QAT 精度\"、\"校准掉点\"、\"QAT loss 不收敛\"、\"混合精度\"、\"int16\"、\"fp16\"、\"sensitivity\"、\"敏感度\"、\"QconfigSetter\"、\"FixedScaleObserver\"、\"HistogramObserver\"、\"精度调优\"。注意：若训练侧精度正常但 export/convert/compile/HBM 掉点，应路由到 s-plugin-consistency-debug。bypass 模式下参见 bypass.md。"
     },
     "s-ucp-hbm-infer": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "ucp",
       "path": ".drobotics-s/skills/ucp/s-ucp-hbm-infer",
       "skillFile": ".drobotics-s/skills/ucp/s-ucp-hbm-infer/SKILL.md",
       "description": "Generate X86-side Python client code for hbm_infer, the Python SDK that connects to BPU boards via gRPC to deploy and run HBM model inference. Use this skill when the user wants to write Python code using hbm_infer client APIs — including HbmRpcSession (standard/flexible mode), HTensor for transmission optimization, output_config for output filtering, and related utilities like get_input_info, get_output_info, get_profile, compress_option, core_id. Triggers on writing or debugging Python inference scripts, optimizing data transfer between X86 and board, or any question about the hbm_infer Python client API."
     },
     "s-ucp-infer-generating": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "ucp",
       "path": ".drobotics-s/skills/ucp/s-ucp-infer-generating",
       "skillFile": ".drobotics-s/skills/ucp/s-ucp-infer-generating/SKILL.md",
       "description": "提供基于 UCP 的模型推理 C++ 代码生成能力。当用户询问 UCP/DNN 推理接口怎么用、某个 API 的参数含义、如何加载模型、如何分配 tensor 内存、如何提交推理任务、Cache 同步怎么做，或要求只生成推理流程中某个模块的代码时使用。"
     },
     "s-ucp-perfetto-trace-analysis": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "ucp",
       "path": ".drobotics-s/skills/ucp/s-ucp-perfetto-trace-analysis",
       "skillFile": ".drobotics-s/skills/ucp/s-ucp-perfetto-trace-analysis/SKILL.md",
       "description": "Use this skill whenever the user wants to quickly locate, diagnose, or analyze likely performance bottlenecks in a UCP model inference Perfetto trace. Trigger on requests about UCP inference traces, `.pftrace` files, inference latency, slow inference, pipeline stalls, CPU/BPU gaps, OpInfer delays, dispatch or response delay, low effective occupancy, critical-path investigation, or trace-based performance triage in the UCP inference path. This skill is specialized for UCP / UCP-like inference-chain performance analysis and fast bottleneck localization, not generic Perfetto profiling unrelated to UCP inference."
     },
     "drobotics-router": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": null,
       "path": ".drobotics-s/skills/drobotics-router",
       "skillFile": ".drobotics-s/skills/drobotics-router/SKILL.md",
       "description": "OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 D Robotics 子 Skill。"
     },
     "board-detection": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": null,
       "path": ".drobotics-s/skills/drobotics-router/board-detection",
       "skillFile": ".drobotics-s/skills/drobotics-router/board-detection/SKILL.md",
       "description": "板卡硬件平台检测 Skill。当任务涉及板端运行、板端推理、远端 HBM、性能压测或 BPU 实测，且 .drobotics-s/.env.board 不存在或不完整时触发。自动完成板卡 IP 获取、SSH 架构探测、平台信息写入。"
     },
     "oe-package-detection": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": null,
       "path": ".drobotics-s/skills/drobotics-router/oe-package-detection",
       "skillFile": ".drobotics-s/skills/drobotics-router/oe-package-detection/SKILL.md",
-      "description": "OE 包环境检测 Skill。当任务涉及普通 PTQ/QAT 量化、编译、部署等工具链操作，且 .drobotics-s/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、GPU/CPU Docker 判定，并将结果写入 .env 文件。"
+      "description": "OE 包环境检测 Skill。当工具链任务进入且 .drobotics-s/.env.oe-package 不存在时触发。默认采用 Docker，检测 OE 包版本、匹配 S100/S600 镜像并识别 GPU/CPU 可用性；仅用户明确要求且本地环境匹配时选择 local。"
     },
     "oe-package-install": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": null,
       "path": ".drobotics-s/skills/drobotics-router/oe-package-install",
       "skillFile": ".drobotics-s/skills/drobotics-router/oe-package-install/SKILL.md",
       "description": "OE 包本地安装 Skill。在 oe-package-detection 完成后触发，询问用户是否本地安装。若用户同意，则检测本地 Python / CUDA / PyTorch 版本，匹配 OE 包内 whl，创建 venv 全量安装，更新 .env 为 EXECUTION_MODE=local。"
     },
     "s-ucp-model-perf-eval": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "ucp",
       "path": ".drobotics-s/skills/ucp/s-ucp-model-perf-eval",
       "skillFile": ".drobotics-s/skills/ucp/s-ucp-model-perf-eval/SKILL.md",
       "description": "自动化 hrt_model_exec perf 板端性能评测。触发条件：模型性能测试、benchmark、性能评估、板端测试、thread_num/core_id 参数扫描、吞吐量/延迟对比、远程部署 hrt_model_exec 运行 perf。"
     },
     "s-ucp-perfetto-trace-catcher": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "ucp",
       "path": ".drobotics-s/skills/ucp/s-ucp-perfetto-trace-catcher",
       "skillFile": ".drobotics-s/skills/ucp/s-ucp-perfetto-trace-catcher/SKILL.md",
       "description": "Capture UCP (D Robotics inference SDK) Perfetto traces from a development board. Use this skill whenever the user wants to grab UCP traces, capture Perfetto traces on a dev board, debug UCP scheduling issues with trace data, or pull .pftrace files from a remote board. Also trigger when the user mentions UCP performance analysis, UCP trace, hrt_model_exec tracing, or BPU trace capture on S100/S100P/S600 platforms. Do NOT use for DSP trace or Chrome trace."
     },
     "s-board-monitor": {
-      "version": "1.0.2",
+      "version": "1.1.0",
       "module": "ucp",
       "path": ".drobotics-s/skills/ucp/s-board-monitor",
       "skillFile": ".drobotics-s/skills/ucp/s-board-monitor/SKILL.md",

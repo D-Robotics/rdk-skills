@@ -99,7 +99,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/hmct",
-      "description": "HMCT 模型转换与 PTQ 量化总入口——对浮点 ONNX/Caffe 的标准 PTQ 流程优先使用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c。 根据用户意图自动路由： (1) 提供了校准数据 → 使用 hb_config_generator 生成官方 YAML 配置，再运行 hb_compile -c 执行标准 PTQ； (2) 未提供校准数据 → 使用 hb_compile -m --march 检查模型； (3) 用户希望进行精度调优 → 转交 s-hmct-cosine-similarity-tuning SKILL 执行多阶段调优； (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。 当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。\n",
+      "description": "HMCT 模型转换与 PTQ 量化总入口——对浮点 Caffe/ONNX，以及 PyTorch 等框架导出 ONNX 后的标准 PTQ，优先使用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c。 根据用户意图自动路由： (1) 提供了校准数据 → 使用 hb_config_generator 生成官方 YAML 配置，再运行 hb_compile -c 执行标准 PTQ；PyTorch .pt/.pth 默认先检查导出受支持 ONNX 的条件； (2) 未提供校准数据 → 使用 hb_compile -m --march 检查模型； (3) 用户希望进行精度调优 → 转交 s-hmct-cosine-similarity-tuning SKILL 执行多阶段调优； (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。 当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。\n",
       "install_type": "workspace",
       "name": "hmct-workflow",
       "pack": "OE Tool Chain (S)",
@@ -123,7 +123,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/drobotics-router/oe-package-detection",
-      "description": "OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .drobotics-s/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、GPU/CPU Docker 判定，并将结果写入 .env 文件。",
+      "description": "OE 包环境检测 Skill。当任务涉及量化、编译、部署等工具链操作，且 .drobotics-s/.env.oe-package 不存在时触发。自动完成 OE 包路径定位、版本采集、本地环境匹配检查、S 系列 GPU/CPU Docker 判定，并将结果写入 .env 文件。",
       "install_type": "workspace",
       "name": "oe-package-detection",
       "pack": "OE Tool Chain (S)",
@@ -443,7 +443,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/plugin/s-plugin-adaptation",
-      "description": "为用户的浮点 PyTorch 模型适配地瓜机器人机器人公司的 QAT 工具 `horizon_plugin_pytorch`。这是一个编排型 skill，必须按固定顺序依次调用：`s-plugin-set-march` → `s-plugin-insert-quant-dequant` → `s-plugin-dynamic-block` → `s-plugin-prepare` → `s-plugin-set-fake-quantize`。",
+      "description": "Use when the user explicitly asks to adapt a floating-point PyTorch model for D-Robotics QAT with `horizon_plugin_pytorch`, including the ordered preparation steps. Ordinary model deployment defaults to OE PTQ via ONNX when supported.",
       "install_type": "workspace",
       "name": "s-plugin-adaptation",
       "pack": "OE Tool Chain (S)",
@@ -483,7 +483,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating",
-      "description": "为基础网络结构生成从量化到编译的完整流程代码（set_march → Quant/DeQuant → 量化配置 → prepare → 校准 → QAT → export → convert → remove_io_op → statistics → compile HBM）。当用户需要同时覆盖量化和编译多个步骤时触发，如\"帮我写量化编译全流程代码\"、\"Conv+BN+ReLU 量化部署\"、\"地瓜机器人量化编译\"、\"基础结构量化到 HBM\"。即使用户没有明确说\"全流程\"，只要涉及从量化到编译的多个步骤都应触发。如果用户只需要量化或只需要编译，应路由到对应子 skill。关键词：\"量化编译\"、\"量化部署\"、\"全流程\"、\"set_march 到 HBM\"、\"地瓜机器人量化\"、\"D Robotics 量化编译\"、\"基础结构量化\"、\"QAT 量化编译\"。",
+      "description": "Use when the user explicitly asks for QAT or horizon_plugin_pytorch workflow code for a model structure, including calibration, optional QAT training, export, and HBM compilation. Ordinary floating-point deployment defaults to the official OE PTQ flow through ONNX; do not trigger this skill solely because a task spans quantization and compilation.",
       "install_type": "workspace",
       "name": "s-plugin-hbdk-generating",
       "pack": "OE Tool Chain (S)",
@@ -523,7 +523,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-s/skills/plugin/s-plugin-hbdk-generating/s-plugin-quantization",
-      "description": "为基础网络结构生成量化流程代码（set_march → 插入 Quant/DeQuant → 配置量化参数 → prepare → 校准 → QAT 训练）。务必在用户提到模型量化、量化流程、QAT 校准、D Robotics 量化适配、HistogramObserver/MinMaxObserver 配置、量化参数配置、校准训练、QuantStub 插入时触发此 skill，即使用户只问其中一个步骤，只要涉及 D Robotics 量化流程的任何环节都应触发。",
+      "description": "Use when the user explicitly requests QAT or horizon_plugin_pytorch calibration/training code for a custom PyTorch model, including QuantStub/DeQuantStub, prepare, observers, or fake-quant state. Ordinary floating-point deployment and PTQ requests use the official OE PTQ workflow instead.",
       "install_type": "workspace",
       "name": "s-plugin-quantization",
       "pack": "OE Tool Chain (S)",

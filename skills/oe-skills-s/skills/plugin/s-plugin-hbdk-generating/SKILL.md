@@ -1,7 +1,7 @@
 ---
 name: s-plugin-hbdk-generating
-description: 为基础网络结构生成从量化到编译的完整流程代码（set_march → Quant/DeQuant → 量化配置 → prepare → 校准 → QAT → export → convert → remove_io_op → statistics → compile HBM）。当用户需要同时覆盖量化和编译多个步骤时触发，如"帮我写量化编译全流程代码"、"Conv+BN+ReLU 量化部署"、"地瓜机器人量化编译"、"基础结构量化到 HBM"。即使用户没有明确说"全流程"，只要涉及从量化到编译的多个步骤都应触发。如果用户只需要量化或只需要编译，应路由到对应子 skill。关键词："量化编译"、"量化部署"、"全流程"、"set_march 到 HBM"、"地瓜机器人量化"、"D Robotics 量化编译"、"基础结构量化"、"QAT 量化编译"。
-version: 1.0.2
+description: Use when the user explicitly asks for QAT or horizon_plugin_pytorch workflow code for a model structure, including calibration, optional QAT training, export, and HBM compilation. Ordinary floating-point deployment defaults to the official OE PTQ flow through ONNX; do not trigger this skill solely because a task spans quantization and compilation.
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -9,7 +9,7 @@ license: Apache-2.0
 
 ## 目标
 
-根据用户提供的浮点模型结构，生成一份完整的量化编译全流程代码，从 `set_march` 到最终编译 HBM。
+根据用户明确要求的 QAT / `horizon_plugin_pytorch` 流程和浮点模型结构，生成从 `set_march` 到最终编译 HBM 的代码。普通浮点模型部署默认先评估 OE 官方 PTQ；不要因请求跨越量化和编译阶段就自动选择本 Skill。
 
 本 Skill 是编排型 skill，负责按固定顺序调用两个子 skill，不直接实现具体逻辑。
 
@@ -83,9 +83,10 @@ license: Apache-2.0
 ### 第一步：确认是否是完整量化编译需求
 
 符合以下描述时，应触发本 Skill：
-- "帮我生成量化编译全流程代码"
-- "基础结构量化部署"
-- "Conv+BN+ReLU+Linear 量化编译"
+- 用户明确要求使用 QAT / `horizon_plugin_pytorch` 生成流程代码
+- 用户明确要求对自定义 PyTorch 结构插入量化节点、执行校准或 QAT 训练，再导出并编译
+
+仅提到普通浮点模型量化或部署时，不触发本 Skill；默认先检查是否可导出受支持的 ONNX 并走 `hmct-workflow` / `s-tc-ui` 的标准 PTQ 流程。
 
 如果用户只需要量化（不编译），或只需要编译（已有 QAT BC），则直接调用对应子 skill。
 

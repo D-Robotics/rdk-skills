@@ -1,7 +1,7 @@
 #!/bin/bash
 # OE 包本地安装脚本
 # 用法: bash .drobotics-s/skills/drobotics-router/oe-package-install/install.sh <OE_DIR>
-# 示例: bash .drobotics-s/skills/drobotics-router/oe-package-install/install.sh /mnt/oe-cli-test/horizon_j6_open_explorer_v3.9.0_rc4-py310_20260326
+# 示例: bash .drobotics-s/skills/drobotics-router/oe-package-install/install.sh /path/to/extracted/oe-package-3.7.0-s100-s600
 set -euo pipefail
 
 # ============================================================

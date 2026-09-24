@@ -1,7 +1,7 @@
 ---
 name: drobotics-router
 description: OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 D Robotics 子 Skill。
-version: 1.0.2
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -227,7 +227,7 @@ SKILL.md 中可能包含特定场景的执行框架、参考文档加载指令�
 ### 路由原则
 
 - 用户请求通常落在流程中的某个阶段，先定位到阶段再路由到对应 Skill
-- 跨多个连续阶段的需求，优先用编排型 Skill（`s-plugin-hbdk-generating`、`s-plugin-adaptation`），不要拆成多个零散 Skill
+- 跨多个连续阶段的需求，先按量化方法选流程：普通浮点模型部署优先走 OE 标准 PTQ；仅在用户明确选择 QAT 或确认 PTQ 不适用时，才用 `s-plugin-hbdk-generating`、`s-plugin-adaptation` 编排插件流程
 - 能明确命中具体 Skill 时，尽快切换，不要停留在本 Skill 中重复解释
 
 ### ⚠️ 易混淆路由对照表
@@ -245,31 +245,15 @@ SKILL.md 中可能包含特定场景的执行框架、参考文档加载指令�
 
 ### 量化路径判定门禁（必须执行）
 
-当用户需求涉及量化或部署时，在加载任何子 Skill 之前，**必须**完成以下判定并输出结论：
+当用户需求涉及浮点模型量化或部署时，在加载子 Skill 前按以下默认路径判定。D-Robotics OE S 系列手册明确推荐先试 PTQ；PTQ 无法满足需求时，再评估 QAT。来源见 `references/oe-s-official-docs.md`。
 
-```
-量化路径判定：
-1. 用户输入类型：ONNX / PyTorch / 未明确？
-   → [填写]
-2. 用户是否明确说"导出 ONNX 再量化"？
-   → [填写]
-3. 判定结果：PTQ 路径 / QAT 路径
-   → [填写]
-4. 如果判定为 PTQ 路径且用户输入是 PyTorch：
-   → 必须有用户明确指示才能走 PTQ，否则 STOP 并向用户确认
-```
+1. **普通浮点 Caffe / ONNX**：默认 PTQ。Caffe 可直接进入 PTQ；ONNX 先核对当前 OE 版本支持范围、输入信息和算子约束，再用校准数据转换。
+2. **PyTorch `.pt` / `.pth`**：不因文件后缀自动选 QAT。先检查是否有模型定义、权重和输入样例可用于导出 ONNX；导出结果符合当前 OE 支持范围时，默认进入 PTQ。D-Robotics 手册当前列出的 ONNX 范围为 opset 10–19、ir_version ≤ 9。
+3. **明确 QAT 请求**：用户明确要求量化感知训练、插件适配或 `horizon_plugin_pytorch` API 时，进入 QAT Skill。
+4. **PTQ 不适用或精度未达标**：先按当前 OE 手册排查 ONNX 合法性、算子约束、预处理和校准数据，再做 PTQ 精度分析/调优。仍不能满足目标时，说明原因并与用户确认是否改走 QAT；不得仅因输入是 PyTorch、模型复杂或某次转换失败就自动启动训练。
+5. **只要求检查模型**：使用当前版本文档支持的模型检查命令。检查通过不代表 PTQ 已完成，也不代表已生成 HBM。
 
-**判定规则**：
-- 用户提供 `.onnx` 文件 → PTQ
-- 用户提供 `.pt/.pth` + 模型代码，且未说"导出 ONNX" → QAT
-- 用户提供 `.pt/.pth` 但明确说"导出 ONNX 再量化" → PTQ（需引用用户原话）
-- 不确定 → 向用户询问，不要自行决定
-
-**⛔ 不可绕过的硬门禁**：当判定为 QAT 时，**禁止**因为以下原因降级为 PTQ：
-- GPU 不可用 → 应路由到 GPU docker 容器方案（见 `references/deployment-workflow.md` §5）
-- 模型复杂度高 → 应尝试 QAT，遇到困难时向用户报告阻塞原因
-- 已有 ONNX 导出 → 仍需走 QAT 链路的 `.bc` 导出
-- HMCT histogram 校准崩溃 → 应修复或报告，不应改用其他校准方法 + PTQ
+**判定优先级**：用户明确指定 QAT 时遵循其选择；其他常规浮点模型部署请求先评估 PTQ。只有导出/校准等所需信息确实缺失且无法从项目中确认时才询问用户。
 
 ### ⛔ 路由后强制读取门禁
 

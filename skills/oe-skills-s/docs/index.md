@@ -1,7 +1,8 @@
 # OpenExplorer 代码仓库索引 (oe-mcp)
 
 > 本文件为 oe-mcp `search_code` 的路由入口。根据用户意图中的关键词，定位到对应仓库的详细索引文件。
-> 版本: S OpenExplorer v3.9.0 RC4 | BPU: Nash 系列 (NASH_B / NASH_P / NASH_E)
+> 本地组件索引是特定 OE 包快照，组件版本不代表当前在线稳定手册的版本。当前在线手册列出的发布包是 `oe-package-3.7.0-s100-s600.tgz`；命令和 API 以安装包版本及对应手册为准。PTQ/QAT 默认路径参见 [OE S 官方手册依据](../skills/drobotics-router/references/oe-s-official-docs.md)。
+> 本地组件快照标识：S OpenExplorer v3.9.0 RC4 | BPU: Nash 系列 (NASH_B / NASH_P / NASH_E)
 
 ## 仓库总览
 

@@ -1,7 +1,7 @@
 ---
 name: s-plugin-quantization
-description: 为基础网络结构生成量化流程代码（set_march → 插入 Quant/DeQuant → 配置量化参数 → prepare → 校准 → QAT 训练）。务必在用户提到模型量化、量化流程、QAT 校准、D Robotics 量化适配、HistogramObserver/MinMaxObserver 配置、量化参数配置、校准训练、QuantStub 插入时触发此 skill，即使用户只问其中一个步骤，只要涉及 D Robotics 量化流程的任何环节都应触发。
-version: 1.0.2
+description: Use when the user explicitly requests QAT or horizon_plugin_pytorch calibration/training code for a custom PyTorch model, including QuantStub/DeQuantStub, prepare, observers, or fake-quant state. Ordinary floating-point deployment and PTQ requests use the official OE PTQ workflow instead.
+version: 1.1.0
 license: Apache-2.0
 ---
 
@@ -10,6 +10,8 @@ license: Apache-2.0
 ## 目标
 
 根据用户提供的浮点模型结构，生成量化流程代码，从 `set_march` 到 QAT 训练完成。生成后的代码可直接运行（在正确安装了 `horizon_plugin_pytorch` 和 `hbdk4` 的环境中）。
+
+此处的 plugin Calibration 是插件流程中的校准阶段，不等同于 OE 标准 PTQ。普通浮点部署默认先将模型导出为受支持的 ONNX 并进入 `hmct-workflow` / `s-tc-ui`。
 
 本 Skill 覆盖的流程：
 
