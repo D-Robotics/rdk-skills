@@ -619,7 +619,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-x5/skills/x5-bpu-python-api",
-      "description": "在 X5 板端使用 hbm_runtime.HB_HBMRuntime 加载 .bin、读取模型 I/O 并执行本地 Python 推理；当系统 /etc/version 不低于 3.5.0 且已有匹配 X5 libdnn 的本地 wheel/DEB 时使用。禁止安装 PyPI 同名 S 系列包，也不处理 C++ Runtime、.hbm 或 hbm_infer gRPC。",
+      "description": "在 X5 板端使用 hbm_runtime.HB_HBMRuntime 加载 .bin、读取模型 I/O 并执行本地 Python 推理；先通过官方 MCP 页面确认当前板端版本受支持，再检查匹配的 X5 libdnn wheel/DEB。禁止安装 PyPI 同名 S 系列包，也不处理 C++ Runtime、.hbm 或 hbm_infer gRPC。",
       "install_type": "workspace",
       "name": "x5-bpu-python-api",
       "pack": "OE Tool Chain (X5)",
@@ -651,7 +651,7 @@
     },
     {
       "catalog_path": "skills/oe-skills-x5/skills/x5-environment-probe",
-      "description": "只读探测 X5 手册、OE Docker/host 工具链、Plugin、Runtime、Python 和可选板端事实并生成 environment.json；当执行任何 X5 工作流前环境未知、版本不明或需要 ready/degraded/blocked 结论时使用。不得安装、升级或修改设备。",
+      "description": "只读探测 X5 OE Docker/host 工具链、Plugin、Runtime、Python 和可选板端事实并生成 environment.json；当执行任何 X5 工作流前环境未知、版本不明或需要 ready/degraded/blocked 结论时使用。不得安装、升级或修改设备。",
       "install_type": "workspace",
       "name": "x5-environment-probe",
       "pack": "OE Tool Chain (X5)",

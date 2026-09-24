@@ -10,13 +10,13 @@
 
 ## 兼容性与资料
 
-- **平台运行合同版本**：`2.0.0`（独立于源码发布版本 `1.1.0`）。
-- **工具链基线**：X5 `OE Mapper v1.2.8 / Python 3.10` 与匹配的 Runtime SDK。
+- **平台运行合同版本**：`2.0.0`（独立于源码发布版本 `1.1.1`）。
+- **工具链基线**：以实际容器/板端探测到的版本为准；命令、API、版本兼容性和支持边界须按本地 `manual-map.md` 的 MCP 合同检索并读取官方正文，不把索引中的版本标签或离线包版本当成证据。
 - **开发环境**：OE 官方强烈建议使用 Docker。默认验证 X5 OE image；仅在用户明确选择 `--execution-mode host`（或设置 `OE_DROBOTICS_EXECUTION_MODE=host`）后使用 host 工具链。
 - **量化默认**：未指定量化方法且已有 ONNX/Caffe 浮点模型时先试 PTQ；仅在用户明确要求或 PTQ 评测证明无法达到目标时考虑 QAT。
 - **PTQ march**：CLI/YAML 必须是 `bayes-e`。
 - **QAT march**：Python API 必须是 `March.BAYES_E`。`March.BAYES` 对应 J5，不得用于 X5。
-- **本地手册**：`OE_DROBOTICS_DOC_ROOT` → `OE_X_SERIES_DOC_ROOT` → Pack/工作区相对发现。禁止把维护者机器的绝对路径作为发布后的唯一默认值。
+- **官方资料**：X5 OE 通过 `mcp__rdk_docs__search_docs(manual="oe-x5", source="docs")` 检索，再用 `mcp__rdk_docs__get_page` 读取官方正文；板端 X5 Python API 通过 `manual="rdk-x"` 核验。缺少离线手册不影响环境探测的 `ready` 状态。
 - **固定发布物**：SDK、文档、Docker 镜像和离线制品以 [离线制品交付指南](../../../docs/offline-artifact-delivery.md) 为准。下载、镜像导入和在线拉取前必须取得明确确认。
 - **详细兼容矩阵**：执行前读取 [compatibility.md](policies/compatibility.md)。
 - **官方环境依据**：[OE X5 环境部署](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/env_install/env_deploy.html)；[PTQ/QAT 简介](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/faststart/ptq_qat_overview.html)。
@@ -25,12 +25,12 @@
 
 | 阶段 | 必需输入 | 前置检查 | 缺失时处理 |
 | --- | --- | --- | --- |
-| 环境探测 | 发布包/容器位置、Python、目标工作流 | 真实命令、包版本、文档根 | 输出 `degraded` 或 `blocked`，不安装 |
+| 环境探测 | 发布包/容器位置、Python、目标工作流 | 真实命令、包版本；具体手册事实由 workflow 使用 MCP 核验 | 输出 `degraded` 或 `blocked`，不安装 |
 | 环境安装 | 已审阅安装计划、制品来源、目标环境 | 环境快照、风险与回滚 | 未确认时只输出计划 |
 | PTQ | ONNX 或 Caffe + `.prototxt`、输入合同、校准数据或 `skip`、输出目录 | `hb_mapper checker`、`march=bayes-e` | 停在预检，不生成猜测配置 |
 | QAT | 可训练模型、训练/验证数据、浮点基线、Plugin/PyTorch 版本 | `March.BAYES_E`、可复现训练环境 | 不满足时保持 `blocked` |
 | Runtime C/C++ | 已验证的目标 Runtime 模型、I/O 合同、开发板/SDK 信息 | 模型格式与 Runtime 兼容性、板端可达性 | 不上传、不覆盖板端文件 |
-| Runtime Python | X5 `.bin`、`/etc/version >= 3.5.0`、匹配 wheel/DEB | Python ABI、包来源、`libdnn` | 不混装 S 系列包 |
+| Runtime Python | X5 `.bin`、板端 `/etc/version`、匹配 wheel/DEB | 使用 MCP 官方页面确认版本范围；若版本正好为 3.5.0，还需目标板包来源与实际 import 证据 | 证据不足时保持 `blocked`；不混装 S 系列包 |
 | 诊断 | 环境快照、失败收据、模型/配置、完整日志、可复现输入 | 证据完整性与失败阶段 | 只读分析并列出最小补充项 |
 
 ## 全局完成标准
@@ -102,6 +102,7 @@
 ## Pack 资产
 
 - `skill-index.json`：X5 V2 唯一合同；全局索引是兼容聚合视图。
+- `.drobotics-x5/release-artifacts.json`：X5 固定版本交付清单；`.drobotics-x5/scripts/release_artifacts.py` 只读取该清单并渲染命令。
 - `schemas/`：8 个 JSON Schema，覆盖环境、路由、计划、运行状态、产物、验证、收据和 PTQ 配置。
 - `references/`：运行合同、手册映射与能力边界。
 - `scripts/`：7 个可执行脚本，覆盖状态收据、环境探测、PTQ 配置与执行、QAT 目标检查和板端状态解析。

@@ -1,7 +1,7 @@
 ---
 name: x5-qat-adaptation
 description: 将浮点 PyTorch 模型适配为 X5 Plugin QAT 模型；当需要设置 March.BAYES_E、量化边界、可量化算子、prepare 和 fake-quant 状态入口时使用。只处理 horizon_plugin_pytorch，不处理 HAT 或 J5 March.BAYES。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -54,5 +54,6 @@ python .drobotics-x5/platforms/x5/scripts/check_qat_target.py \
 
 ## 按需参考
 
-- `_sources/plugin/source/user_guide/float_model_requirements.md.txt`
-- `_sources/plugin/source/terminology/terminology.md.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 Plugin float model requirements March BAYES_E")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

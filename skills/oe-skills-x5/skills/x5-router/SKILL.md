@@ -1,7 +1,7 @@
 ---
 name: x5-router
 description: 路由 X5 OE 环境、PTQ、Plugin QAT、Runtime、板端 Python 和诊断请求；通用量化默认优先 PTQ，只有明确要求 QAT 或 PTQ 评测确认无法达到目标时才进入 QAT；不执行 HAT、X3 或 S 系列工作流。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

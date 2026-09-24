@@ -2,7 +2,7 @@
 
 ## Description:
 
-Read-only probe of X5 manuals, OE Mapper, Plugin, Runtime, Python and optional board-side facts; emits environment.json with a ready/degraded/blocked verdict.
+Read-only probe of X5 OE Mapper, Plugin, Runtime, Python and optional board-side facts; emits environment.json with a ready/degraded/blocked verdict. It does not inspect or require local manuals.
 
 This skill is ready for commercial/non-commercial use.
 
@@ -25,7 +25,7 @@ Global
 ## Known Risks and Mitigations:
 
 Risk: 将 HAT 可见误判为 HAT 在范围内，导致后续工作流错误调用 HAT 工具。
-Mitigation: 手册基线明确为 OE Mapper v1.2.8 / Python 3.10；HAT 可见不等于 HAT 在范围内，探测结果中标注 HAT 为 out-of-scope。
+Mitigation: probe 不判断手册或 API 的官方支持性；具体工具链事实必须通过 MCP 读取官方页面。HAT 可见不等于 HAT 在范围内，探测结果中标注 HAT 为 out-of-scope。
 
 ## Reference(s):
 

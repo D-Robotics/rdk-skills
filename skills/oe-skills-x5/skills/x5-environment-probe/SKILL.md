@@ -1,7 +1,7 @@
 ---
 name: x5-environment-probe
-description: 只读探测 X5 手册、OE Docker/host 工具链、Plugin、Runtime、Python 和可选板端事实并生成 environment.json；当执行任何 X5 工作流前环境未知、版本不明或需要 ready/degraded/blocked 结论时使用。不得安装、升级或修改设备。
-version: 1.1.0
+description: 只读探测 X5 OE Docker/host 工具链、Plugin、Runtime、Python 和可选板端事实并生成 environment.json；当执行任何 X5 工作流前环境未知、版本不明或需要 ready/degraded/blocked 结论时使用。不得安装、升级或修改设备。
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -9,19 +9,18 @@ license: Apache-2.0
 
 ## 目标与边界
 
-记录真实环境事实，不修复环境。手册基线是 `OE Mapper v1.2.8 / Python 3.10`；OE 官方强烈建议 Docker，X5 OE Mapper 应优先检查已配置的 Docker image。HAT 可见不代表 HAT 在范围内。
+记录真实环境事实，不修复环境。OE 官方强烈建议 Docker，X5 OE Mapper 应优先检查已配置的 Docker image。探测器不查询或检查文档目录；HAT 可见不代表 HAT 在范围内。
 
 ## 输入合同
 
 - `--workflow environment|ptq|qat|runtime|python-api|diagnose`。
-- 可选文档根、板卡型号、`/etc/version`、架构与可达性事实。
+- 可选的旧版 `--docs-root`（兼容参数，会忽略）、板卡型号、`/etc/version`、架构与可达性事实。
 - 输出路径，通常是运行目录的 `environment.json`。
 - 可选 `--docker-image <本地 X5 OE image>`；也可设置 `OE_DROBOTICS_DOCKER_IMAGE`。PTQ 使用匹配版本的 CPU image，例如 `openexplorer/ai_toolchain_ubuntu_20_x5_cpu:<version>`；QAT 使用 GPU image，例如 `registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_20_x5_gpu:<version>`。
 - 默认执行模式为 Docker；只有用户明确选择 `--execution-mode host`（或设置 `OE_DROBOTICS_EXECUTION_MODE=host`）时才检查并使用宿主机工具链。
 
 ## 前置检查
 
-- 文档解析优先级：显式路径 → `OE_DROBOTICS_DOC_ROOT` → `OE_X_SERIES_DOC_ROOT` → 工作区相对发现。
 - 板卡事实必须来自实际命令或用户提供的可审计证据。
 
 ## 执行步骤
@@ -52,9 +51,9 @@ Runtime/Python 请求如需板端事实，追加 `--board-chip X5 --board-archit
 
 ## 产物与完成标准
 
-- `ready`：目标工作流的必需工具、手册和板端条件齐全。
+- `ready`：目标工作流所需工具和已声明的板端条件齐全；这不表示已执行官方文档核验。
 - `degraded`：缺少可选能力，但能安全进入有限工作流。
-- `blocked`：缺少必需工具、手册、版本、板端或芯片事实。
+- `blocked`：缺少必需工具、版本输入、板端或芯片事实。
 - 快照通过 `environment.schema.json` 校验并明确 `hat_in_scope: false`。
 
 ## 风险与确认
@@ -72,4 +71,5 @@ Runtime/Python 请求如需板端事实，追加 `--board-chip X5 --board-archit
 
 - `.drobotics-x5/platforms/x5/schemas/environment.schema.json`
 - `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 具体命令、API 与版本支持按 `.drobotics-x5/docs/local-document-retrieval.md` 的官方 MCP 合同核验
 - [OE X5 官方环境部署手册](https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/env_install/env_deploy.html)

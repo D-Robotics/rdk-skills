@@ -1,7 +1,7 @@
 ---
 name: x5-runtime-perf-eval
 description: 在 X5 板端评测模型延时、吞吐和稳定性；当功能正确性已通过，需要使用 hrt_model_exec 或 ai_benchmark 得到可复现性能报告时使用。先读本地工具参数，不猜命令；不修改频率或停止业务进程而未确认。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -20,7 +20,7 @@ license: Apache-2.0
 ## 前置检查
 
 1. 确认板卡空闲程度、温度、频率和电源模式可记录。
-2. 从 `_sources/runtime/source/tool_introduction/hrt_model_exec.rst.txt` 读取当前版本参数。
+2. 先通过官方 MCP 检索 X5 `hrt_model_exec` 并调用 `get_page` 读取正文，再按当前版本参数执行。
 3. 固定输入、后处理范围和计时边界；不同方案必须使用同一口径。
 
 ## 执行步骤
@@ -47,5 +47,6 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `_sources/runtime/source/tool_introduction/hrt_model_exec.rst.txt`
-- `_sources/runtime/source/ai_benchmark/ai_benchmark.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 hrt_model_exec ai_benchmark performance")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

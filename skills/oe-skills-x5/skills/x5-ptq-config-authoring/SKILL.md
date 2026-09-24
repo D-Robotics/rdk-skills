@@ -1,7 +1,7 @@
 ---
 name: x5-ptq-config-authoring
 description: 生成并机器校验 X5 OE Mapper PTQ YAML；当模型预检通过、输入和校准合同已明确，需要得到 march=bayes-e 的可审阅配置时使用。拒绝 Plugin load/QAT 混用、HAT 和 S 系列字段。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -37,7 +37,7 @@ python .drobotics-x5/platforms/x5/scripts/validate_ptq_config.py \
   <x5.yaml> --check-paths --report <config-report.json>
 ~~~
 
-以 `assets/ptq/` 模板审阅参数组，但不要直接使用占位路径。高级字段必须能追溯到本地手册。
+以 `assets/ptq/` 模板审阅参数组，但不要直接使用占位路径。高级字段必须在生成或执行前通过官方文档 MCP 搜索并读取对应 X5 手册正文确认。
 
 ## 产物与完成标准
 
@@ -55,5 +55,6 @@ python .drobotics-x5/platforms/x5/scripts/validate_ptq_config.py \
 
 ## 按需参考
 
-- `.drobotics-x5/platforms/x5/schemas/ptq-config.schema.json`
-- `_sources/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_makertbin.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 PTQ YAML hb_mapper makertbin parameters")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

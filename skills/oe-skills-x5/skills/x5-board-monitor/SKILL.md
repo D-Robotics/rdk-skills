@@ -1,7 +1,7 @@
 ---
 name: x5-board-monitor
 description: 采集并解析 X5 hrut_somstatus、温度、CPU/BPU/DDR/GPU 频率、BPU ratio 和 dmesg 证据；当需要建立板端资源快照或关联性能异常时使用。默认只读和有界采样，不调频、不清日志、不循环到手工终止。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -49,4 +49,6 @@ python .drobotics-x5/platforms/x5/scripts/parse_somstatus.py \
 
 ## 按需参考
 
-- `_sources/runtime/source/tool_introduction/auxiliary_tool.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 hrut_somstatus auxiliary tools board monitoring")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

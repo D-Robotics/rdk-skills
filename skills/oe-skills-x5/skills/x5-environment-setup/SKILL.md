@@ -1,7 +1,7 @@
 ---
 name: x5-environment-setup
 description: 编排 X5 工具链环境探测和经确认的安装；当用户希望准备 OE Mapper、Plugin、Runtime 或板端 Python 环境时使用。先只读探测，再生成安装计划，只有明确授权后才交给 x5-environment-install；不安装 HAT。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 

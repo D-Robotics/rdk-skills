@@ -6,7 +6,6 @@
     "entry_skill": "x5-router",
     "runtime_roots": ["<PROJECT_ROOT>/.drobotics-x5"],
     "platform": "X5",
-    "manual_baseline": "OE Mapper v1.2.8 / Python 3.10",
     "excluded_capabilities": ["HAT", "X3", "S-series workflows"]
   },
   "routing_policy": {
@@ -110,7 +109,7 @@
       "risk": "low",
       "requires": ["hb_mapper"],
       "handoffs": ["x5-ptq-config-authoring", "x5-model-diagnostics"],
-      "resources": {"references": ["_sources/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_checker.rst.txt"], "scripts": ["platforms/x5/scripts/run_ptq.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_checker.html"], "scripts": ["platforms/x5/scripts/run_ptq.py"]},
       "eval_tags": ["preflight", "failure"]
     },
     {
@@ -123,7 +122,7 @@
       "risk": "medium",
       "requires": ["input-contract"],
       "handoffs": ["x5-ptq-config-authoring", "x5-accuracy-diagnostics"],
-      "resources": {"references": ["_sources/oe_mapper/source/ptq/ptq_usage/prepare_calibration_data.rst.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_usage/prepare_calibration_data.html"], "scripts": []},
       "eval_tags": ["happy-path", "preflight"]
     },
     {
@@ -136,7 +135,7 @@
       "risk": "medium",
       "requires": ["model-preflight"],
       "handoffs": ["x5-ptq-compile"],
-      "resources": {"references": ["_sources/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_makertbin.rst.txt"], "scripts": ["platforms/x5/scripts/generate_ptq_config.py", "platforms/x5/scripts/validate_ptq_config.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_makertbin.html"], "scripts": ["platforms/x5/scripts/generate_ptq_config.py", "platforms/x5/scripts/validate_ptq_config.py"]},
       "eval_tags": ["happy-path", "schema", "preflight"]
     },
     {
@@ -149,7 +148,7 @@
       "risk": "medium",
       "requires": ["hb_mapper", "validated-config"],
       "handoffs": ["x5-runtime-deploy", "x5-accuracy-diagnostics", "x5-performance-diagnostics"],
-      "resources": {"references": ["_sources/oe_mapper/source/ptq/ptq_usage/quantize_compile.rst.txt"], "scripts": ["platforms/x5/scripts/run_ptq.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_usage/quantize_compile.html"], "scripts": ["platforms/x5/scripts/run_ptq.py"]},
       "eval_tags": ["happy-path", "preflight", "safety"]
     },
     {
@@ -175,7 +174,7 @@
       "risk": "medium",
       "requires": ["plugin-environment-ready"],
       "handoffs": ["x5-qat-training"],
-      "resources": {"references": ["_sources/plugin/source/user_guide/float_model_requirements.md.txt"], "scripts": ["platforms/x5/scripts/check_qat_target.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/plugin/source/user_guide/float_model_requirements.html"], "scripts": ["platforms/x5/scripts/check_qat_target.py"]},
       "eval_tags": ["platform-isolation", "preflight"]
     },
     {
@@ -188,7 +187,7 @@
       "risk": "medium",
       "requires": ["March.BAYES_E", "reproducible-training"],
       "handoffs": ["x5-qat-compile", "x5-accuracy-diagnostics"],
-      "resources": {"references": ["_sources/plugin/source/user_guide/calibration.md.txt", "_sources/plugin/source/user_guide/qat.md.txt"], "scripts": ["platforms/x5/scripts/check_qat_target.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/plugin/source/user_guide/calibration.html", "https://developer.d-robotics.cc/oe_x5_doc/cn/plugin/source/user_guide/qat.html"], "scripts": ["platforms/x5/scripts/check_qat_target.py"]},
       "eval_tags": ["happy-path", "failure"]
     },
     {
@@ -201,7 +200,7 @@
       "risk": "medium",
       "requires": ["quantized-metrics-passed"],
       "handoffs": ["x5-consistency-diagnostics", "x5-runtime-deploy"],
-      "resources": {"references": ["_sources/plugin/source/api_reference/apis/compiler.rst.txt"], "scripts": ["platforms/x5/scripts/check_qat_target.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/plugin/source/api_reference/apis/compiler.html"], "scripts": ["platforms/x5/scripts/check_qat_target.py"]},
       "eval_tags": ["platform-isolation", "preflight"]
     },
     {
@@ -214,7 +213,7 @@
       "risk": "high",
       "requires": ["board-reachable", "model-runtime-compatibility"],
       "handoffs": ["x5-runtime-cpp-infer", "x5-runtime-perf-eval", "x5-board-monitor", "x5-model-diagnostics"],
-      "resources": {"references": ["_sources/runtime/source/runtime_dev.rst.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/runtime/source/runtime_dev.html"], "scripts": []},
       "eval_tags": ["safety", "preflight", "happy-path"]
     },
     {
@@ -227,7 +226,7 @@
       "risk": "medium",
       "requires": ["runtime-sdk"],
       "handoffs": ["x5-runtime-deploy", "x5-consistency-diagnostics"],
-      "resources": {"references": ["_sources/runtime/source/bpu_sdk_api/bpu_sdk_api.rst.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/runtime/source/bpu_sdk_api/bpu_sdk_api.html"], "scripts": []},
       "eval_tags": ["happy-path", "preflight"]
     },
     {
@@ -240,7 +239,7 @@
       "risk": "medium",
       "requires": ["board-reachable"],
       "handoffs": ["x5-performance-diagnostics", "x5-board-monitor"],
-      "resources": {"references": ["_sources/runtime/source/tool_introduction/hrt_model_exec.rst.txt", "_sources/runtime/source/ai_benchmark/ai_benchmark.rst.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/runtime/source/tool_introduction/hrt_model_exec.html", "https://developer.d-robotics.cc/oe_x5_doc/cn/runtime/source/ai_benchmark/ai_benchmark.html"], "scripts": []},
       "eval_tags": ["happy-path", "safety"]
     },
     {
@@ -253,7 +252,7 @@
       "risk": "low",
       "requires": ["board-reachable"],
       "handoffs": ["x5-performance-diagnostics"],
-      "resources": {"references": ["_sources/runtime/source/tool_introduction/auxiliary_tool.rst.txt"], "scripts": ["platforms/x5/scripts/parse_somstatus.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/runtime/source/tool_introduction/auxiliary_tool.html"], "scripts": ["platforms/x5/scripts/parse_somstatus.py"]},
       "eval_tags": ["happy-path", "preflight"]
     },
     {
@@ -264,9 +263,9 @@
       "accepts": ["x5-bin", "board-version", "python-abi", "local-package-source"],
       "produces": ["python-inference-code", "model-io-evidence", "run-receipt"],
       "risk": "medium",
-      "requires": ["board-version>=3.5.0"],
+      "requires": ["official-api-version-confirmed-via-mcp"],
       "handoffs": ["x5-environment-probe", "x5-model-diagnostics"],
-      "resources": {"references": ["skills/x5-bpu-python-api/references/x5_bpu_pyapi.md"], "scripts": ["scripts/check_bpu_python_api_version.py"]},
+      "resources": {"references": ["https://developer.d-robotics.cc/rdk_x_doc/Basic_Application/multi_media_sp_dev_api/RDK_X5/pydev_multimedia_api_x5/ai-python-api"], "scripts": ["scripts/check_bpu_python_api_version.py"]},
       "eval_tags": ["happy-path", "platform-isolation", "safety"]
     },
     {
@@ -292,7 +291,7 @@
       "risk": "low",
       "requires": [],
       "handoffs": ["x5-calibration-data-prepare", "x5-ptq-config-authoring", "x5-qat-training"],
-      "resources": {"references": ["_sources/oe_mapper/source/ptq/ptq_tool/accuracy_debug.rst.txt", "_sources/plugin/source/user_guide/quant_analysis.md.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_tool/accuracy_debug.html", "https://developer.d-robotics.cc/oe_x5_doc/cn/plugin/source/user_guide/quant_analysis.html"], "scripts": []},
       "eval_tags": ["diagnose", "failure"]
     },
     {
@@ -305,7 +304,7 @@
       "risk": "low",
       "requires": [],
       "handoffs": ["x5-qat-compile", "x5-runtime-cpp-infer", "x5-runtime-deploy"],
-      "resources": {"references": ["_sources/oe_mapper/source/ptq/ptq_tool/hb_verifier.rst.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_tool/hb_verifier.html"], "scripts": []},
       "eval_tags": ["diagnose", "failure"]
     },
     {
@@ -318,7 +317,7 @@
       "risk": "low",
       "requires": [],
       "handoffs": ["x5-ptq-config-authoring", "x5-runtime-perf-eval", "x5-board-monitor"],
-      "resources": {"references": ["_sources/oe_mapper/source/tune_content/performance_tune.rst.txt"], "scripts": []},
+      "resources": {"references": ["https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/tune_content/performance_tune.html", "https://developer.d-robotics.cc/oe_x5_doc/cn/oe_mapper/source/ptq/ptq_tool/hb_perf.html"], "scripts": []},
       "eval_tags": ["diagnose", "failure"]
     }
   ]

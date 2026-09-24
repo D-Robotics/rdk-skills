@@ -28,15 +28,6 @@ EXPECTED_RELEASES = {
             "registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_20_x5_gpu:v1.2.8",
         },
     },
-    "s-3.7.0": {
-        "platform": "s-series",
-        "version": "3.7.0",
-        "public_ids": {"sdk", "docs-zh", "docker-cpu-offline", "docker-gpu-offline", "s100-dsp-ucp-tutorial"},
-        "images": {
-            "registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v3.7.0",
-            "registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_gpu:v3.7.0",
-        },
-    },
 }
 
 
@@ -56,6 +47,8 @@ def check_manifest(manifest: dict[str, Any], failures: list[str]) -> None:
     assert_true(policy.get("registry_password_env") == "DROBOTICS_REGISTRY_PASSWORD", "Missing registry password environment contract", failures)
 
     releases = manifest.get("releases", {})
+    assert_true(set(releases) == set(EXPECTED_RELEASES), "Manifest must contain only fixed X5 releases", failures)
+    guide = DOC_PATH.read_text(encoding="utf-8") if DOC_PATH.is_file() else ""
     for release_id, expected in EXPECTED_RELEASES.items():
         release = releases.get(release_id)
         assert_true(isinstance(release, dict), f"Missing fixed release: {release_id}", failures)
@@ -78,11 +71,15 @@ def check_manifest(manifest: dict[str, Any], failures: list[str]) -> None:
             assert_true(parsed.netloc == "d-robotics-aitoolchain.oss-cn-beijing.aliyuncs.com", f"Unexpected artifact host: {artifact.get('id')}", failures)
             assert_true(parsed.path.endswith(f"/{filename}"), f"Filename does not match URL: {artifact.get('id')}", failures)
             assert_true(not parsed.query and not parsed.fragment, f"Artifact URL must be immutable without query/fragment: {artifact.get('id')}", failures)
+            assert_true(filename in guide, f"Artifact filename is not documented for {release_id}: {filename}", failures)
+            assert_true(url in guide, f"Artifact URL is not documented for {release_id}: {artifact.get('id')}", failures)
 
         registry = release.get("registry", {})
         assert_true(registry.get("host") == "registry.d-robotics.cc", f"Wrong Registry host for {release_id}", failures)
         images = {image.get("image") for image in registry.get("images", []) if isinstance(image, dict)}
         assert_true(images == expected["images"], f"Unexpected Registry images for {release_id}", failures)
+        for image in images:
+            assert_true(image in guide, f"Registry image is not documented for {release_id}: {image}", failures)
 
 
 def check_security_contract(failures: list[str]) -> None:
@@ -99,7 +96,6 @@ def check_integrations(failures: list[str]) -> None:
     for path in (
         DOC_PATH,
         ROOT / "platforms/x5/PACK.md",
-        ROOT / "platforms/s-series/PACK.md",
         ROOT / "skills/x5-environment-setup/SKILL.md",
     ):
         assert_true(path.is_file(), f"Missing integration file: {path}", failures)
@@ -148,7 +144,7 @@ def main() -> int:
     if failures:
         print("\n".join(f"FAIL: {failure}" for failure in failures), file=sys.stderr)
         return 1
-    print("RELEASE_ARTIFACT_VALIDATION_OK: fixed X5 1.2.8 and S 3.7.0 sources; no embedded Registry credentials")
+    print("RELEASE_ARTIFACT_VALIDATION_OK: fixed X5 1.2.8 sources; no embedded Registry credentials")
     return 0
 
 

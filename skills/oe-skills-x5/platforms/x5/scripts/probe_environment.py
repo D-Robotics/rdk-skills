@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 
-"""Probe X5 host, toolchain, documentation, and optional board facts."""
+"""Probe X5 host, toolchain, and optional board facts."""
 
 from __future__ import annotations
 
@@ -184,40 +184,6 @@ def probe_docker_toolchain(image: str | None, workflow: str) -> dict[str, Any]:
     return result
 
 
-def doc_candidates(explicit: str | None) -> list[Path]:
-    values: list[Path] = []
-    for value in (
-        explicit,
-        os.environ.get("OE_DROBOTICS_DOC_ROOT"),
-        os.environ.get("OE_X_SERIES_DOC_ROOT"),
-    ):
-        if value:
-            values.append(Path(value).expanduser())
-    values.append(Path.cwd() / "x5_doc-v1.2.8-py310-cn")
-    script_path = Path(__file__).resolve()
-    for parent in script_path.parents:
-        values.append(parent / "x5_doc-v1.2.8-py310-cn")
-        values.append(parent.parent / "x5_doc-v1.2.8-py310-cn")
-    unique: list[Path] = []
-    seen: set[str] = set()
-    for candidate in values:
-        resolved = candidate.resolve()
-        key = str(resolved).lower()
-        if key not in seen:
-            seen.add(key)
-            unique.append(resolved)
-    return unique
-
-
-def resolve_docs(explicit: str | None) -> tuple[Path | None, list[str]]:
-    checked: list[str] = []
-    for candidate in doc_candidates(explicit):
-        checked.append(str(candidate))
-        if (candidate / "index.html").is_file() and (candidate / "_sources").is_dir():
-            return candidate, checked
-    return None, checked
-
-
 def version_tuple(value: str | None) -> tuple[int, ...] | None:
     if not value:
         return None
@@ -231,7 +197,6 @@ def version_tuple(value: str | None) -> tuple[int, ...] | None:
 
 
 def build_snapshot(args: argparse.Namespace) -> dict[str, Any]:
-    docs_root, checked_docs = resolve_docs(args.docs_root)
     tools = {
         name: command_info(name)
         for name in (
@@ -300,8 +265,6 @@ def build_snapshot(args: argparse.Namespace) -> dict[str, Any]:
 
     missing: list[str] = []
     limitations: list[str] = []
-    if docs_root is None:
-        missing.append("X5 local manual")
     if board and board.get("chip") and str(board["chip"]).upper() != "X5":
         missing.append("board chip must be X5")
     if args.workflow == "ptq":
@@ -334,8 +297,6 @@ def build_snapshot(args: argparse.Namespace) -> dict[str, Any]:
         current = version_tuple(args.board_version)
         if current is None:
             missing.append("board /etc/version")
-        elif current < (3, 5, 0):
-            missing.append("board version >= 3.5.0")
     if args.workflow == "environment":
         if requested_execution == "docker" and not docker_probe["verified"]:
             if docker_image:
@@ -367,11 +328,12 @@ def build_snapshot(args: argparse.Namespace) -> dict[str, Any]:
             ),
         },
         "documentation": {
-            "root": str(docs_root) if docs_root else None,
-            "available": docs_root is not None,
+            "root": None,
+            "available": None,
             "hat_in_scope": False,
-            "manual_baseline": "OE Mapper v1.2.8 / Python 3.10",
-            "checked_candidates": checked_docs,
+            "source": "mcp__rdk_docs__",
+            "manual": "oe-x5",
+            "verification": "not_checked_by_environment_probe",
         },
         "board": board,
         "missing": missing,
@@ -397,7 +359,10 @@ def main() -> int:
         default="environment",
     )
     parser.add_argument("--output", default="environment.json")
-    parser.add_argument("--docs-root")
+    parser.add_argument(
+        "--docs-root",
+        help="Deprecated compatibility option; documentation no longer affects environment readiness",
+    )
     parser.add_argument(
         "--docker-image",
         help="A locally available X5 OE Docker image; never pulled by this read-only probe",

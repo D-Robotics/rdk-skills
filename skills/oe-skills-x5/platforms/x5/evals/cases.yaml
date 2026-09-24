@@ -100,7 +100,7 @@ skill_matrix:
   - skill: x5-bpu-python-api
     routing: "X5 HB_HBMRuntime 加载 bin"
     happy_path: "版本门禁、模型 I/O 和输出比对通过"
-    preflight_failure: "/etc/version 低于 3.5.0 或来源是 PyPI"
+    preflight_failure: "MCP 官方页面未确认当前版本支持，或包来源是 PyPI"
     risk_confirmation: "安装 wheel/DEB 或升级系统包"
   - skill: x5-model-diagnostics
     routing: "分析 X5 failure receipt"

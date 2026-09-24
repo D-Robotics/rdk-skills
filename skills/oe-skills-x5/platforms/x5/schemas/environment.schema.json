@@ -59,8 +59,11 @@
       "required": ["root", "available", "hat_in_scope"],
       "properties": {
         "root": {"type": ["string", "null"]},
-        "available": {"type": "boolean"},
-        "hat_in_scope": {"const": false}
+        "available": {"type": ["boolean", "null"]},
+        "hat_in_scope": {"const": false},
+        "source": {"type": "string"},
+        "manual": {"type": "string"},
+        "verification": {"type": "string"}
       },
       "additionalProperties": true
     },

@@ -96,7 +96,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Render commands for fixed D-Robotics release artifacts without downloading or storing credentials."
     )
-    parser.add_argument("--release", required=True, help="Release ID, such as x5-1.2.8 or s-3.7.0")
+    parser.add_argument("--release", required=True, help="Fixed X5 release ID, such as x5-1.2.8")
     parser.add_argument(
         "--mode",
         choices=("list", "wget", "docker-pull", "docker-load", "json"),

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 
-"""Validate the X5 V2 Skill Pack, local manual coverage, and executable contracts."""
+"""Validate the X5 V2 Skill Pack and executable contracts without local manuals."""
 
 from __future__ import annotations
 
@@ -17,14 +17,6 @@ import textwrap
 from collections import deque
 from pathlib import Path
 from typing import Any
-
-from search_local_docs import (
-    load_platform_index,
-    resolve_doc_root,
-    resolve_python_api_doc,
-    score,
-    terms,
-)
 
 
 PACK_VERSION = "2.0.0"
@@ -117,27 +109,12 @@ REQUIRED_ASSETS = (
     "assets/runtime-cpp/main.cc",
     "assets/runtime-cpp/build.sh",
 )
-EXPECTED_RETRIEVAL = {
-    "X5 hb_mapper makertbin": "/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_makertbin.html",
-    "X5 hb_mapper checker": "/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_checker.html",
-    "X5 March.BAYES_E": "/plugin/source/terminology/terminology.html",
-    "X5 Runtime hbDNNInitializeFromFiles": "/runtime/source/",
-    "X5 hrut_somstatus": "/runtime/source/tool_introduction/auxiliary_tool.html",
-    "X5 HB_HBMRuntime Python API": "/local-python-api/x5-bpu",
-}
-MANUAL_FACTS = {
-    "_sources/plugin/source/terminology/terminology.md.txt": ("March.BAYES_E", "March.BAYES"),
-    "_sources/oe_mapper/source/ptq/ptq_tool/hb_mapper/hb_mapper_makertbin.rst.txt": ("bayes-e", "J5"),
-    "_sources/runtime/source/runtime_dev.rst.txt": ("hbDNNInitializeFromFiles", "hbDNNInfer"),
-    "_sources/runtime/source/tool_introduction/auxiliary_tool.rst.txt": ("hrut_somstatus",),
-}
 ISOLATION_CASES = {
     "reject-hat": "blocked_out_of_scope",
     "reject-j5-march": "reject_and_require_March.BAYES_E",
     "reject-s-series": "reject_platform_mixing",
     "reject-x3-reuse": "blocked_until_x3_pack_exists",
 }
-SOURCE_REFERENCE = re.compile(r"_sources/[A-Za-z0-9_./-]+\.(?:rst|md|ipynb)\.txt")
 LOCAL_REFERENCE = re.compile(r"\.drobotics-x5/[A-Za-z0-9_./-]+")
 FRONTMATTER = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.S)
 FENCED_CODE_BLOCK = re.compile(r"(?ms)^(?:```|~~~)[^\r\n]*\r?\n(.*?)^(?:```|~~~)\s*$")
@@ -190,19 +167,6 @@ def load_yaml(path: Path, failures: list[str]) -> Any:
 
 def installed_path(root: Path, value: str) -> Path:
     return root / value.removeprefix(".drobotics-x5/")
-
-
-def ranked_routes(entries: list[dict[str, Any]], query: str) -> list[str]:
-    query_terms = terms(query)
-    ranked = sorted(
-        (
-            (score(entry, query_terms), str(entry.get("routePath", "")))
-            for entry in entries
-            if score(entry, query_terms) > 0
-        ),
-        key=lambda item: (-item[0], item[1]),
-    )
-    return [route for _, route in ranked]
 
 
 def check_pack_index(root: Path, failures: list[str]) -> dict[str, Any]:
@@ -303,7 +267,15 @@ def check_pack_index(root: Path, failures: list[str]) -> dict[str, Any]:
                     if not isinstance(value, str):
                         failures.append(f"{skill_id} has a non-string {category} resource")
                         continue
-                    if not value.startswith("_sources/"):
+                    if category == "references" and value.startswith("https://"):
+                        assert_true(
+                            value.startswith("https://developer.d-robotics.cc/oe_x5_doc/")
+                            or value.startswith("https://developer.d-robotics.cc/rdk_x_doc/"),
+                            f"{skill_id} references a non-official/manual-out-of-scope URL: {value}",
+                            failures,
+                        )
+                    else:
+                        assert_true(not value.startswith("_sources/"), f"{skill_id} resource hard-depends on a local manual: {value}", failures)
                         assert_true((root / value).is_file(), f"Missing resource for {skill_id}: {value}", failures)
 
     queue: deque[str] = deque([str(pack.get("entry_skill", ""))])
@@ -383,13 +355,12 @@ def check_skill_contracts(
     pack_index: dict[str, Any],
     global_index: dict[str, Any],
     failures: list[str],
-) -> tuple[dict[str, str], set[str]]:
+) -> dict[str, str]:
     skill_root = root / "skills"
     actual_ids = sorted(path.parent.name for path in skill_root.glob("*/SKILL.md"))
     assert_true(actual_ids == sorted(EXPECTED_SKILLS), "X5 Skill directories do not match the V2 index", failures)
     pack_items = {item.get("id"): item for item in pack_index.get("skills", []) if isinstance(item, dict)}
     skill_texts: dict[str, str] = {}
-    manual_references: set[str] = set()
 
     for skill_id in EXPECTED_SKILLS:
         item = pack_items.get(skill_id, {})
@@ -407,8 +378,7 @@ def check_skill_contracts(
             body = section_text(text, heading)
             assert_true(len(body) >= 12, f"{skill_id} has an empty or trivial section: {heading}", failures)
 
-        for value in SOURCE_REFERENCE.findall(text):
-            manual_references.add(value)
+        assert_true("_sources/" not in text, f"{skill_id} must not depend on local manual sources", failures)
         for value in LOCAL_REFERENCE.findall(text):
             candidate = installed_path(root, value.rstrip(".,;:)]}"))
             assert_true(candidate.exists(), f"{skill_id} references a missing Pack path: {value}", failures)
@@ -449,14 +419,13 @@ def check_skill_contracts(
         "route.json",
     ):
         assert_true(term in router_text, f"x5-router lacks route or isolation term: {term}", failures)
-    return skill_texts, manual_references
+    return skill_texts
 
 
-def check_pack_documents(root: Path, failures: list[str]) -> set[str]:
+def check_pack_documents(root: Path, failures: list[str]) -> None:
     pack_root = root / "platforms/x5"
     pack_path = pack_root / "PACK.md"
     assert_true(pack_path.is_file(), f"Missing X5 PACK.md: {pack_path}", failures)
-    manual_references: set[str] = set()
     documents = (
         pack_path,
         pack_root / "policies/compatibility.md",
@@ -471,7 +440,6 @@ def check_pack_documents(root: Path, failures: list[str]) -> set[str]:
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8")
-        manual_references.update(SOURCE_REFERENCE.findall(text))
         assert_true(MAINTAINER_PATH.search(text) is None, f"Maintainer absolute path found in {path}", failures)
 
     if pack_path.is_file():
@@ -519,7 +487,6 @@ def check_pack_documents(root: Path, failures: list[str]) -> set[str]:
         assert_true("S 系列的实战深度 + V2 的模块化、脚本化和机器可验证合同" in readme, "X5 README lacks the target standard", failures)
         for skill_id in EXPECTED_SKILLS:
             assert_true(skill_id in readme, f"X5 README does not list {skill_id}", failures)
-    return manual_references
 
 
 def check_router(root: Path, failures: list[str]) -> None:
@@ -659,50 +626,24 @@ def check_schemas_and_assets(root: Path, failures: list[str]) -> None:
             assert_true(term in build_text, f"Runtime build asset lacks guard: {term}", failures)
 
 
-def check_manual(
-    root: Path,
-    docs_root: Path,
-    pack_index: dict[str, Any],
-    referenced_sources: set[str],
-    failures: list[str],
-) -> None:
-    assert_true(docs_root.is_dir(), f"Missing X5 local manual root: {docs_root}", failures)
-    if not docs_root.is_dir():
-        return
-    for item in pack_index.get("skills", []):
-        if not isinstance(item, dict):
-            continue
-        for value in item.get("resources", {}).get("references", []):
-            if isinstance(value, str) and value.startswith("_sources/"):
-                referenced_sources.add(value)
-    assert_true(bool(referenced_sources), "X5 Pack does not cite any local manual sources", failures)
-    for relative in sorted(referenced_sources):
-        assert_true(not relative.lower().startswith("_sources/hat/"), f"HAT source leaked into X5 references: {relative}", failures)
-        assert_true((docs_root / relative).is_file(), f"Missing X5 manual source: {relative}", failures)
-
-    for relative, required_terms in MANUAL_FACTS.items():
-        path = docs_root / relative
-        assert_true(path.is_file(), f"Missing authoritative X5 source: {relative}", failures)
-        if path.is_file():
-            text = path.read_text(encoding="utf-8", errors="replace")
-            for term in required_terms:
-                assert_true(term in text, f"Manual fact '{term}' missing from {relative}", failures)
-
-    try:
-        python_api_doc = resolve_python_api_doc(None)
-        entries = load_platform_index(docs_root, "zh", python_api_doc)
-    except (FileNotFoundError, ValueError, json.JSONDecodeError) as error:
-        failures.append(f"Unable to load X5 local retrieval index: {error}")
-        return
-    hat_routes = [str(entry.get("routePath", "")) for entry in entries if str(entry.get("routePath", "")).lower().startswith("/hat/")]
-    assert_true(not hat_routes, f"X5 retrieval still exposes HAT routes: {', '.join(hat_routes[:5])}", failures)
-    for query, expected_route in EXPECTED_RETRIEVAL.items():
-        routes = ranked_routes(entries, query)
-        assert_true(
-            any(expected_route in route for route in routes[:12]),
-            f"Local X5 retrieval did not surface {expected_route} for '{query}'",
-            failures,
-        )
+def check_documentation_contract(root: Path, failures: list[str]) -> None:
+    manual_map_path = root / "platforms/x5/references/manual-map.md"
+    policy_path = root / "X5.md"
+    assert_true(manual_map_path.is_file(), f"Missing official MCP manual map: {manual_map_path}", failures)
+    assert_true(policy_path.is_file(), f"Missing X5 workspace policy: {policy_path}", failures)
+    manual_map = manual_map_path.read_text(encoding="utf-8") if manual_map_path.is_file() else ""
+    policy = policy_path.read_text(encoding="utf-8") if policy_path.is_file() else ""
+    for term in (
+        "mcp__rdk_docs__search_docs",
+        'manual="oe-x5"',
+        'source="docs"',
+        'manual="rdk-x"',
+        "mcp__rdk_docs__get_page",
+        "报告阻塞",
+    ):
+        assert_true(term in manual_map, f"Official MCP manual map lacks contract term: {term}", failures)
+    for term in ("mcp__rdk_docs__search_docs", "mcp__rdk_docs__get_page", "不能作为官方依据"):
+        assert_true(term in policy, f"X5.md lacks official MCP rule: {term}", failures)
 
 
 def invoke(
@@ -801,7 +742,7 @@ def create_fake_toolchain(root: Path) -> dict[str, str]:
     return {"PATH": path_value, "PATHEXT": os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD") + ";.CMD"}
 
 
-def check_script_smoke(root: Path, docs_root: Path, failures: list[str]) -> None:
+def check_script_smoke(root: Path, failures: list[str]) -> None:
     scripts = root / "platforms/x5/scripts"
     with tempfile.TemporaryDirectory(prefix="x5-pack-validation-") as temporary:
         work = Path(temporary)
@@ -973,7 +914,7 @@ def check_script_smoke(root: Path, docs_root: Path, failures: list[str]) -> None
                 "--workflow",
                 "environment",
                 "--docs-root",
-                str(docs_root),
+                str(work / "absent-local-manual"),
                 "--output",
                 str(environment_json),
             ],
@@ -986,6 +927,9 @@ def check_script_smoke(root: Path, docs_root: Path, failures: list[str]) -> None
         environment = load_json(environment_json, failures)
         assert_true(environment.get("platform") == "X5", "Environment smoke has wrong platform", failures)
         assert_true(environment.get("documentation", {}).get("hat_in_scope") is False, "Environment smoke includes HAT", failures)
+        assert_true(environment.get("documentation", {}).get("available") is None, "Environment probe must not discover local docs", failures)
+        assert_true(environment.get("documentation", {}).get("verification") == "not_checked_by_environment_probe", "Environment probe must not claim MCP verification", failures)
+        assert_true("X5 local manual" not in environment.get("missing", []), "Absent local docs must not block environment probe", failures)
 
         run_root = work / "contract-run"
         contract_script = scripts / "run_contract.py"
@@ -1114,7 +1058,7 @@ def check_script_smoke(root: Path, docs_root: Path, failures: list[str]) -> None
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--docs-root", help="Override the X5 local documentation root")
+    parser.add_argument("--docs-root", help="Deprecated compatibility option; local manuals are not a validator dependency")
     parser.add_argument("--skip-smoke", action="store_true", help="Skip executable script smoke tests")
     args = parser.parse_args()
 
@@ -1122,21 +1066,14 @@ def main() -> int:
     failures: list[str] = []
     pack_index = check_pack_index(root, failures)
     global_index = check_global_index(root, pack_index, failures)
-    pack_manual_references = check_pack_documents(root, failures)
+    check_pack_documents(root, failures)
     check_router(root, failures)
-    _, skill_manual_references = check_skill_contracts(root, pack_index, global_index, failures)
+    check_skill_contracts(root, pack_index, global_index, failures)
     check_eval_matrix(root, failures)
     check_schemas_and_assets(root, failures)
-
-    docs_root: Path | None = None
-    try:
-        docs_root = resolve_doc_root(args.docs_root)
-    except FileNotFoundError as error:
-        failures.append(str(error))
-    if docs_root is not None:
-        check_manual(root, docs_root, pack_index, pack_manual_references | skill_manual_references, failures)
-        if not args.skip_smoke:
-            check_script_smoke(root, docs_root, failures)
+    check_documentation_contract(root, failures)
+    if not args.skip_smoke:
+        check_script_smoke(root, failures)
 
     if failures:
         print("\n".join(f"FAIL: {failure}" for failure in failures), file=sys.stderr)

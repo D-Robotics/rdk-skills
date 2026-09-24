@@ -1,7 +1,7 @@
 ---
 name: x5-consistency-diagnostics
 description: 比较 X5 浮点、calibration/QAT、定点、编译和 Runtime 的固定输入输出，定位首个数值或 I/O 不一致阶段；当 Plugin 编译后掉点、仿真与板端不同或 C++/Python 输出不一致时使用。默认只读。
-version: 1.1.0
+version: 1.1.1
 license: Apache-2.0
 ---
 
@@ -47,5 +47,6 @@ Plugin 编译问题 → `x5-qat-compile`；C++ I/O → `x5-runtime-cpp-infer`；
 
 ## 按需参考
 
-- `_sources/oe_mapper/source/ptq/ptq_tool/hb_verifier.rst.txt`
-- `_sources/runtime/source/runtime_dev.rst.txt`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- 官方资料查询：`mcp__rdk_docs__search_docs(manual="oe-x5", source="docs", query="X5 hb_verifier Runtime BPU consistency")`，再用 `mcp__rdk_docs__get_page` 读取匹配官方页面正文。
+- 不使用本地 `_sources` 副本替代 MCP 证据；无法从官方正文确认具体命令/API/版本时报告阻塞。

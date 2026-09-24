@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 D-Robotics. All rights reserved.
 
-"""Gate board-side hbm_runtime Python APIs on supported system versions."""
+"""Apply a conservative X5 Python API release-range screen; MCP and board checks remain required."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import re
 import sys
 from pathlib import Path
 
-MINIMUM_VERSIONS = {
+EXCLUSIVE_VERSION_FLOORS = {
     "x5": (3, 5, 0),
 }
 VERSION_PATTERN = re.compile(r"(?<!\d)(\d+(?:\.\d+){1,3})(?!\d)")
@@ -58,9 +58,9 @@ def read_version_content(args: argparse.Namespace) -> tuple[str, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate whether board /etc/version supports the local hbm_runtime Python API."
+        description="Screen the X5 hbm_runtime documented version range; confirm MCP and actual board import separately."
     )
-    parser.add_argument("--platform", choices=sorted(MINIMUM_VERSIONS), required=True)
+    parser.add_argument("--platform", choices=sorted(EXCLUSIVE_VERSION_FLOORS), required=True)
     parser.add_argument(
         "--version-file",
         type=Path,
@@ -80,7 +80,7 @@ def main() -> int:
         return 2
 
     detected = detect_version(content)
-    required = MINIMUM_VERSIONS[args.platform]
+    version_floor = EXCLUSIVE_VERSION_FLOORS[args.platform]
     if detected is None:
         print(
             "BPU_PYTHON_API_VERSION_ERROR: cannot unambiguously parse a system version "
@@ -89,19 +89,29 @@ def main() -> int:
         )
         return 3
 
-    if normalize_version(detected) < normalize_version(required):
+    if normalize_version(detected) < normalize_version(version_floor):
         print(
             "BPU_PYTHON_API_VERSION_UNSUPPORTED: "
             f"platform={args.platform} detected={format_version(detected)} "
-            f"required>={format_version(required)} source={source}",
+            f"detected version is below the documented post-{format_version(version_floor)} range; "
+            f"verify the latest official MCP documentation source={source}",
             file=sys.stderr,
         )
         return 1
+    if normalize_version(detected) == normalize_version(version_floor):
+        print(
+            "BPU_PYTHON_API_VERSION_NEEDS_VERIFICATION: "
+            f"platform={args.platform} detected={format_version(detected)}; official wording does not establish "
+            "whether this exact release is supported. Recheck via MCP and verify an actual board import.",
+            file=sys.stderr,
+        )
+        return 4
 
     print(
-        "BPU_PYTHON_API_VERSION_OK: "
+        "BPU_PYTHON_API_VERSION_RANGE_CANDIDATE: "
         f"platform={args.platform} detected={format_version(detected)} "
-        f"required>={format_version(required)} source={source}"
+        f"after={format_version(version_floor)}. This is a static range screen only; confirm current MCP wording, "
+        f"package source, and actual board import before use. source={source}"
     )
     return 0
 
