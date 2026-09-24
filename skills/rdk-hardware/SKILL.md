@@ -1,6 +1,6 @@
 ---
 name: rdk-hardware
-description: "Hardware facts for RDK boards: six-board specs (X3/X5/Ultra/S100/S100P/S600), 40PIN/GPIO and I2C/SPI/UART/PWM, power/LEDs, display, network/IP, CAN, TOPS/RAM, cooling, OS lines, and system paths. Use for board-specific pinouts, interfaces, voltage, credentials, model directories, IP, capacity, or hardware comparisons. 触发词:各板引脚一样吗、40PIN怎么接、IO电平、默认用户名密码、模型目录在哪、CAN口、网口默认IP、算力多少TOPS、BPU算力、TOPS对比、X3算力、X5算力、内存多大、供电几V、HDMI分辨率、TROS路径、板型怎么查。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); error-code/boot failure → rdk-board-knowledge; peripheral control → rdk-peripheral-cookbook; on-board inference → rdk-model-deploy; own-model conversion: X5 → x5-router, S-series → horizon-router, X3/Ultra → rdk-docs-reference for official toolchain docs; camera bringup → rdk-camera-setup; board selection → rdk-ecosystem."
+description: "Hardware facts for RDK boards: six-board specs (X3/X5/Ultra/S100/S100P/S600), 40PIN/GPIO and I2C/SPI/UART/PWM, power/LEDs, display, network/IP, CAN, TOPS/RAM, cooling, OS lines, and system paths. Use for board-specific pinouts, interfaces, voltage, credentials, model directories, IP, capacity, or hardware comparisons. 触发词:各板引脚一样吗、40PIN怎么接、IO电平、默认用户名密码、模型目录在哪、CAN口、网口默认IP、算力多少TOPS、BPU算力、TOPS对比、X3算力、X5算力、内存多大、供电几V、HDMI分辨率、TROS路径、板型怎么查。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); error-code/boot failure → rdk-board-knowledge; peripheral control → rdk-peripheral-cookbook; on-board inference → rdk-model-deploy; own-model conversion: X5 → x5-router, S-series → drobotics-router, X3/Ultra → rdk-docs-reference for official toolchain docs; camera bringup → rdk-camera-setup; board selection → rdk-ecosystem."
 trigger: 算力, TOPS, BPU算力, TOPS对比, 算力对比, 算力几T, X3算力, X5算力, compute TOPS, 算力多少TOPS, 内存多大, RAM, 引脚一样, 40PIN怎么接, IO电平, CAN口, ip link can0, 默认用户名密码, 供电几V, 电源灯, HDMI分辨率, TROS路径, 板型怎么查
 version: 1.0.0
 license: Apache-2.0
@@ -14,7 +14,7 @@ The single most important rule: **per-board hardware facts are NOT uniform — c
 
 ## Workspace router availability gate
 
-Before an X5 conversion handoff, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` into the confirmed project root. Before an S-series conversion handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)`. After installation, restart the agent session and retry the original handoff.
+Before an X5 conversion handoff, check whether `x5-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (X5)` into the confirmed project root. Before an S-series conversion handoff, check whether `drobotics-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)`. After installation, restart the agent session and retry the original handoff.
 
 ## Confirm the board first
 
@@ -44,7 +44,7 @@ Never assume the board. An X3 pinout handed to an X5 user, or a SocketCAN comman
 - **S600 runs Ubuntu 24.04 + TROS Jazzy** (`/opt/tros/jazzy/`, `tros-jazzy-*`); S100/X-series run 22.04 + Humble. Don't copy paths/package names.
 - **Default IP differs by board AND firmware.** X3 ≤2.0.0 / Ultra = `192.168.1.10`; everything else = `192.168.127.10` (S-series on the fixed eth1).
 
-> Model artifacts never cross BPU architectures: X3/X5/Ultra → `.bin`, S100/S100P/S600 → `.hbm`. Recompile per board. For own-model conversion, use `x5-router` on X5, `horizon-router` on S-series, and `rdk-docs-reference` to find the X3/Ultra official toolchain docs.
+> Model artifacts never cross BPU architectures: X3/X5/Ultra → `.bin`, S100/S100P/S600 → `.hbm`. Recompile per board. For own-model conversion, use `x5-router` on X5, `drobotics-router` on S-series, and `rdk-docs-reference` to find the X3/Ultra official toolchain docs.
 
 ## Workflows
 

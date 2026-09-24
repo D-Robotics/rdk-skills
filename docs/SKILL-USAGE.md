@@ -46,8 +46,8 @@ OE-Skills-X5 等需要 workspace 初始化的 Pack，整包安装而非逐个 sk
 ```bash
 git clone --depth 1 https://github.com/D-Robotics/rdk-skills.git
 cd rdk-skills
-bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT   # 铺设 .drobotics/ + 注入路由规则
-bash skills/oe-skills-s/setup.sh $PROJECT_ROOT    # 铺设 .horizon/ + 注入路由规则
+bash skills/oe-skills-x5/setup.sh $PROJECT_ROOT   # 铺设 .drobotics-x5/ + 注入路由规则
+bash skills/oe-skills-s/setup.sh $PROJECT_ROOT    # 铺设 .drobotics-s/ + 注入路由规则
 
 # 升级已装 workspace：先比 VERSION，已是最新则跳过；不同则删除重建（无旧文件残留）
 bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
@@ -56,7 +56,7 @@ bash skills/oe-skills-x5/setup.sh --update --ref v2.1.0 $PROJECT_ROOT
 
 Pack 仓库保持为权威上游与降级来源（直接 clone Pack 仓库后在其根目录执行 `bash setup.sh $PROJECT_ROOT`，升级用 `bash setup.sh --update $PROJECT_ROOT`）。
 
-**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」（升级则说「升级一下项目的 OE 工具链」）——installer 会读随包注册表、clone Hub 目录、比对项目侧 `INSTALLED_REF`（回退 `VERSION`）与注册表 `ref`，已是最新则跳过、否则执行镜像里的 `setup.sh --update --ref <ref>` 并做安装后检查（Hub 镜像落后时才降级到 Pack 仓库）。升级会重建 `.drobotics/`/`.horizon/`，其中的本地修改会丢失，需用户显式确认。
+**更省事的方式**：先通过方式 2 安装 Hub 插件（内含 `rdk-pack-installer`），然后直接对 Agent 说「Install D-Robotics OE-Skills-X5 into this project」（升级则说「升级一下项目的 OE 工具链」）——installer 会读随包注册表、clone Hub 目录、比对项目侧 `INSTALLED_REF`（回退 `VERSION`）与注册表 `ref`，已是最新则跳过、否则执行镜像里的 `setup.sh --update --ref <ref>` 并做安装后检查（Hub 镜像落后时才降级到 Pack 仓库）。升级会重建 `.drobotics-x5/`/`.drobotics-s/`，其中的本地修改会丢失，需用户显式确认。
 
 安装完成后**重启 Agent 会话**使新技能生效。
 
@@ -99,7 +99,7 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 
 - **26 个设备侧 skill**（`rdk-device-skills` Pack，扁平布局）
 - **22 个 OE 工具链 X5 skill**（`oe-skills-x5` Pack，workspace 集成型，完整 `x5/` 资源树 + `setup.sh` 镜像为 `skills/oe-skills-x5/`，可自安装）
-- **33 个 OE 工具链 S 系列 skill**（`oe-skills-s` Pack，workspace 集成型，完整 `horizon/` 资源树 + `setup.sh` 镜像为 `skills/oe-skills-s/`，可自安装）
+- **33 个 OE 工具链 S 系列 skill**（`oe-skills-s` Pack，workspace 集成型，完整 `drobotics-s/` 资源树 + `setup.sh` 镜像为 `skills/oe-skills-s/`，可自安装）
 - **8 个 BSP 开发 skill**（`bsp-skills` Pack，扁平布局）
 
 ### 设备侧 26 个
@@ -123,7 +123,7 @@ Agent **不会**一次性加载所有 skill 内容，而是分三层渐进披露
 
 ### OE 工具链 S（33 个）
 
-镜像自 `oe-skills-s` 的完整 `horizon/` 资源树（批量布局，含 `docs/`、`skill-index.json`、`VERSION` 与 `setup.sh` 覆盖层），模块：`hbdk` / `hmct` / `horizon_tc_ui` / `horizon-router` / `plugin` / `ucp`，含模块级路由与嵌套子 skill。安装方式同 X5：Hub 镜像 `bash skills/oe-skills-s/setup.sh $PROJECT_ROOT`，或降级 `git clone https://github.com/D-Robotics/oe-skills-s.git` + `bash setup.sh $PROJECT_ROOT`。
+镜像自 `oe-skills-s` 的完整 `drobotics-s/` 资源树（批量布局，含 `docs/`、`skill-index.json`、`VERSION` 与 `setup.sh` 覆盖层），模块：`hbdk` / `hmct` / `tc_ui` / `drobotics-router` / `plugin` / `ucp`，含模块级路由与嵌套子 skill。安装方式同 X5：Hub 镜像 `bash skills/oe-skills-s/setup.sh $PROJECT_ROOT`，或降级 `git clone https://github.com/D-Robotics/oe-skills-s.git` + `bash setup.sh $PROJECT_ROOT`。
 
 支持的板卡：RDK X3 / X5 / Ultra / S100 / S100P / S600（X 系列模型格式 `.bin`，S 系列 `.hbm`）。
 

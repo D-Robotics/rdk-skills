@@ -2,9 +2,9 @@
 
 ## 仓库概述
 
-- **名称**: hbdk4-compiler v4.11.2 — Horizon BDK4 Compiler
+- **名称**: hbdk4-compiler v4.11.2 — D Robotics BDK4 Compiler
 - **Python 包**: `hbdk4_compiler-4.11.2-cp310`，已解压的 pip wheel（非 git 源码仓库）
-- **用途**: 将神经网络模型（ONNX、PyTorch TorchScript）编译为面向 Horizon BPU (Brain Processing Unit) 的优化 `.hbm` 二进制文件
+- **用途**: 将神经网络模型（ONNX、PyTorch TorchScript）编译为面向 D Robotics BPU (Brain Processing Unit) 的优化 `.hbm` 二进制文件
 - **角色**: RDK S 系列 Open Explorer 工具链后端编译器，接收 HBIR（MLIR dialect）并生成可在 Nash 系列 BPU 上运行的 HBM
 - **依赖**: `numpy`, `netron>=6.0.2`, `hbdk4-march==4.11.2`；可选 `paramiko`（RemoteBPU）
 - **支持目标平台**: nash-e, nash-m, nash-p, nash-h, nash-b, nash-b-lite, nash-b-plus

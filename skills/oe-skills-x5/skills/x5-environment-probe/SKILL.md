@@ -1,7 +1,7 @@
 ---
 name: x5-environment-probe
 description: 只读探测 X5 手册、OE Mapper、Plugin、Runtime、Python 和可选板端事实并生成 environment.json；当执行任何 X5 工作流前环境未知、版本不明或需要 ready/degraded/blocked 结论时使用。不得安装、升级或修改设备。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -25,7 +25,7 @@ license: Apache-2.0
 ## 执行步骤
 
 ~~~bash
-python .drobotics/platforms/x5/scripts/probe_environment.py \
+python .drobotics-x5/platforms/x5/scripts/probe_environment.py \
   --workflow ptq \
   --output <run-root>/environment.json
 ~~~
@@ -51,5 +51,5 @@ Runtime/Python 请求如需板端事实，追加 `--board-chip X5 --board-archit
 
 ## 按需参考
 
-- `.drobotics/platforms/x5/schemas/environment.schema.json`
-- `.drobotics/platforms/x5/references/manual-map.md`
+- `.drobotics-x5/platforms/x5/schemas/environment.schema.json`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`

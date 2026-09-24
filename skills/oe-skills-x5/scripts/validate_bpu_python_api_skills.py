@@ -23,7 +23,7 @@ SKILL_SPECS = {
         "module": "x5",
         "platform": "x5",
         "chip": "X5",
-        "path": ".drobotics/skills/x5-bpu-python-api",
+        "path": ".drobotics-x5/skills/x5-bpu-python-api",
         "manual_platform": "x5",
         "reference_path": Path("skills/x5-bpu-python-api/references/x5_bpu_pyapi.md"),
         "route": "/local-python-api/x5-bpu",
@@ -85,7 +85,7 @@ def check_index_and_skills(root: Path, index: dict[str, Any], failures: list[str
 
         expected_path = spec["path"]
         expected_file = f"{expected_path}/SKILL.md"
-        skill_file = root / expected_file.removeprefix(".drobotics/")
+        skill_file = root / expected_file.removeprefix(".drobotics-x5/")
         assert_true(skill_file.is_file(), f"Missing Skill file: {skill_id}", failures)
         reference_file = root / spec["reference_path"]
         assert_true(reference_file.is_file(), f"Missing packaged API reference: {reference_file}", failures)

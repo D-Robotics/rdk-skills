@@ -31,4 +31,4 @@ Model Zoo 负责样例选择、接口合同、代码/文档规范、接入、回
 - [X5 router 与范围](https://github.com/D-Robotics/rdk-skills/blob/131d3048d5b1b8012b1383dc70be4f8264e25918/skills/oe-skills-x5/skills/x5-router/SKILL.md)
 - [X5 PTQ 完成条件](https://github.com/D-Robotics/rdk-skills/blob/131d3048d5b1b8012b1383dc70be4f8264e25918/skills/oe-skills-x5/skills/x5-ptq-deploy/SKILL.md)
 - [X5 QAT 产物边界](https://github.com/D-Robotics/rdk-skills/blob/131d3048d5b1b8012b1383dc70be4f8264e25918/skills/oe-skills-x5/skills/x5-qat-compile/SKILL.md)
-- [S 全链路部署范围](https://github.com/D-Robotics/rdk-skills/blob/131d3048d5b1b8012b1383dc70be4f8264e25918/skills/oe-skills-s/skills/horizon-router/references/deployment-workflow.md)
+- [S 全链路部署范围](https://github.com/D-Robotics/rdk-skills/blob/131d3048d5b1b8012b1383dc70be4f8264e25918/skills/oe-skills-s/skills/drobotics-router/references/deployment-workflow.md)

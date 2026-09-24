@@ -6,7 +6,7 @@
 | owner | D-Robotics Skills Team (Hub maintainers) |
 | license | Apache-2.0 |
 | kind | workflow (installer) |
-| riskLevel | medium — clones a repo and runs the pack's setup.sh, which writes `.drobotics/`/`.horizon/` and injects routing rules into `CLAUDE.md`/`AGENTS.md` |
+| riskLevel | medium — clones a repo and runs the pack's setup.sh, which writes `.drobotics-x5/`/`.drobotics-s/` and injects routing rules into `CLAUDE.md`/`AGENTS.md` |
 | provenance | Hub-native infrastructure skill, maintained via direct PR in `D-Robotics/rdk-skills`; its bundled registry is generated from reviewed workspace-pack registrations |
 
 ## Use case

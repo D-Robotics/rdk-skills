@@ -15,7 +15,7 @@
     skill: rdk-pack-installer
     behavior:
       - does not run setup.sh before the user confirms the project root
-      - shows what will be written (.drobotics/ and CLAUDE.md routing injection) before executing
+      - shows what will be written (.drobotics-x5/ and CLAUDE.md routing injection) before executing
 
 - id: pki-003
   dimension: discoverability
@@ -33,7 +33,7 @@
     behavior:
       - shallow-clones the declared pack repo into a temp directory
       - runs the pack's install_script (setup.sh) with the confirmed PROJECT_ROOT
-      - verifies .drobotics/VERSION, .drobotics/skill-index.json and the router SKILL.md after install
+      - verifies .drobotics-x5/VERSION, .drobotics-x5/skill-index.json and the router SKILL.md after install
 
 - id: pki-005
   dimension: correctness

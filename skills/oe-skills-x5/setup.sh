@@ -9,9 +9,11 @@
 # --update  Rebuild only when the installed VERSION differs.
 # --force   With --update, rebuild even when versions match.
 # --ref     Installation anchor (for example v1.0.0), recorded in
-#           .drobotics/INSTALLED_REF. Defaults to the source VERSION.
+#           .drobotics-x5/INSTALLED_REF. Defaults to the source VERSION.
 
 set -euo pipefail
+
+command -v python3 >/dev/null || { echo "ERROR: python3 is required" >&2; exit 1; }
 
 RESOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
 UPDATE=0
@@ -75,7 +77,7 @@ if [ -d "$RESOURCE_DIR/x5" ]; then
 else
   DROBOTICS_SRC="$RESOURCE_DIR"
 fi
-DROBOTICS_DST="$PROJECT_ROOT/.drobotics"
+DROBOTICS_DST="$PROJECT_ROOT/.drobotics-x5"
 
 if [ ! -d "$DROBOTICS_SRC" ]; then
   echo "ERROR: resource directory not found: $DROBOTICS_SRC" >&2
@@ -152,19 +154,34 @@ ROUTING_RULES="$MARKER
 
 If the user request involves X5 OpenExplorer related topics
 (quantization, compile, deploy, evaluation, training, CLI usage, version issues),
-you MUST follow the project rules defined in .drobotics/X5.md.
+you MUST follow the project rules defined in .drobotics-x5/X5.md.
 
 For X5 OpenExplorer related tasks:
 - Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge.
-- If uncertain, use .drobotics/scripts/search_local_docs.py to retrieve local documentation before answering."
+- If uncertain, use .drobotics-x5/scripts/search_local_docs.py to retrieve local documentation before answering."
 
 for file in CLAUDE.md AGENTS.md; do
   target="$PROJECT_ROOT/$file"
-  if [ -f "$target" ] && ! grep -q "$MARKER" "$target"; then
-    printf '%s\n\n%s\n' "$ROUTING_RULES" "$(cat "$target")" > "$target"
-    echo "  [ok] $file (injected)"
+  if [ -f "$target" ]; then
+    python3 - "$target" "$ROUTING_RULES" <<'PYROUTE'
+from pathlib import Path
+import re
+import sys
+path = Path(sys.argv[1])
+rules = sys.argv[2]
+text = path.read_text()
+markers = ['X5 Workspace Rules']
+# Installed blocks have exactly this bounded sentence structure.
+pattern = r"(?m)^# (?:" + "|".join(re.escape(x) for x in markers) + r")\r?\n\r?\nIf the user request involves [^\n]+\n\(quantization, compile, deploy, evaluation, training, CLI usage, version issues\),\n[^\n]+\n\nFor [^\n]+\n- Do NOT guess toolchain APIs or CLI parameters based on general LLM knowledge\.\n- If uncertain, [^\n]+(?:\n|$)"
+text = re.sub(pattern, "", text).lstrip("\n")
+path.write_text(rules + "\n\n" + text)
+PYROUTE
+    echo "  [ok] $file (routing refreshed)"
   fi
 done
+if [ -d "$PROJECT_ROOT/.drobotics" ]; then
+  echo "  [note] Legacy .drobotics/ retained. Review and migrate local board/environment configuration before use."
+fi
 
 ERRORS=0
 for file in \
@@ -211,4 +228,4 @@ if [ "$ERRORS" -gt 0 ]; then
   exit 1
 fi
 
-echo "==> Done. .drobotics/ initialized at $DROBOTICS_DST"
+echo "==> Done. .drobotics-x5/ initialized at $DROBOTICS_DST"

@@ -37,7 +37,7 @@ Tag 与 Release 不是原子操作。半失败时记录已经存在的 Tag 对�
 
 一个 Hub PR 同时移除 components.d/rdk-device.yml 的 rdk-model-zoo entry，新增 components.d/rdk-model-zoo.yml 并同步镜像/生成物。catalog_dir 全局唯一；一个 repo 只能映射一个 component。源头保留上游署名/许可与历史，旧 Device 新版本提供迁移说明。直接从旧仓库安装的用户需处理旧副本；Hub 同名入口不变。
 
-平铺 Skills 不需要 OE workspace 安装器。不能把本 Pack 放入 OE 升级会删除的 `.drobotics/` 或 `.horizon/`。跨平台读取目标 checkout 的代码和规范；安装源维护分支不代表运行平台，独立安装的 Skill 必须携带自身的 references/assets。
+平铺 Skills 不需要 OE workspace 安装器。不能把本 Pack 放入 OE 升级会删除的 `.drobotics-x5/` 或 `.drobotics-s/`。跨平台读取目标 checkout 的代码和规范；安装源维护分支不代表运行平台，独立安装的 Skill 必须携带自身的 references/assets。
 
 ## 来源
 

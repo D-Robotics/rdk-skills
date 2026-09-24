@@ -1,6 +1,6 @@
 # X5 Skill Pack V2
 
-X5 Pack 以“S 系列的实战深度 + V2 的模块化、脚本化和机器可验证合同”为完成标准。入口为 `x5-router`，详细注册表为 `.drobotics/platforms/x5/skill-index.json`。
+X5 Pack 以“S 系列的实战深度 + V2 的模块化、脚本化和机器可验证合同”为完成标准。入口为 `x5-router`，详细注册表为 `.drobotics-x5/platforms/x5/skill-index.json`。
 
 ## 能力模块
 
@@ -23,14 +23,14 @@ X5 Pack 以“S 系列的实战深度 + V2 的模块化、脚本化和机器可�
 
 ## 运行合同
 
-实际运行使用 `.drobotics/platforms/x5/scripts/run_contract.py` 管理 `input.json`、`environment.json`、`route.json`、`plan.json`、`run-state.json`、`events.ndjson`、`artifacts.json`、`verification.json` 和 `receipt.json`。
+实际运行使用 `.drobotics-x5/platforms/x5/scripts/run_contract.py` 管理 `input.json`、`environment.json`、`route.json`、`plan.json`、`run-state.json`、`events.ndjson`、`artifacts.json`、`verification.json` 和 `receipt.json`。
 
 ## 验收
 
 ~~~bash
-python .drobotics/scripts/validate_x5_skills.py
-python .drobotics/scripts/validate_bpu_python_api_skills.py
-python .drobotics/scripts/validate_release_artifacts.py
+python .drobotics-x5/scripts/validate_x5_skills.py
+python .drobotics-x5/scripts/validate_bpu_python_api_skills.py
+python .drobotics-x5/scripts/validate_release_artifacts.py
 ~~~
 
 静态验收通过不代表真实工具链/开发板 smoke 已通过；发布记录必须区分两者。

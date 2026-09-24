@@ -1,7 +1,7 @@
 ---
 name: x5-qat-deploy
 description: 编排 X5 horizon_plugin_pytorch calibration、QAT、定点转换与 Plugin 编译；当用户有可训练 PyTorch 模型、数据和浮点基线，希望得到 March.BAYES_E 的 .hbm/.hbir 及指标闭环时使用。明确排除 HAT，且不把 QAT 自动交给 hb_mapper makertbin。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -52,5 +52,5 @@ QAT 合同固定为 `March.BAYES_E → adaptation → calibration/QAT → conver
 
 ## 按需参考
 
-- `.drobotics/platforms/x5/policies/compatibility.md`
+- `.drobotics-x5/platforms/x5/policies/compatibility.md`
 - `_sources/plugin/source/quick_start/quick_start.ipynb.txt`

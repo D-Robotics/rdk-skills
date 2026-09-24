@@ -1,6 +1,6 @@
 ---
 name: rdk-board-delegate
-description: 'S-series (S100/S100P/S600) "big-brain / little-brain" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc, IPC, UART, CAN) and Acore/Linux-specific hbmem zero-copy, CPU↔MCU/VDSP/BPU IPC, PCIe, EtherCAT, PTP/gPTP, OTA/miniboot, and VDSP. Covers OpenClaw board-task delegation. Use for S-series MCU firmware, real-time joint/motor control, IPC, EtherCAT/PTP, PCIe, upgrades, VDSP, or CPU+BPU+MCU architecture. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); S-series .hbm compile → horizon-router; ready-made models → rdk-model-zoo; ROS/stereo/lidar application development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.'
+description: 'S-series (S100/S100P/S600) "big-brain / little-brain" heterogeneous development — MCU1 FreeRTOS firmware (build, remoteproc, IPC, UART, CAN) and Acore/Linux-specific hbmem zero-copy, CPU↔MCU/VDSP/BPU IPC, PCIe, EtherCAT, PTP/gPTP, OTA/miniboot, and VDSP. Covers OpenClaw board-task delegation. Use for S-series MCU firmware, real-time joint/motor control, IPC, EtherCAT/PTP, PCIe, upgrades, VDSP, or CPU+BPU+MCU architecture. 触发词:S100、S100P、S600、MCU、小脑、大脑、R52、FreeRTOS、固件、remoteproc、烧固件、关节实时控制、电机回路、IPC、共享内存、hbmem、零拷贝、EtherCAT、运动控制主站、PTP、时间同步、PCIe、OTA、miniboot、VDSP、大小脑异构、CAN、OpenClaw、板端委派。Routing — workspace-router handoffs are availability-gated (missing → install the matching OE workspace Pack with rdk-pack-installer, restart, retry); S-series .hbm compile → drobotics-router; ready-made models → rdk-model-zoo; ROS/stereo/lidar application development has no dedicated Skill: use rdk-docs-reference to search tros_doc; LLM/VLM → rdk-llm-deployment; error-code lookup → rdk-board-knowledge.'
 version: 1.0.0
 license: Apache-2.0
 ---
@@ -13,14 +13,14 @@ S100/S100P/S600 are **not** "X-series with more TOPS". They are a single SoC wit
 
 ## Workspace router availability gate
 
-Before an S-series toolchain handoff, check whether `horizon-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)` into the confirmed project root. After installation, restart the agent session and retry the original handoff.
+Before an S-series toolchain handoff, check whether `drobotics-router` is available in the current session. If unavailable, do not hand off: use `rdk-pack-installer` to install `OE Tool Chain (S)` into the confirmed project root. After installation, restart the agent session and retry the original handoff.
 
 ## The three compute domains (the foundation)
 
 | Domain | Hardware | Runs | Typical work | Where you write code |
 |--------|----------|------|--------------|----------------------|
 | **"Big brain" CPU (Acore)** | A78AE (S100/S100P 6× @1.5/2.0GHz; **S600 18× @2.0GHz**) | Ubuntu (S100/S100P **22.04 + Humble**, S600 **24.04 + Jazzy**) | ROS2 nodes, AI orchestration, planning | Most user code lives here |
-| **"Decision" BPU** | Nash — 80 TOPS (S100) / 128 (S100P) / **560 (S600, 4× core)** | `hbm_runtime` | LLM/VLM/detection/segmentation/point cloud | Compile `.hbm` via `hb_compile` (see `horizon-router`) |
+| **"Decision" BPU** | Nash — 80 TOPS (S100) / 128 (S100P) / **560 (S600, 4× core)** | `hbm_runtime` | LLM/VLM/detection/segmentation/point cloud | Compile `.hbm` via `hb_compile` (see `drobotics-router`) |
 | **"Little brain" MCU** | R52+ (S100 4× / S600 6×, FreeRTOS V10.0.1) | bare FreeRTOS, **not Linux** | hard real-time joint/motor loops (ms/kHz), IMU pre-proc, CAN | MCU1 firmware (this skill) |
 
 Two facts that catch everyone:

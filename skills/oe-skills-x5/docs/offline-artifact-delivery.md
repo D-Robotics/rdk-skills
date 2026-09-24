@@ -1,6 +1,6 @@
 # 固定版本离线交付与 Docker 获取
 
-本 Pack 为已启用的平台维护**版本固定**的 SDK、文档、离线 Docker 镜像和在线 Docker 镜像引用。唯一机器可读来源是 `.drobotics/release-artifacts.json`；可用 `.drobotics/scripts/release_artifacts.py` 只生成命令，不会自动下载大文件、执行 Docker 或读取凭据。
+本 Pack 为已启用的平台维护**版本固定**的 SDK、文档、离线 Docker 镜像和在线 Docker 镜像引用。唯一机器可读来源是 `.drobotics-x5/release-artifacts.json`；可用 `.drobotics-x5/scripts/release_artifacts.py` 只生成命令，不会自动下载大文件、执行 Docker 或读取凭据。
 
 ## 安全与完整性
 
@@ -14,22 +14,22 @@
 先仅查看本次固定发布物：
 
 ~~~bash
-python .drobotics/scripts/release_artifacts.py --release x5-1.2.8 --mode list
-python .drobotics/scripts/release_artifacts.py --release s-3.7.0 --mode list
+python .drobotics-x5/scripts/release_artifacts.py --release x5-1.2.8 --mode list
+python .drobotics-x5/scripts/release_artifacts.py --release s-3.7.0 --mode list
 ~~~
 
 生成公共文件的可审阅 `wget` 命令，再由用户确认后执行：
 
 ~~~bash
-python .drobotics/scripts/release_artifacts.py --release x5-1.2.8 --mode wget --output-dir <cache-dir>
-python .drobotics/scripts/release_artifacts.py --release s-3.7.0 --mode wget --output-dir <cache-dir>
+python .drobotics-x5/scripts/release_artifacts.py --release x5-1.2.8 --mode wget --output-dir <cache-dir>
+python .drobotics-x5/scripts/release_artifacts.py --release s-3.7.0 --mode wget --output-dir <cache-dir>
 ~~~
 
 离线 Docker 镜像下载完成后，生成 `docker load` 命令：
 
 ~~~bash
-python .drobotics/scripts/release_artifacts.py --release x5-1.2.8 --mode docker-load --output-dir <cache-dir>
-python .drobotics/scripts/release_artifacts.py --release s-3.7.0 --mode docker-load --output-dir <cache-dir>
+python .drobotics-x5/scripts/release_artifacts.py --release x5-1.2.8 --mode docker-load --output-dir <cache-dir>
+python .drobotics-x5/scripts/release_artifacts.py --release s-3.7.0 --mode docker-load --output-dir <cache-dir>
 ~~~
 
 在线 Docker 拉取会只输出安全的 `--password-stdin` 登录和 `docker pull` 命令。先通过受管秘密注入环境变量，再复制输出命令执行：
@@ -37,7 +37,7 @@ python .drobotics/scripts/release_artifacts.py --release s-3.7.0 --mode docker-l
 ~~~bash
 export DROBOTICS_REGISTRY_USERNAME='<read-only-registry-user>'
 export DROBOTICS_REGISTRY_PASSWORD='<retrieve-from-secret-manager>'
-python .drobotics/scripts/release_artifacts.py --release x5-1.2.8 --mode docker-pull
+python .drobotics-x5/scripts/release_artifacts.py --release x5-1.2.8 --mode docker-pull
 ~~~
 
 ## X5：OE Mapper 1.2.8 / Python 3.10

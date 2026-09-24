@@ -221,8 +221,8 @@ jobs:
           mkdir "$smoke_root/x5-project" "$smoke_root/s-project"
           bash "$smoke_root/hub/skills/oe-skills-x5/setup.sh" --ref "smoke" "$smoke_root/x5-project"
           bash "$smoke_root/hub/skills/oe-skills-s/setup.sh" --ref "smoke" "$smoke_root/s-project"
-          test "$(cat "$smoke_root/x5-project/.drobotics/INSTALLED_REF")" = smoke
-          test "$(cat "$smoke_root/s-project/.horizon/INSTALLED_REF")" = smoke
+          test "$(cat "$smoke_root/x5-project/.drobotics-x5/INSTALLED_REF")" = smoke
+          test "$(cat "$smoke_root/s-project/.drobotics-s/INSTALLED_REF")" = smoke
 
       - name: Render validated English Release notes
         env:

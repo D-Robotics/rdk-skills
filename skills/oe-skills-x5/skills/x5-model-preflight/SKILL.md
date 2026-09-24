@@ -1,7 +1,7 @@
 ---
 name: x5-model-preflight
 description: 对 X5 PTQ 的 ONNX/Caffe 模型执行格式、输入合同、浮点参考运行和 hb_mapper checker 预检；当尚未生成正式 YAML、需要判断模型能否进入 bayes-e PTQ 时使用。只做预检，不生成部署成功结论。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -31,7 +31,7 @@ license: Apache-2.0
 3. 执行：
 
 ~~~bash
-python .drobotics/platforms/x5/scripts/run_ptq.py checker \
+python .drobotics-x5/platforms/x5/scripts/run_ptq.py checker \
   --config <preflight.yaml> \
   --output-dir <run-root>/checker \
   --report <run-root>/checker-report.json

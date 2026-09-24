@@ -56,17 +56,17 @@ BASH = _find_bash()
 
 @unittest.skipUnless(BASH, "no usable bash found")
 class PackSetupUpgradeTests(unittest.TestCase):
-    # catalog_dir -> (workspace_dir, routing marker)
+    # catalog_dir -> workspace_dir
     PACKS = {
-        "x5": ("oe-skills-x5", ".drobotics", "# X5 Workspace Rules"),
-        "s": ("oe-skills-s", ".horizon", "# Horizon Workspace Rules"),
+        "x5": ("oe-skills-x5", ".drobotics-x5"),
+        "s": ("oe-skills-s", ".drobotics-s"),
     }
 
     @classmethod
     def setUpClass(cls):
         repo = Path(__file__).resolve().parents[1]
         cls.mirrors = {}
-        for pack, (catalog_dir, _ws_dir, _marker) in cls.PACKS.items():
+        for pack, (catalog_dir, _ws_dir) in cls.PACKS.items():
             work = Path(tempfile.mkdtemp(prefix=f"setup-mirror-{pack}-"))
             mirror = work / catalog_dir
             shutil.copytree(repo / "skills" / catalog_dir, mirror)
@@ -91,6 +91,20 @@ class PackSetupUpgradeTests(unittest.TestCase):
             check=False,
         )
 
+    def test_s_and_x5_can_install_and_force_update_together(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary)
+            (project / "AGENTS.md").write_text("# Project rules\nKeep this.\n")
+            for pack in ("x5", "s", "x5", "s"):
+                result = self._run_setup(self.mirrors[pack], project, "--update", "--force")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            rules = (project / "AGENTS.md").read_text()
+            for pack, (_, workspace) in self.PACKS.items():
+                self.assertTrue((project / workspace / "VERSION").is_file())
+                self.assertIn(workspace + "/", rules)
+            self.assertEqual(rules.count("you MUST follow the project rules"), 2)
+            self.assertIn("# Project rules\nKeep this.", rules)
+
     def _install(self, pack, project):
         """Fresh plain install, asserting the legacy argument form works."""
         result = self._run_setup(self.mirrors[pack], project)
@@ -100,7 +114,7 @@ class PackSetupUpgradeTests(unittest.TestCase):
         return result
 
     def test_fresh_install_records_version_and_ref_anchor(self):
-        for pack, (catalog_dir, ws_dir, marker) in self.PACKS.items():
+        for pack, (catalog_dir, ws_dir) in self.PACKS.items():
             with self.subTest(pack=pack), tempfile.TemporaryDirectory() as td:
                 project = Path(td)
                 (project / "CLAUDE.md").write_text("# my project\n", encoding="utf-8")
@@ -121,16 +135,18 @@ class PackSetupUpgradeTests(unittest.TestCase):
                     (ws / "INSTALLED_REF").read_text(encoding="utf-8").strip(),
                     src_version,
                 )
-                self.assertIn(
-                    marker,
-                    (project / "CLAUDE.md").read_text(encoding="utf-8"),
-                )
+                setup_text = (self.mirrors[pack] / "setup.sh").read_text(encoding="utf-8")
+                marker_lines = [line for line in setup_text.splitlines() if line.startswith("MARKER=")]
+                self.assertEqual(len(marker_lines), 1, pack)
+                marker = marker_lines[0].partition("=")[2].strip("'\"")
+                self.assertTrue(marker, pack)
+                self.assertIn(marker, (project / "CLAUDE.md").read_text(encoding="utf-8"))
                 self.assertGreater(
                     len(list((ws / "skills").glob("*/SKILL.md"))), 0
                 )
 
     def test_update_is_noop_when_versions_match(self):
-        for pack, (catalog_dir, ws_dir, marker) in self.PACKS.items():
+        for pack, (catalog_dir, ws_dir) in self.PACKS.items():
             with self.subTest(pack=pack), tempfile.TemporaryDirectory() as td:
                 project = Path(td)
                 (project / "CLAUDE.md").write_text("# my project\n", encoding="utf-8")
@@ -152,7 +168,7 @@ class PackSetupUpgradeTests(unittest.TestCase):
                 )
 
     def test_update_rebuilds_on_version_change_and_removes_stale_files(self):
-        for pack, (catalog_dir, ws_dir, marker) in self.PACKS.items():
+        for pack, (catalog_dir, ws_dir) in self.PACKS.items():
             with self.subTest(pack=pack), tempfile.TemporaryDirectory() as td:
                 project = Path(td)
                 (project / "CLAUDE.md").write_text("# my project\n", encoding="utf-8")
@@ -191,7 +207,7 @@ class PackSetupUpgradeTests(unittest.TestCase):
                 self.assertFalse(stale.exists(), "stale file survived the rebuild")
 
     def test_force_rebuilds_even_when_versions_match(self):
-        for pack, (catalog_dir, ws_dir, marker) in self.PACKS.items():
+        for pack, (catalog_dir, ws_dir) in self.PACKS.items():
             with self.subTest(pack=pack), tempfile.TemporaryDirectory() as td:
                 project = Path(td)
                 (project / "CLAUDE.md").write_text("# my project\n", encoding="utf-8")

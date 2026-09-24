@@ -138,7 +138,7 @@ ISOLATION_CASES = {
     "reject-x3-reuse": "blocked_until_x3_pack_exists",
 }
 SOURCE_REFERENCE = re.compile(r"_sources/[A-Za-z0-9_./-]+\.(?:rst|md|ipynb)\.txt")
-LOCAL_REFERENCE = re.compile(r"\.drobotics/[A-Za-z0-9_./-]+")
+LOCAL_REFERENCE = re.compile(r"\.drobotics-x5/[A-Za-z0-9_./-]+")
 FRONTMATTER = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.S)
 FENCED_CODE_BLOCK = re.compile(r"(?ms)^(?:```|~~~)[^\r\n]*\r?\n(.*?)^(?:```|~~~)\s*$")
 FORBIDDEN_S_EXECUTABLE = re.compile(
@@ -189,7 +189,7 @@ def load_yaml(path: Path, failures: list[str]) -> Any:
 
 
 def installed_path(root: Path, value: str) -> Path:
-    return root / value.removeprefix(".drobotics/")
+    return root / value.removeprefix(".drobotics-x5/")
 
 
 def ranked_routes(entries: list[dict[str, Any]], query: str) -> list[str]:
@@ -251,7 +251,7 @@ def check_pack_index(root: Path, failures: list[str]) -> dict[str, Any]:
         skill_id = str(item.get("id", ""))
         missing_fields = sorted(required_fields - set(item))
         assert_true(not missing_fields, f"{skill_id} index entry lacks fields: {', '.join(missing_fields)}", failures)
-        expected_entry = f".drobotics/skills/{skill_id}/SKILL.md"
+        expected_entry = f".drobotics-x5/skills/{skill_id}/SKILL.md"
         assert_true(item.get("entry") == expected_entry, f"Wrong V2 entry path: {skill_id}", failures)
         assert_true(installed_path(root, expected_entry).is_file(), f"Missing Skill file: {skill_id}", failures)
         assert_true(item.get("kind") in valid_kinds, f"Invalid Skill kind: {skill_id}", failures)

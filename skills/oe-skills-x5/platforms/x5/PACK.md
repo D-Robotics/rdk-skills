@@ -32,7 +32,7 @@
 
 ## 全局完成标准
 
-- 实际执行使用 `<working_dir>/.drobotics/x5-runs/<run-id>/` 或用户认可的运行目录。
+- 实际执行使用 `<working_dir>/.drobotics-x5/x5-runs/<run-id>/` 或用户认可的运行目录。
 - 每次运行至少产生 `input.json`、`environment.json`、`route.json`、`plan.json`、`run-state.json`、`events.ndjson`、`artifacts.json`、`verification.json` 和 `receipt.json`。
 - PTQ 成功必须有 checker 证据、通过 schema 校验的 YAML、`.bin`、`hb_model_info` 中的 `BPU march: bayes-e` 和后续 Runtime 验证结论。
 - QAT 成功必须有浮点/calibration/QAT/quantized 指标、`March.BAYES_E` 证据、模型检查和编译产物；不得把 Generic/J5 示例中的 `March.BAYES` 当成 X5 成功路径。
@@ -108,9 +108,9 @@
 ## 验收
 
 ~~~bash
-python .drobotics/scripts/validate_x5_skills.py
-python .drobotics/scripts/validate_bpu_python_api_skills.py
-python .drobotics/scripts/validate_release_artifacts.py
+python .drobotics-x5/scripts/validate_x5_skills.py
+python .drobotics-x5/scripts/validate_bpu_python_api_skills.py
+python .drobotics-x5/scripts/validate_release_artifacts.py
 ~~~
 
 验证器会执行假工具链 PTQ、QAT 目标检查、运行合同和板端状态解析 smoke；这仍不等于真实工具链/开发板通过。发布前还必须在匹配的 X5 SDK 中运行 PTQ smoke，并在可用开发板上运行带标签的 Runtime smoke。

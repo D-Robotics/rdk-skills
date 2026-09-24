@@ -1,5 +1,5 @@
 {
-  "skillsRoot": ".drobotics/skills",
+  "skillsRoot": ".drobotics-x5/skills",
   "modules": {
     "x5": {
       "title": "D-Robotics X5 / Skill Pack V2",

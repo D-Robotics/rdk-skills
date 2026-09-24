@@ -1,7 +1,7 @@
 ---
 name: x5-model-diagnostics
 description: 只读分诊 X5 环境、checker、PTQ、QAT、Runtime、精度、性能和日志问题；当已有 failure receipt、environment.json、日志或中间产物，需要定位首次失败阶段和下一 Skill 时使用。默认不重跑训练、编译、安装或上传。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -50,5 +50,5 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `.drobotics/platforms/x5/references/manual-map.md`
-- `.drobotics/platforms/x5/references/run-contract.md`
+- `.drobotics-x5/platforms/x5/references/manual-map.md`
+- `.drobotics-x5/platforms/x5/references/run-contract.md`

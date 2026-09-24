@@ -1,7 +1,7 @@
 ---
 name: x5-router
 description: 路由 X5 环境、OE Mapper PTQ、Plugin QAT、Runtime、板端 Python 和诊断请求；当目标芯片明确为 X5 或请求包含 bayes-e、hb_mapper、X5 .bin、March.BAYES_E 时使用。只选择一个主 Skill 并生成 route.json；不执行 HAT、X3 或 S 系列工作流。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -9,7 +9,7 @@ license: Apache-2.0
 
 ## 目标与边界
 
-- 读取 `.drobotics/platforms/x5/skill-index.json`，以输入、产物、环境和风险选择一个主 Skill。
+- 读取 `.drobotics-x5/platforms/x5/skill-index.json`，以输入、产物、环境和风险选择一个主 Skill。
 - 用户只说“X 系列”时先确认 X5/X3；X3 和其他 X 芯片在专属 Pack 可用前返回 `blocked`。
 - HAT、HAT config、Trainer、Model Zoo 和 `tools/compile_perf.py` 不在范围内。
 - 不调用 `s-*`、HBDK4、HMCT、UCP、`nash-*` 或 `March.BAYES`。
@@ -58,6 +58,6 @@ license: Apache-2.0
 
 ## 按需参考
 
-- `.drobotics/platforms/x5/policies/compatibility.md`
-- `.drobotics/platforms/x5/policies/risk-policy.md`
-- `.drobotics/platforms/x5/references/run-contract.md`
+- `.drobotics-x5/platforms/x5/policies/compatibility.md`
+- `.drobotics-x5/platforms/x5/policies/risk-policy.md`
+- `.drobotics-x5/platforms/x5/references/run-contract.md`

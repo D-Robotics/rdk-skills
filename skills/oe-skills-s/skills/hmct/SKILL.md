@@ -1,14 +1,14 @@
 ---
 name: hmct-workflow
 description: >
-  HMCT 模型转换与 PTQ 量化总入口——优先使用 hb_compile + YAML 配置方式。
+  HMCT 模型转换与 PTQ 量化总入口——对浮点 ONNX/Caffe 的标准 PTQ 流程优先使用 hb_config_generator 生成官方 YAML，再运行 hb_compile -c。
   根据用户意图自动路由：
-  (1) 提供了校准数据 → 使用 hb_config_generator 生成 YAML 配置，再调用 j6-hbdk-compile 执行编译；
-  (2) 未提供校准数据 → 使用 hb_config_generator 生成快速验证配置，再调用 j6-hbdk-compile 验证；
-  (3) 用户希望进行精度调优 → 转交 j6-hmct-cosine-similarity-tuning SKILL 执行多阶段调优；
+  (1) 提供了校准数据 → 使用 hb_config_generator 生成官方 YAML 配置，再运行 hb_compile -c 执行标准 PTQ；
+  (2) 未提供校准数据 → 使用 hb_compile -m --march 检查模型；
+  (3) 用户希望进行精度调优 → 转交 s-hmct-cosine-similarity-tuning SKILL 执行多阶段调优；
   (4) 用户希望进行单项精度 debug 分析（节点灵敏度、数据分布、累积误差等）→ 调用 hmct-debugger CLI 执行对应分析工具。
   当用户提示词中出现 HMCT、模型转换、模型量化、PTQ、hb_compile、YAML 配置、精度调优、cosine similarity、节点灵敏度、数据分布、累积误差、debug 等关键词时应触发此 Skill。
-version: 1.0.0
+version: 1.0.2
 license: Apache-2.0
 ---
 
@@ -21,14 +21,14 @@ license: Apache-2.0
 ```
 用户请求
   │
-  ├─ 意图：模型转换 / 量化构建 / PTQ，且提供了校准数据（cali_data_dir）
-  │   └─→ 路由 A：通过 hb_config_generator 生成 YAML → j6-hbdk-compile 编译
+  ├─ 意图：浮点 ONNX/Caffe 模型的 PTQ 量化，且提供了校准数据（cal_data_dir）
+  │   └─→ 路由 A：hb_config_generator 生成官方 YAML → hb_compile -c
   │
-  ├─ 意图：模型转换 / 验证模型 / 快速检查，未提供校准数据
-  │   └─→ 路由 B：通过 hb_config_generator 生成快速验证 YAML → j6-hbdk-compile 验证
+  ├─ 意图：检查模型能否被工具链处理，当前没有校准数据
+  │   └─→ 路由 B：hb_compile -m <model> --march <march>（只检查，不执行 PTQ）
   │
   ├─ 意图：精度调优 / cosine similarity 不达标 / 混精度配置
-  │   └─→ 路由 C：精度调优工作流（转交 j6-hmct-cosine-similarity-tuning）
+  │   └─→ 路由 C：精度调优工作流（转交 s-hmct-cosine-similarity-tuning）
   │
   ├─ 意图：单项 debug 分析（灵敏度、分布、累积误差等）
   │   └─→ 路由 D：精度 Debug 工具
@@ -45,7 +45,8 @@ license: Apache-2.0
 
 **关键词：** 模型转换、量化构建、PTQ 构建、校准、hb_compile、YAML 配置
 
-**优先使用 `hb_config_generator` + `hb_compile` 方式（而非 `run_build.py`）。**
+**首选官方命令行工作流：`hb_config_generator` 生成 YAML，用户确认配置后运行 `hb_compile -c`。**
+标准 PTQ 不调用 `s-hbdk-compile` 中的自定义 `compile_model.py`，也不让 Agent 直接编写 `hbdk4.compiler` API 编译代码。只有用户明确要求 API 级代码，或官方 CLI 无法完成某个已确认的特殊操作时，才转到相应的高级 Skill。
 
 ### 工作流
 
@@ -59,116 +60,101 @@ Step 1: 收集参数 → Step 2: hb_config_generator 生成 YAML → Step 3: 用
 
 | 参数 | 说明 |
 |------|------|
-| `--onnx_path` | 输入 ONNX 模型路径 |
-| `--cali_data_dir` | 校准数据目录（子目录名需与模型输入名一致） |
+| `-m` / `--model` | 输入 ONNX 模型路径；Caffe 模型还需要 `-p` / `--proto` |
+| `calibration_parameters.cal_data_dir` | 校准数据目录，填入生成的官方 YAML |
 
 #### 可选参数
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--march` | `nash-p` | BPU 芯片架构 |
-| `--input_shape` | 从 ONNX 自动推断 | 输入 shape，如 `[1,3,224,224]` |
-| `--preprocess` | 无 | 预处理参数（mean/std/scale/color_convert/resizer/pyramid 等） |
-| `--name_prefix` | `model` | 输出模型名称或路径前缀 |
-| `--calibration_type` | 由 HMCT 决定 | 激活校准方法（`max` / `kl` / `load` 等） |
+| `--march` | 必须依据目标板选择 | S100=`nash-e`，S100P=`nash-m`，S600=`nash-p`；未知时先确认 |
+| `input_parameters` | 从模型信息和用户描述核对 | 输入名称、形状、训练/运行格式及前处理参数 |
+| `calibration_parameters` | 根据工具链版本与用户需求填写 | 校准数据目录和量化参数；保留生成器的字段结构 |
+| `model_parameters.working_dir` | 由用户指定或沿用生成配置 | 编译产物目录 |
 
 ### 执行方式
 
 ```bash
-# Step 1: 使用 hb_config_generator 生成 YAML 配置
-hb_config_generator \
-    --model-path <模型路径> \
-    --calibration-data-dir <校准数据目录> \
-    --march <芯片架构> \
-    --output-path <输出目录>/compile_config.yaml
+# Step 1: 生成官方完整 YAML 模板（工具在当前目录生成 full_compile_config.yaml）
+hb_config_generator -f -m <模型路径> --march <芯片架构>
 
-# Step 2: 用户确认 YAML 配置（默认必须确认）
-# 向用户展示生成的 YAML 配置摘要（模型路径、march、校准数据等）
+# Step 2: 编辑 full_compile_config.yaml
+# 将校准数据目录填入 calibration_parameters.cal_data_dir，
+# 并按模型和用户信息核对 input_parameters / compiler_parameters。
 
-# Step 3: 使用 hb_compile 执行编译
-hb_compile -c <输出目录>/compile_config.yaml
+# Step 3: 用户确认 YAML 配置后运行
+hb_compile -c full_compile_config.yaml
 ```
 
 ### YAML 配置示例
 
 ```yaml
-model:
-  onnx: /path/to/model.onnx
-  march: nash-p
-  calibration:
-    data_dir: /path/to/cali_data
-    calibration_type: max
-  input:
-    input_source: pyramid
-    preprocessing:
-      mean: [123.675, 116.28, 103.53]
-      scale: [0.01712475, 0.017507, 0.0174292]
-  output:
-    out_dir: ./compile_output
-    model_name: quantized_model
+model_parameters:
+  onnx_model: /path/to/model.onnx
+  march: nash-e                  # S100；S100P=nash-m；S600=nash-p
+  working_dir: ./model_output
+  output_model_file_prefix: model
+input_parameters:
+  input_type_rt: nv12
+  input_type_train: bgr
+  input_layout_train: NCHW
+calibration_parameters:
+  cal_data_dir: /path/to/calibration_data
+compiler_parameters:
+  compile_mode: latency
 ```
+
+示例只展示官方配置 section 与字段名。实际任务先由 `hb_config_generator -f` 生成当前工具链版本的模板，再按真实模型输入、前处理和校准参数修改；不要用此片段覆盖生成器输出中的其它必需字段。
 
 ### 执行步骤
 
-1. 确认 `--onnx_path` 和 `--cali_data_dir`，未提供则询问
-2. 确认 `--march` 参数，未指定则使用默认值 `nash-p`
-3. 运行 `hb_config_generator` 生成 YAML 配置
-4. **向用户展示 YAML 配置摘要，等待用户确认**（默认强制门禁）
-5. 用户确认后，转交 **j6-hbdk-compile** Skill 执行 `hb_compile -c`
-6. 检查输出日志，确认构建成功
-7. 向用户报告结果和输出文件路径
+1. 确认浮点模型路径、校准数据目录和目标板；未知目标板时先询问，不默认猜 `march`
+2. 运行 `hb_config_generator -f -m <模型路径> --march <march>` 生成完整官方 YAML
+3. 编辑生成文件中的 `calibration_parameters.cal_data_dir`，并根据模型信息核对输入配置
+4. **向用户展示配置摘要并等待确认**；除非用户已明确要求直接执行，否则此时停下
+5. 用户确认后，在同一 OE 环境中运行 `hb_compile -c <生成的 YAML>`
+6. 检查 `hb_compile.log` 和目标 HBM 是否生成，再报告路径与结果
 
 ### 参考文档
 
-- `hb_config_generator` 使用文档见 `horizon-tc-ui` Skill
-- `hb_compile` YAML 配置参考见 `j6-hbdk-compile` Skill
+- `hb_config_generator` 命令与配置编写见 `../tc_ui/s-tc-ui/references/tasks/task-yaml-authoring.md`
+- `hb_compile` 主流程与验证见 `../tc_ui/s-tc-ui/references/tasks/task-float-to-hbm.md`
+- 官方 PTQ 文档：<https://developer.d-robotics.cc/oe_s_doc/guide/ptq/ptq_tool/hb_config_generator>、<https://developer.d-robotics.cc/oe_s_doc/guide/ptq/ptq_usage/quantize_compile>
 
 ---
 
-## 路由 B：快速验证（YAML 驱动）
+## 路由 B：快速模型检查
 
-**触发条件：** 用户希望验证模型是否能走通转换流程，但未提供校准数据。
+**触发条件：** 用户只想检查模型是否可被工具链识别/处理，尚未提供校准数据。这条路由不执行 PTQ 量化。
 
 **关键词：** 验证模型、check_model、快速检查、测试转换、能不能转
 
 ### 工作流
 
 ```
-Step 1: 收集参数 → Step 2: hb_config_generator 生成验证 YAML（启用 check 模式） → Step 3: 用户确认 → Step 4: hb_compile -c 验证
+Step 1: 确认模型路径与 march → Step 2: hb_compile -m 做模型检查 → Step 3: 报告检查结果
 ```
 
 ### 需要收集的参数
 
 | 参数 | 必填 | 说明 |
 |------|------|------|
-| `--onnx_path` | 是 | 输入 ONNX 模型路径 |
-| `--march` | 否 | BPU 芯片架构，默认 `nash-p` |
-| `--input_shape` | 否 | 输入 shape |
+| `-m` / `--model` | 是 | 输入 ONNX/Caffe 模型路径 |
+| `--march` | 是 | 目标 BPU 架构，按 S100/S100P/S600 选择 `nash-e/m/p` |
 
 ### 执行方式
 
 ```bash
-# Step 1: 生成 YAML 配置（check 模式使用随机校准数据）
-hb_config_generator \
-    --model-path <模型路径> \
-    --march <芯片架构> \
-    --output-path <输出目录>/compile_config.yaml \
-    --check-mode
-
-# Step 2: 用户确认 YAML 配置
-
-# Step 3: 执行快速验证编译
-hb_compile -c <输出目录>/compile_config.yaml
+# 只检查模型，不运行校准量化
+hb_compile -m <模型路径> --march <芯片架构>
 ```
 
 ### 执行步骤
 
-1. 确认 `--onnx_path`，未提供则询问
-2. 确认 `--march` 参数，未指定则使用默认值 `nash-p`
-3. 运行 `hb_config_generator --check-mode` 生成验证 YAML
-4. **向用户展示 YAML 配置摘要，等待用户确认**
-5. 用户确认后，转交 **j6-hbdk-compile** Skill 执行 `hb_compile -c`
-6. 若通过则告知用户模型兼容；若失败则分析错误原因
+1. 确认模型路径和目标板；march 未知时先询问
+2. 执行 `hb_compile -m <模型路径> --march <march>` 做 check
+3. 明确说明 check 通过只代表模型检查成功，不代表 PTQ 已完成或 HBM 已产出
+4. 若用户实际需要 PTQ，转回路由 A，收集校准数据并生成 YAML
 
 ---
 
@@ -180,7 +166,7 @@ hb_compile -c <输出目录>/compile_config.yaml
 
 ### 转交目标
 
-转交至 **j6-hmct-cosine-similarity-tuning** Skill 处理。
+转交至 **s-hmct-cosine-similarity-tuning** Skill 处理。
 
 ### 需要收集的参数
 
@@ -204,19 +190,19 @@ hb_compile -c <输出目录>/compile_config.yaml
 
 ```bash
 # 默认（由 HMCT 自动选择校准方法）
-python3 HMCT_Skill/j6-hmct-cosine-similarity-tuning/script/hmct_precision_tuning.py \
+python3 HMCT_Skill/s-hmct-cosine-similarity-tuning/script/hmct_precision_tuning.py \
     --onnx_path <模型路径> \
     --cali_data_dir <校准数据目录> \
     --march <芯片架构>
 
 # 显式指定单一校准方法
-python3 HMCT_Skill/j6-hmct-cosine-similarity-tuning/script/hmct_precision_tuning.py \
+python3 HMCT_Skill/s-hmct-cosine-similarity-tuning/script/hmct_precision_tuning.py \
     --onnx_path <模型路径> \
     --cali_data_dir <校准数据目录> \
     --calibration_type max
 
 # 多校准方法（HMCT 触发 modelwise search）
-python3 HMCT_Skill/j6-hmct-cosine-similarity-tuning/script/hmct_precision_tuning.py \
+python3 HMCT_Skill/s-hmct-cosine-similarity-tuning/script/hmct_precision_tuning.py \
     --onnx_path <模型路径> \
     --cali_data_dir <校准数据目录> \
     --calibration_type max kl
@@ -233,7 +219,7 @@ INT8 基线 → 全 INT16 ─┬─ 达标 → INT8+INT16 渐进回退
 
 ### 参考文档
 
-完整调优流程见 [j6-hmct-cosine-similarity-tuning/SKILL.md](j6-hmct-cosine-similarity-tuning/SKILL.md)
+完整调优流程见 [s-hmct-cosine-similarity-tuning/SKILL.md](s-hmct-cosine-similarity-tuning/SKILL.md)
 
 ---
 
@@ -280,12 +266,12 @@ INT8 基线 → 全 INT16 ─┬─ 达标 → INT8+INT16 渐进回退
 
 | 用户输入 | 路由 | 原因 |
 |----------|------|------|
-| "帮我把 model.onnx 转换为量化模型，校准数据在 ./cali_data" | A | 有校准数据，执行 YAML 驱动编译 |
+| "帮我把 model.onnx 转换为量化模型，校准数据在 ./cali_data" | A | 生成官方 YAML，确认后运行 hb_compile -c |
 | "构建时帮我加上 input_dict 做归一化预处理" | A | 需传预处理参数到 YAML |
 | "用 quant_config.json 量化这个模型" | A | 按 YAML 配置方式执行 |
 | "我想看下这个模型能不能在 nash-e 上跑通" | B | 验证意图，无校准数据 |
 | "帮我验证一下 model.onnx 能否转换成功" | B | 验证意图 |
-| "用随机数据快速跑一遍流程" | B | 验证意图，走 check 模式 |
+| "用随机数据快速估算模型性能" | `s-tc-ui` fast-perf | 只做性能估算，不冒充 PTQ 量化 |
 | "量化后精度下降了，帮我调优" | C | 精度调优意图 |
 | "cosine similarity 只有 0.95，怎么提升" | C | 精度不达标 |
 | "帮我做混精度配置，把敏感节点设成 INT16" | C | 精度调优意图 |
@@ -302,9 +288,9 @@ HMCT_Skill/
 ├── SKILL.md                                    ← 本文件（路由入口）
 ├── reference/
 │   ├── build_model.md                          ← build_model / check_model 参考文档
-│   ├── run_build.py                            ← 一键构建/验证脚本（备选路径，推荐用 YAML 方式）
+│   ├── run_build.py                            ← 旧 HMCT API 示例；仅用户明确要求 API 流程时参考，不作为标准 PTQ 路径
 │   └── debug_tools.md                          ← 精度 debug 工具参考文档
-└── j6-hmct-cosine-similarity-tuning/
+└── s-hmct-cosine-similarity-tuning/
     ├── SKILL.md                                ← 精度调优 Skill 定义
     ├── example.md                              ← Prompt 示例
     └── script/

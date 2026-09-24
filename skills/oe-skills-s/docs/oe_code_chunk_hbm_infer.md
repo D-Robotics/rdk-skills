@@ -3,7 +3,7 @@
 ## 仓库概述
 
 - **Name**: hbm_infer (v3.15.3)
-- **Purpose**: Python client for remote HBM model inference on Horizon RDK S series development boards via gRPC
+- **Purpose**: Python client for remote HBM model inference on D Robotics RDK S series development boards via gRPC
 - **Role**: Host-side component in the AI toolchain; uploads models to the board, sends input tensors, receives inference results
 - **Architecture**: Client-server model — Python client on PC, native C++ gRPC server (`hbm_rpc_service`) on the RDK S series board running UCP inference
 - **Dependencies**: grpcio 1.66.1, protobuf >=3.20.3 <=4.23.0, paramiko >=3.1.0, scp >=0.12.0, typeguard >=2.13.3, numpy, torch

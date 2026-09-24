@@ -3,7 +3,7 @@
 ## 仓库概述
 
 - **名称**: `hbdk4-march` v4.11.2
-- **用途**: Horizon Robotics BPU（Brain Processing Unit）机器架构（march）描述包
+- **用途**: D Robotics BPU（Brain Processing Unit）机器架构（march）描述包
 - **角色**: HBDK4 工具链的基础依赖，为 `hbdk4-compiler` 和 `hmct` 提供 BPU 目标架构元数据
 - **形式**: 解压后的 Python wheel（二进制包），非源码仓库
 - **导入路径**: `hbdk4.march`（注意不是 `hbdk4_march`）

@@ -1,7 +1,7 @@
 ---
 name: x5-bpu-python-api
 description: 在 X5 板端使用 hbm_runtime.HB_HBMRuntime 加载 .bin、读取模型 I/O 并执行本地 Python 推理；当系统 /etc/version 不低于 3.5.0 且已有匹配 X5 libdnn 的本地 wheel/DEB 时使用。禁止安装 PyPI 同名 S 系列包，也不处理 C++ Runtime、.hbm 或 hbm_infer gRPC。
-version: 1.0.0
+version: 1.0.1
 license: Apache-2.0
 ---
 
@@ -23,7 +23,7 @@ license: Apache-2.0
 
 ~~~bash
 cat /etc/version
-python3 .drobotics/scripts/check_bpu_python_api_version.py --platform x5
+python3 .drobotics-x5/scripts/check_bpu_python_api_version.py --platform x5
 ~~~
 
 2. 系统版本必须 `>= 3.5.0`，模型必须为 X5 `.bin`。
@@ -55,4 +55,4 @@ python3 .drobotics/scripts/check_bpu_python_api_version.py --platform x5
 
 ## 按需参考
 
-- `.drobotics/skills/x5-bpu-python-api/references/x5_bpu_pyapi.md`
+- `.drobotics-x5/skills/x5-bpu-python-api/references/x5_bpu_pyapi.md`
