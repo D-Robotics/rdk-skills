@@ -3,7 +3,9 @@
 
 """Behavioral tests for data-only README regeneration."""
 
+from collections import Counter
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -16,6 +18,36 @@ SCRIPT = ROOT / ".github" / "scripts" / "regenerate_readme.py"
 
 
 class ReadmeRegenerationTests(unittest.TestCase):
+    def _catalog_rows(self, filename, section):
+        content = (ROOT / filename).read_text(encoding="utf-8")
+        start = f"<!-- {section}-table-start -->"
+        end = f"<!-- {section}-table-end -->"
+        self.assertEqual(content.count(start), 1)
+        self.assertEqual(content.count(end), 1)
+        table = content.split(start)[1].split(end)[0]
+        rows = {}
+        for name, cells in re.findall(r"^\| \*\*(.*?)\*\* \|(.*)$", table, re.MULTILINE):
+            # Translate display labels only; descriptions and row order may differ.
+            name = name.replace("OE 工具链", "OE Tool Chain")
+            self.assertNotIn(name, rows, f"duplicate component in {filename}")
+            rows[name] = Counter(re.findall(r"\]\(([^)]+)\)", cells))
+        self.assertTrue(rows, f"missing component rows in {filename}")
+        return rows
+
+    def test_bilingual_skill_catalog_matches_per_component(self):
+        self.assertEqual(
+            self._catalog_rows("README.md", "skills"),
+            self._catalog_rows("README_cn.md", "skills"),
+            "Chinese skill links must match English links under the same component",
+        )
+
+    def test_bilingual_feedback_links_match_per_component(self):
+        self.assertEqual(
+            self._catalog_rows("README.md", "help"),
+            self._catalog_rows("README_cn.md", "help"),
+            "Chinese source-repository feedback links must match English links",
+        )
+
     def test_source_controlled_directory_name_is_data_not_python_source(self):
         """A source filename that closes triple quotes must remain inert data."""
         with tempfile.TemporaryDirectory() as temp_dir:
