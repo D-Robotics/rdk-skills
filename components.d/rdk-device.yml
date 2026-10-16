@@ -57,5 +57,5 @@ skills:
     catalog_dir: rdk-source-map
 links:
   contributing: CONTRIBUTING.md
-  discussions: true
+  discussions: false
 

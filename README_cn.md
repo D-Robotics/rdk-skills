@@ -300,7 +300,7 @@ Hub 内容通过来源 Release 触发的升级 PR 更新，合入后才进入主
 | 产品 | Issues | Discussions | 贡献指南 |
 |------|--------|-------------|----------|
 | **BSP Skills** | [Issues](https://github.com/D-Robotics/bsp-skills/issues) | — | [贡献指南](https://github.com/D-Robotics/bsp-skills/blob/main/CONTRIBUTING.md) |
-| **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | [Discussions](https://github.com/D-Robotics/rdk-device-skills/discussions) | [贡献指南](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
+| **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | — | [贡献指南](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
 | **OE 工具链 (X5)** | [Issues](https://github.com/D-Robotics/oe-skills-x5/issues) | — | [贡献指南](https://github.com/D-Robotics/oe-skills-x5/blob/main/CONTRIBUTING.md) |
 | **OE 工具链 (S)** | [Issues](https://github.com/D-Robotics/oe-skills-s/issues) | — | — |
 <!-- help-table-end -->

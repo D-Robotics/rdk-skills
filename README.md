@@ -315,7 +315,7 @@ Product source repos:
 | **BSP Skills** | [Issues](https://github.com/D-Robotics/bsp-skills/issues) | — | [Contributing](https://github.com/D-Robotics/bsp-skills/blob/main/CONTRIBUTING.md) |
 | **OE Tool Chain (S)** | [Issues](https://github.com/D-Robotics/oe-skills-s/issues) | — | — |
 | **OE Tool Chain (X5)** | [Issues](https://github.com/D-Robotics/oe-skills-x5/issues) | — | [Contributing](https://github.com/D-Robotics/oe-skills-x5/blob/main/CONTRIBUTING.md) |
-| **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | [Discussions](https://github.com/D-Robotics/rdk-device-skills/discussions) | [Contributing](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
+| **RDK Device Skills** | [Issues](https://github.com/D-Robotics/rdk-device-skills/issues) | — | [Contributing](https://github.com/D-Robotics/rdk-device-skills/blob/main/CONTRIBUTING.md) |
 | **RDK Model Zoo Skills** | [Issues](https://github.com/D-Robotics/rdk_model_zoo/issues) | — | [Contributing](https://github.com/D-Robotics/rdk_model_zoo/blob/main/docs/Model_Zoo_Repository_Guidelines.md) |
 <!-- help-table-end -->
 
