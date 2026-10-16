@@ -143,6 +143,8 @@ class HubReleaseNoteTests(unittest.TestCase):
         self.assertIn("BSP Skills | `v1.0.1`", notes.body)
         self.assertIn("OE Skills X5 | `v1.0.0`", notes.body)
         self.assertIn("BSP Skills: `v1.0.0` to `v1.0.1`", notes.body)
+        self.assertIn('skills/oe-skills-x5/setup.sh --ref v1.0.0', notes.body)
+        self.assertIn('skills/oe-skills-s/setup.sh --ref v1.3.4', notes.body)
         self.assertFalse(self.renderer.contains_cjk(notes.body))
 
     def test_rejects_non_english_additions_and_unresolved_template_markers(self):

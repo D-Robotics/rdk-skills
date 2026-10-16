@@ -277,6 +277,12 @@ def _render_template(version: str, components: dict[str, dict[str, Any]]) -> str
     }
     for source, display_name in COMPONENTS.items():
         body = body.replace(f"| {display_name} | `vX.Y.Z` |", f"| {display_name} | `{components[source]['ref']}` |")
+    for pack in ("oe-skills-x5", "oe-skills-s"):
+        source_ref = components[f"D-Robotics/{pack}"]["ref"]
+        body = body.replace(
+            f"skills/{pack}/setup.sh --ref vX.Y.Z",
+            f"skills/{pack}/setup.sh --ref {source_ref}",
+        )
     body = body.replace("vX.Y.Z", tag)
     for old, new in replacements.items():
         body = body.replace(old, new)
