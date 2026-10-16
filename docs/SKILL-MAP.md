@@ -6,9 +6,9 @@ Find a skill by task area. Every skill node links to its `SKILL.md`; the links b
 
 [中文首页](../README_cn.md) · [English README](../README.md)
 
-本图依据当前提交的 Skill 索引生成，共 **97** 个 Skill。新增或移除 Skill 时需同步更新本页。
+本图依据当前提交的 Skill 索引生成，共 **98** 个 Skill。新增或移除 Skill 时需同步更新本页。
 
-Generated from the committed skill index: **97** skills. Refresh this page when catalog entries change.
+Generated from the committed skill index: **98** skills. Refresh this page when catalog entries change.
 
 <a id="device"></a>
 
@@ -75,7 +75,7 @@ flowchart LR
 
 <a id="bsp"></a>
 
-## BSP 开发 / BSP · 8
+## BSP 开发 / BSP · 9
 
 **按需安装 / Select skills:** 可通过技能安装入口选择需要的 Skill。 / Select the skills needed for your task.
 
@@ -98,9 +98,11 @@ flowchart LR
     click skill31 "../skills/bsp-s-series/SKILL.md" "Open SKILL.md"
     root --> skill32["bsp-source-sync"]
     click skill32 "../skills/bsp-source-sync/SKILL.md" "Open SKILL.md"
+    root --> camera_bringup["cmos-sensor-bringup"]
+    click camera_bringup "../skills/cmos-sensor-bringup/SKILL.md" "Open SKILL.md"
 ```
 
-[bsp-bootloader-build](../skills/bsp-bootloader-build/SKILL.md) · [bsp-deb-build](../skills/bsp-deb-build/SKILL.md) · [bsp-env-setup](../skills/bsp-env-setup/SKILL.md) · [bsp-image-build](../skills/bsp-image-build/SKILL.md) · [bsp-kernel-build](../skills/bsp-kernel-build/SKILL.md) · [bsp-rootfs-custom](../skills/bsp-rootfs-custom/SKILL.md) · [bsp-s-series](../skills/bsp-s-series/SKILL.md) · [bsp-source-sync](../skills/bsp-source-sync/SKILL.md)
+[bsp-bootloader-build](../skills/bsp-bootloader-build/SKILL.md) · [bsp-deb-build](../skills/bsp-deb-build/SKILL.md) · [bsp-env-setup](../skills/bsp-env-setup/SKILL.md) · [bsp-image-build](../skills/bsp-image-build/SKILL.md) · [bsp-kernel-build](../skills/bsp-kernel-build/SKILL.md) · [bsp-rootfs-custom](../skills/bsp-rootfs-custom/SKILL.md) · [bsp-s-series](../skills/bsp-s-series/SKILL.md) · [bsp-source-sync](../skills/bsp-source-sync/SKILL.md) · [cmos-sensor-bringup](../skills/cmos-sensor-bringup/SKILL.md)
 
 <a id="x5"></a>
 
