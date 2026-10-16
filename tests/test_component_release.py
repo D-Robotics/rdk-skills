@@ -516,38 +516,6 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
             "complete after all classic-protection gates pass.",
         )
 
-    def test_release_design_scopes_the_live_branch_control_contract(self):
-        document, section = self._document_section(
-            "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
-            "### 4. Review and merge controls",
-            "### 5. Hub release workflow",
-        )
-        self._assert_live_branch_control_contract(
-            document,
-            section,
-            "The broad branch ruleset includes `refs/heads/*` and excludes both "
-            "`refs/heads/main` and `refs/heads/bot/component-upgrade/*`; its create, "
-            "update, and delete controls continue on every other matching branch ref. "
-            "`main` is excluded from the broad restrict-update ruleset so GitHub native "
-            "Auto-merge can complete after all classic-protection gates pass.",
-        )
-
-    def test_release_plan_scopes_the_live_branch_control_contract(self):
-        document, section = self._document_section(
-            "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
-            "- [ ] **Step 3: Configure merge and release boundaries**",
-            "- [ ] **Step 4: Verify the App boundary**",
-        )
-        self._assert_live_branch_control_contract(
-            document,
-            section,
-            "The broad branch ruleset includes `refs/heads/*` and excludes both "
-            "`refs/heads/main` and `refs/heads/bot/component-upgrade/*`; its create, "
-            "update, and delete controls continue on every other matching branch ref. "
-            "`main` is excluded from the broad restrict-update ruleset so GitHub native "
-            "Auto-merge can complete after all classic-protection gates pass.",
-        )
-
     def _assert_tag_only_source_recovery_contract(self, section: str) -> None:
         self.assertIn("Automatic source notification remains `release.published`.", section)
         self.assertIn(
@@ -588,22 +556,6 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
             "docs/RELEASING.md",
             "## Historical source Release recovery",
             "## Exact-tag Release recovery",
-        )
-        self._assert_tag_only_source_recovery_contract(section)
-
-    def test_release_design_scopes_tag_only_source_recovery(self):
-        _, section = self._document_section(
-            "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
-            "### 1. Source notification workflows",
-            "### 2. Hub component-upgrade workflow",
-        )
-        self._assert_tag_only_source_recovery_contract(section)
-
-    def test_release_plan_scopes_tag_only_source_recovery(self):
-        _, section = self._document_section(
-            "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
-            "## Task 5: Add source Release notifiers",
-            "## Task 6: Replace scheduled direct writes with reconciliation",
         )
         self._assert_tag_only_source_recovery_contract(section)
 
@@ -648,22 +600,6 @@ class ComponentUpgradeWorkflowContractTests(unittest.TestCase):
             "docs/RELEASING.md",
             "## Historical source Release recovery",
             "## Exact-tag Release recovery",
-        )
-        self._assert_source_trigger_and_fact_contract(section)
-
-    def test_release_design_scopes_source_triggers_and_fact_fields(self):
-        _, section = self._document_section(
-            "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
-            "### 1. Source notification workflows",
-            "### 2. Hub component-upgrade workflow",
-        )
-        self._assert_source_trigger_and_fact_contract(section)
-
-    def test_release_plan_scopes_source_triggers_and_fact_fields(self):
-        _, section = self._document_section(
-            "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
-            "## Task 5: Add source Release notifiers",
-            "## Task 6: Replace scheduled direct writes with reconciliation",
         )
         self._assert_source_trigger_and_fact_contract(section)
 

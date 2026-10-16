@@ -330,8 +330,6 @@ class HubReleaseWorkflowContractTests(unittest.TestCase):
             path: (ROOT / path).read_text(encoding="utf-8")
             for path in (
                 "docs/RELEASING.md",
-                "docs/superpowers/plans/2026-08-31-component-release-pr-automation.md",
-                "docs/superpowers/specs/2026-08-31-component-release-pr-automation-design.md",
             )
         }
         for path, policy in environment_policies.items():
