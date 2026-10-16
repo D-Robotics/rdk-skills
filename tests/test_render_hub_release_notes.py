@@ -71,6 +71,13 @@ def mixed_components():
             "release_url": "https://github.com/D-Robotics/oe-skills-s/releases/tag/v1.3.4",
             "formal_release": True,
         },
+        {
+            "name": "RDK Model Zoo Skills",
+            "repo": "D-Robotics/rdk_model_zoo",
+            "ref": "v1.0.1",
+            "release_url": "https://github.com/D-Robotics/rdk_model_zoo/releases/tag/v1.0.1",
+            "formal_release": True,
+        },
     ]
 
 
@@ -114,6 +121,14 @@ def release_facts(records):
 
 
 class HubReleaseNoteTests(unittest.TestCase):
+    def test_release_sources_cover_the_committed_component_registry(self):
+        renderer = load_renderer()
+        rows = [yaml.safe_load(path.read_text()) for path in (ROOT / "components.d").glob("*.yml")]
+        self.assertEqual(set(renderer.COMPONENTS), {row["repo"] for row in rows})
+        notes = renderer.render_notes("1.1.0", rows, [], release_facts=release_facts(rows))
+        self.assertIn("RDK Model Zoo Skills | `v1.0.1`", notes.body)
+
+
     def setUp(self):
         self.renderer = load_renderer()
 

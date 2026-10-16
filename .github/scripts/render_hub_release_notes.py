@@ -26,12 +26,14 @@ MARKER = re.compile(r"(?:\{\{[^{}\n]+\}\}|<(?!\!)[^>\n]+>|X\.Y\.Z|\b(?:TODO|TBD|
 PRINTABLE_ASCII = re.compile(r"^[\x09\x0a\x0d\x20-\x7e]*$")
 
 COMPONENTS = {
+    "D-Robotics/rdk_model_zoo": "RDK Model Zoo Skills",
     "D-Robotics/bsp-skills": "BSP Skills",
     "D-Robotics/rdk-device-skills": "RDK Device Skills",
     "D-Robotics/oe-skills-x5": "OE Skills X5",
     "D-Robotics/oe-skills-s": "OE Skills S",
 }
 COMPONENT_NAME_ALIASES = {
+    "RDK Model Zoo Skills": "RDK Model Zoo Skills",
     "BSP Skills": "BSP Skills",
     "RDK Device Skills": "RDK Device Skills",
     "OE Skills X5": "OE Skills X5",
