@@ -126,7 +126,8 @@ class HubReleaseNoteTests(unittest.TestCase):
         rows = [yaml.safe_load(path.read_text()) for path in (ROOT / "components.d").glob("*.yml")]
         self.assertEqual(set(renderer.COMPONENTS), {row["repo"] for row in rows})
         notes = renderer.render_notes("1.1.0", rows, [], release_facts=release_facts(rows))
-        self.assertIn("RDK Model Zoo Skills | `v1.0.1`", notes.body)
+        for row in rows:
+            self.assertIn(f"{renderer.COMPONENTS[row['repo']]} | `{row['ref']}`", notes.body)
 
 
     def setUp(self):

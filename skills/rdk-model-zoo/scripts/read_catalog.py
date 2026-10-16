@@ -3,6 +3,10 @@
 """Read local, versioned Model Zoo manifests; never infer missing metrics.
 
 Requires PyYAML. Outputs a working-tree snapshot, not a Release attestation.
+Discovery: an explicit --manifest always wins. Otherwise the known flat and
+per-platform layouts are probed; a single candidate is selected implicitly,
+several candidates require explicit selection, and none means the manifest
+stays unknown.
 """
 from __future__ import annotations
 import argparse
@@ -19,6 +23,15 @@ except ImportError:
     yaml=None
 MAX_BYTES=16*1024*1024
 MANIFEST_LAYOUTS=('docs/manifests','docs/release','release')
+# Unified per-platform layouts and migration-window snapshots, probed in
+# preference order: the active unified manifest wins over the frozen snapshot
+# copy of the same platform. Declared here instead of imported so one installed
+# skill directory stays self-contained; branch names are never consulted.
+PLATFORM_MANIFEST_PATTERNS=(
+    ('docs/release/{platform}','unified'),
+    ('platforms/{platform}/docs/release','snapshot'),
+    ('platforms/{platform}/release','snapshot'))
+MANIFEST_PLATFORMS=('x5','s','x3')
 
 
 def safe_path(root: Path, relative: str) -> Path:
@@ -28,6 +41,29 @@ def safe_path(root: Path, relative: str) -> Path:
     out=(root/relative).resolve()
     if not out.is_relative_to(root):raise ValueError('manifest-escapes-repository')
     return out
+
+
+class AmbiguousManifest(ValueError):
+    def __init__(self,candidates:list[str]):
+        super().__init__('ambiguous-manifest; choose --manifest explicitly; candidates: '+', '.join(candidates))
+        self.candidates=tuple(candidates)
+
+
+def manifest_candidates(root: Path) -> list[str]:
+    """Return manifest files actually present; active copies win over snapshots.
+
+    Flat layouts describe single-platform refs. One candidate may be selected
+    implicitly; several candidates require an explicit --manifest and are never
+    narrowed by branch, filename, or the S release group.
+    """
+    flat=[f'{directory}/models.yaml' for directory in MANIFEST_LAYOUTS if (root/directory/'models.yaml').is_file()]
+    per_platform:dict[str,str]={}
+    for platform in MANIFEST_PLATFORMS:
+        for pattern,_kind in PLATFORM_MANIFEST_PATTERNS:
+            directory=pattern.format(platform=platform)
+            if (root/directory/'models.yaml').is_file():
+                per_platform.setdefault(platform,f'{directory}/models.yaml');break
+    return sorted(set(flat)|set(per_platform.values()))
 
 
 def guard_tree(value, stack=None, budget=None, depth=0):
@@ -101,12 +137,14 @@ def catalog(repo:str,model:str|None=None,manifest:str|None=None,benchmarks:str|N
     root=Path(repo).expanduser().resolve()
     if not root.is_dir():raise ValueError('repository-directory-not-found')
     if manifest is None:
-        options=[f'{directory}/models.yaml' for directory in MANIFEST_LAYOUTS if (root/directory/'models.yaml').is_file()]
+        options=manifest_candidates(root)
         if not options:raise ValueError('manifest-not-found')
-        if len(options)!=1:raise ValueError('ambiguous-manifest; choose --manifest explicitly')
+        if len(options)!=1:raise AmbiguousManifest(options)
         manifest=options[0]
     models,mi=load(root,manifest,'models')
     warnings=[];bi=None;bench_rows=[]
+    if manifest.startswith('platforms/'):
+        warnings.append('Selected manifest is a frozen migration-window snapshot under platforms/; it is not the active unified release location.')
     benchmark_path=benchmarks or (PurePosixPath(manifest).parent/'benchmarks.yaml').as_posix()
     if (root/benchmark_path).is_file() or benchmarks:
         raw,bi=load(root,benchmark_path,'benchmarks');bench_rows=raw['benchmarks']
@@ -136,6 +174,8 @@ def main()->int:
     try:r=catalog(a.repo,a.model,a.manifest,a.benchmark_manifest);code=0
     except Exception as e:
         # No commands have been taken from manifests. Parser failures stay explicit.
-        r={'ok':False,'reason':str(e),'board_verified':False};code=2
+        r={'ok':False,'reason':str(e),'board_verified':False}
+        if isinstance(e,AmbiguousManifest):r['manifest_candidates']=list(e.candidates)
+        code=2
     print(json.dumps(r,ensure_ascii=False,indent=2,default=str));return code
 if __name__=='__main__':sys.exit(main())
