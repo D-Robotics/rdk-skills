@@ -1,7 +1,7 @@
 ---
 name: rdk-model-zoo-repo
 description: "Use to establish an RDK Model Zoo checkout's platform, version, layout, conventions, dirty or untracked files, affected samples, and development entrypoints. 触发词：仓库上下文、工作区盘点、开发入口、分支规范。Workspace inventory belongs here; assessing code correctness, standards compliance or delivery readiness belongs to review. Do not use as primary for ready-made model lookup or quantization."
-version: "1.0.1"
+version: "1.1.1"
 license: Apache-2.0
 metadata:
   author: "RDK Model Zoo maintainers"
@@ -26,7 +26,7 @@ metadata:
 
 ## Instructions
 
-1. 读取 [context-policy.md](references/context-policy.md)，从用户给定路径或当前实际 Git 根识别目标。`rdk_x5` 是维护源线索，不是目标硬件；按实际 ref/README 和（有清单时）Manifest 区分 X5、S100/S100P/S600、X3 和 legacy。记录 repo、HEAD、branch/Tag、dirty、需求来源；平台与硬件尚未确认时保持未知，用户约束冲突时不切换分支。
+1. 读取 [context-policy.md](references/context-policy.md)，从用户给定路径或当前实际 Git 根识别目标。Pack 所在分支（交付默认 `main`、集成开发 `develop`、历史交付线 `rdk_x5`/`rdk_s`）只是来源线索，不是目标硬件；按实际 ref/README 和（有清单时）Manifest 区分 X5、S100/S100P/S600、X3 和 legacy。记录 repo、HEAD、branch/Tag、dirty、需求来源；平台与硬件尚未确认时保持未知，用户约束冲突时不切换分支。
 2. 使用自包含只读脚本收集可观测事实：
    ```bash
    python3 "$SKILL_ROOT/scripts/inspect_repo.py" --repo "$REPO_ROOT"
