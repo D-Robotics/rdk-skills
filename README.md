@@ -23,17 +23,17 @@ Choose a task area, then open its complete skill map. The catalog contains **98 
 flowchart TB
     hub["RDK Skills · 98"]
     hub --> device["Device · 25"]
-    click device "docs/SKILL-MAP.md#device" "Open skill map"
+    click device "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#device" "Open skill map"
     hub --> bsp["BSP · 9"]
-    click bsp "docs/SKILL-MAP.md#bsp" "Open skill map"
+    click bsp "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#bsp" "Open skill map"
     hub --> x5["X5 toolchain · 22"]
-    click x5 "docs/SKILL-MAP.md#x5" "Open skill map"
+    click x5 "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#x5" "Open skill map"
     hub --> s["S toolchain · 33"]
-    click s "docs/SKILL-MAP.md#s" "Open skill map"
+    click s "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#s" "Open skill map"
     hub --> zoo["Model Zoo · 7"]
-    click zoo "docs/SKILL-MAP.md#zoo" "Open skill map"
+    click zoo "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#zoo" "Open skill map"
     hub --> discovery["Discovery & installation · 2"]
-    click discovery "docs/SKILL-MAP.md#hub" "Open skill map"
+    click discovery "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#hub" "Open skill map"
 ```
 
 [Device](docs/SKILL-MAP.md#device) · [BSP](docs/SKILL-MAP.md#bsp) · [X5 toolchain](docs/SKILL-MAP.md#x5) · [S toolchain](docs/SKILL-MAP.md#s) · [Model Zoo](docs/SKILL-MAP.md#zoo) · [Discovery & installation](docs/SKILL-MAP.md#hub)

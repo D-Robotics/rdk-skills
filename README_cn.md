@@ -23,17 +23,17 @@
 flowchart TB
     hub["RDK Skills · 98"]
     hub --> device["设备使用 · 25"]
-    click device "docs/SKILL-MAP.md#device" "Open skill map"
+    click device "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#device" "Open skill map"
     hub --> bsp["BSP 开发 · 9"]
-    click bsp "docs/SKILL-MAP.md#bsp" "Open skill map"
+    click bsp "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#bsp" "Open skill map"
     hub --> x5["X5 模型工具链 · 22"]
-    click x5 "docs/SKILL-MAP.md#x5" "Open skill map"
+    click x5 "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#x5" "Open skill map"
     hub --> s["S 系列模型工具链 · 33"]
-    click s "docs/SKILL-MAP.md#s" "Open skill map"
+    click s "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#s" "Open skill map"
     hub --> zoo["模型应用 · 7"]
-    click zoo "docs/SKILL-MAP.md#zoo" "Open skill map"
+    click zoo "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#zoo" "Open skill map"
     hub --> discovery["查找与安装 · 2"]
-    click discovery "docs/SKILL-MAP.md#hub" "Open skill map"
+    click discovery "https://github.com/D-Robotics/rdk-skills/blob/main/docs/SKILL-MAP.md#hub" "Open skill map"
 ```
 
 [设备使用](docs/SKILL-MAP.md#device) · [BSP 开发](docs/SKILL-MAP.md#bsp) · [X5 模型工具链](docs/SKILL-MAP.md#x5) · [S 系列模型工具链](docs/SKILL-MAP.md#s) · [模型应用](docs/SKILL-MAP.md#zoo) · [查找与安装](docs/SKILL-MAP.md#hub)
