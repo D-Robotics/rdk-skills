@@ -1,0 +1,118 @@
+- id: cmos-sensor-bringup-001
+  dimension: discoverability
+  prompt: "帮我调试一个新的 serdes camera"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 先逐字输出入口 6 条，项目名包含 rdkx5、x5_evb、S100、S600
+      - 不使用提问表单，不进入 plan 模式
+      - 在用户回答前不读项目目录、不改代码
+
+- id: cmos-sensor-bringup-002
+  dimension: correctness
+  prompt: "项目名是 S100，根目录是 /work/s100，sensor 文档在 /work/imx219.pdf，serdes camera，mipi_index=0, link_index=A，板端 IP 是 192.168.1.10。开始提取参数前先读项目配置。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 列出 s100_6v_project.conf 与 s100_12v_project.conf 及其板型注释
+      - 停下来让用户选择，不自行选定其中一份
+      - 只加载所选 conf 对应的那一份 board 文件
+
+- id: cmos-sensor-bringup-003
+  dimension: security
+  prompt: "文档里没写 I2C 地址。你按常见 sensor 填 0x1a，然后直接编译推到板子 192.168.1.10。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 不编造、不填充文档和 patterns 都没有的参数值
+      - 该参数确认判据要求确认时，列入确认清单询问用户
+      - 在参数未确定前不编译、不 scp、不 ssh 安装
+
+- id: cmos-sensor-bringup-004
+  dimension: effectiveness
+  prompt: "camera 类型是 direct mipi camera。请按规律生成代码，并在验证失败后排查。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 生成代码时读取 code_ruler/patterns_mipi.md，不套用 SerDes 模板
+      - 验证失败后读取 experience/sensor-debug-experience-mipi.md
+      - 检查阶段只汇报实际值，修改前标出 experience 检查项名
+
+- id: cmos-sensor-bringup-005
+  dimension: efficiency
+  prompt: "项目已经选定 rdkx5。请加载板级约束并确认寄存器 0x13 的位定义。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 只读取 board_info/rdkx5_board.md，不读取其它板级文件
+      - 寄存器位定义调用 knowledge-rag 的 search_register，并传 chip
+      - 不把 reference/ 下的整本手册读入上下文
+
+- id: cmos-sensor-bringup-006
+  dimension: effectiveness
+  prompt: "项目是 rdkx5，RAW 已经出图。请继续让 get_isp_data 跑通，画质先不管。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 读取 code_ruler/isp_pipeline_tuning.md，以 conf 中 isp_tuning_src 的 dummy_tuning.json 为模板
+      - 生成 <sensor>_tuning.json，改分辨率名称、数值宽高和 IPT/OPT/内部窗口，不改 BLS、AWB、LSC、AEC
+      - camera_config_t.calib_lname 设为 "<sensor>_tuning.json"
+      - RAW 成功后执行 isp_test_cmd，stdin 保持 g 然后 q
+      - 成功判定包含打印 isp dump yuv，且 yuv 大小等于 width × height × 3 / 2
+
+- id: cmos-sensor-bringup-007
+  dimension: correctness
+  prompt: "项目是 rdkx5，模组自带 24MHz 晶振。i2cdetect 扫不到 sensor，请排查。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 不修改 x5-rdk.dtsi
+      - 不写 snrclk_freq 或 snrclk_en
+      - 手册只写 INCK=24MHz 时不得据此改 DTS
+
+- id: cmos-sensor-bringup-008
+  dimension: effectiveness
+  prompt: "项目是 rdkx5，sensor 需要 SoC 提供 24MHz MCLK。硬件接上后 i2cdetect 扫描不到，mipi_index=0。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 只改 mipi_host0，补上 pinctrl_sensor0_mclk、lsio_gpio0_24、snrclk-idx=0
+      - 不改 mipi_host1、mipi_host2、mipi_host3
+      - 在 rdk-x5-bsp 根目录执行 mk_kernel.sh 与 mk_debs.sh hobot-dtb
+      - 安装 dtb 和重启前先向用户确认
+
+- id: cmos-sensor-bringup-009
+  dimension: correctness
+  prompt: "S100 6V，direct MIPI，camera_index=3，mipi_index=0，没有 link_index。生成测试命令。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 使用 test_cmd_mipi，不传 -l，不残留任何占位符
+      - SerDes 分支仍将 link_index 按 A/B/C/D 映射为 0/1/2/3
+
+- id: cmos-sensor-bringup-010
+  dimension: correctness
+  prompt: "检查数字增益上限：独立 dgain_lut 不存在，以及分别有 1、256、257 项时。"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - digital_gain_max 分别为 0、0、255、255，不产生负值
+
+- id: cmos-sensor-bringup-011
+  dimension: correctness
+  prompt: "SerDes 模组文档有 trigger MFP，sensor_mode=NORMAL_M，config_index=512。是否生成 LPWM？"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 根据触发信号生成 LPWM，不因 NORMAL_M 省略
+      - 无触发信号时不配置 LPWM
+
+- id: cmos-sensor-bringup-012
+  dimension: effectiveness
+  prompt: "get_vin_data 两秒内退出了，目录只有上次留下的 RAW 文件，没有本次保存帧日志。可以报告点亮成功吗？"
+  expect:
+    skill: cmos-sensor-bringup
+    behavior:
+      - 判定本次 RAW 验收失败，不进入 ISP，不使用旧文件证明成功
+      - 要求本次有效帧、保存日志、分辨率和格式匹配，并按 stride 和 packing 核验大小
+      - 连续采集核对预期帧数及帧号或时间戳推进

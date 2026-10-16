@@ -1,0 +1,7 @@
+interface:
+  display_name: "Sensor 调试"
+  short_description: "点亮 sensor，RAW 通过后再跑 ISP"
+  default_prompt: "使用 $cmos-sensor-bringup 调试新 sensor。RAW 通过后，若项目配置了 get_isp_data，继续把 ISP pipeline 跑通。"
+
+policy:
+  allow_implicit_invocation: true

@@ -74,6 +74,14 @@
       "repo": "D-Robotics/bsp-skills"
     },
     {
+      "catalog_path": "skills/cmos-sensor-bringup",
+      "description": "点亮 SerDes camera 和 direct MIPI camera 的新 sensor bring-up：收集项目与接入信息，按规律提取参数、生成驱动代码，再编译推送到板端验证。项目 conf 含 isp_test_dir 时，RAW（get_vin_data）通过后继续跑 get_isp_data。 触发词: 调试新 sensor、$cmos-sensor-bringup、点亮 camera、mipi_index、link_index、serdes camera、direct mipi camera、get_isp_data。 不要用于：BSP 源码同步、整机镜像或与本次 sensor 无关的编译；寄存器位定义查询交给 knowledge-rag。",
+      "install_type": "flat",
+      "name": "cmos-sensor-bringup",
+      "pack": "BSP Skills",
+      "repo": "D-Robotics/bsp-skills"
+    },
+    {
       "catalog_path": "skills/oe-skills-s/skills/drobotics-router",
       "description": "OpenExplorer 工具链入口 Skill，处理 PTQ/QAT 量化编译、板端部署、性能精度评估等请求，并将任务路由到对应的 D Robotics 子 Skill。",
       "install_type": "workspace",
