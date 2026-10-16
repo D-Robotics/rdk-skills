@@ -47,6 +47,7 @@ bash skills/oe-skills-x5/setup.sh --ref vX.Y.Z "$PROJECT_ROOT"
 | RDK Device Skills | `vX.Y.Z` |
 | OE Skills X5 | `vX.Y.Z` |
 | OE Skills S | `vX.Y.Z` |
+| RDK Model Zoo Skills | `vX.Y.Z` |
 | RDK Skills Hub | `vX.Y.Z` |
 
 ## Compatibility notes
