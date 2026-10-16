@@ -17,14 +17,14 @@ This repository is the **central catalog (Hub)**: each Skill Pack maintains its 
 
 ## Find the skill for your task
 
-Choose a task area, then open its complete skill map. The catalog contains **97 skills**; OE toolchain skills require whole-pack setup.
+Choose a task area, then open its complete skill map. The catalog contains **98 skills**; OE toolchain skills require whole-pack setup.
 
 ```mermaid
 flowchart TB
-    hub["RDK Skills · 97"]
+    hub["RDK Skills · 98"]
     hub --> device["Device · 25"]
     click device "docs/SKILL-MAP.md#device" "Open skill map"
-    hub --> bsp["BSP · 8"]
+    hub --> bsp["BSP · 9"]
     click bsp "docs/SKILL-MAP.md#bsp" "Open skill map"
     hub --> x5["X5 toolchain · 22"]
     click x5 "docs/SKILL-MAP.md#x5" "Open skill map"
