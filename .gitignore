@@ -44,3 +44,7 @@ build/
 
 # Isolated implementation worktrees
 .worktrees/
+
+# Local agent plans, design drafts, and execution evidence
+/.superpowers/
+/docs/superpowers/
